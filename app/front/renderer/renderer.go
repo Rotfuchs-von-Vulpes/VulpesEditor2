@@ -292,7 +292,7 @@ func RenderTexture(f FrameBuffer, t uint32, zoom, posX, posY float32) {
 	gl.UniformMatrix2fv(rTex.uniforms.model, 1, false, &model[0])
 	gl.Uniform2f(rTex.uniforms.move, moveX, moveY)
 
-	gl.ClearColor(0.39, 0.33, 0.38, 1.0)
+	gl.ClearColor(0.29, 0.29, 0.39, 1.0)
 	gl.Clear(gl.COLOR_BUFFER_BIT)
 	gl.BindVertexArray(rTex.vao)
 	gl.DrawArrays(gl.TRIANGLES, 0, 6)
