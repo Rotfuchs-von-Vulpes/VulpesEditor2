@@ -5,13 +5,13 @@ layout (location = 1) in vec2 aTexCoords;
 
 out vec2 TexCoords;
 
-// uniform float zoom;
+uniform float zoom;
 uniform float aspect;
 uniform vec2 move;
-uniform mat2 model;
+// uniform mat2 model;
 
 void main() {
-   vec2 pos = model * (aPos + move);
+   vec2 pos = (aPos + move) * zoom;
    gl_Position = vec4(aspect*pos.x, pos.y, 0.0, 1.0);
    TexCoords = aTexCoords;
 }

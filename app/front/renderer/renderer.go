@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/AllenDang/cimgui-go/imgui"
-	"github.com/engoengine/glm"
 	"github.com/go-gl/gl/v3.3-core/gl"
 )
 
@@ -36,11 +35,10 @@ type renderer struct {
 }
 
 type textureUniforms struct {
-	zoom   int32
-	move   int32
-	aspect int32
-	model  int32
-	size   int32
+	zoom      int32
+	move      int32
+	aspect    int32
+	thickness int32
 }
 
 type textureRender struct {
@@ -203,9 +201,8 @@ func Init() {
 
 		rTex.uniforms.move = gl.GetUniformLocation(rTex.shaderHandle, util.Str("move"))
 		rTex.uniforms.zoom = gl.GetUniformLocation(rTex.shaderHandle, util.Str("zoom"))
-		rTex.uniforms.model = gl.GetUniformLocation(rTex.shaderHandle, util.Str("model"))
 		rTex.uniforms.aspect = gl.GetUniformLocation(rTex.shaderHandle, util.Str("aspect"))
-		rTex.uniforms.size = gl.GetUniformLocation(rTex.shaderHandle, util.Str("size"))
+		rTex.uniforms.thickness = gl.GetUniformLocation(rTex.shaderHandle, util.Str("thickness"))
 
 		vertices := []float32{
 			1.0, -1.0, 1.0, 1.0,
@@ -275,7 +272,7 @@ func Nuke() {
 	gl.DeleteProgram(r.shaderHandle)
 }
 
-func RenderTexture(f FrameBuffer, t uint32, zoom, posX, posY, texAspect float32) {
+func RenderTexture(f FrameBuffer, t uint32, zoom, posX, posY, texAspect, width, height float32) {
 	gl.Viewport(0, 0, f.width, f.height)
 	gl.BindFramebuffer(gl.FRAMEBUFFER, f.fbo)
 	gl.BindTexture(gl.TEXTURE_2D, t)
@@ -284,15 +281,13 @@ func RenderTexture(f FrameBuffer, t uint32, zoom, posX, posY, texAspect float32)
 	gl.FramebufferTexture(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, f.depth, 0)
 
 	size := f.Size()
-	var aspect float32 = size.X / size.Y
-	moveX := 2 * posX / (size.X * zoom)
-	moveY := 2 * posY / (aspect * size.Y * zoom)
-	model := glm.Mat2{zoom, 0, 0, aspect * zoom}
+	moveX := 2 * posX / (texAspect * size.X * zoom)
+	moveY := 2 * posY / (size.Y * zoom)
 
 	gl.UseProgram(rTex.shaderHandle)
+	gl.Uniform2f(rTex.uniforms.thickness, 1/(texAspect*size.X*zoom), 1/(size.Y*zoom))
 	gl.Uniform1f(rTex.uniforms.aspect, texAspect)
-	gl.Uniform1f(rTex.uniforms.zoom, 1/(size.X*zoom))
-	gl.UniformMatrix2fv(rTex.uniforms.model, 1, false, &model[0])
+	gl.Uniform1f(rTex.uniforms.zoom, zoom)
 	gl.Uniform2f(rTex.uniforms.move, moveX, moveY)
 
 	gl.ClearColor(0.29, 0.29, 0.39, 1.0)
