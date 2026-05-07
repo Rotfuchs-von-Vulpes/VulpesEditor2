@@ -35,15 +35,17 @@ type renderer struct {
 }
 
 type textureUniforms struct {
-	zoom      int32
-	move      int32
-	aspect    int32
-	thickness int32
+	zoom    int32
+	move    int32
+	aspect  int32
+	outline int32
 }
 
 type textureRender struct {
 	shaderHandle uint32
-	vao, vbo     uint32
+	textureVao   uint32
+	outlineVao   uint32
+	vbo          uint32
 	uniforms     textureUniforms
 }
 
@@ -202,9 +204,9 @@ func Init() {
 		rTex.uniforms.move = gl.GetUniformLocation(rTex.shaderHandle, util.Str("move"))
 		rTex.uniforms.zoom = gl.GetUniformLocation(rTex.shaderHandle, util.Str("zoom"))
 		rTex.uniforms.aspect = gl.GetUniformLocation(rTex.shaderHandle, util.Str("aspect"))
-		rTex.uniforms.thickness = gl.GetUniformLocation(rTex.shaderHandle, util.Str("thickness"))
+		rTex.uniforms.outline = gl.GetUniformLocation(rTex.shaderHandle, util.Str("outline"))
 
-		vertices := []float32{
+		textureVertices := []float32{
 			1.0, -1.0, 1.0, 1.0,
 			-1.0, 1.0, 0.0, 0.0,
 			-1.0, -1.0, 0.0, 1.0,
@@ -213,17 +215,37 @@ func Init() {
 			1.0, 1.0, 1.0, 0.0,
 		}
 
-		gl.GenVertexArrays(1, &rTex.vao)
+		outlineVertices := []float32{
+			1.0, -1.0, 1.0, 1.0,
+			-1.0, -1.0, 0.0, 1.0,
+			-1.0, 1.0, 0.0, 0.0,
+			1.0, 1.0, 1.0, 0.0,
+		}
+
+		gl.GenVertexArrays(1, &rTex.textureVao)
 		gl.GenBuffers(1, &rTex.vbo)
-		gl.BindVertexArray(rTex.vao)
+		gl.BindVertexArray(rTex.textureVao)
 
 		gl.BindBuffer(gl.ARRAY_BUFFER, rTex.vbo)
-		gl.BufferData(gl.ARRAY_BUFFER, int(FLOAT_SIZE)*len(vertices), gl.Ptr(&vertices[0]), gl.STATIC_DRAW)
+		gl.BufferData(gl.ARRAY_BUFFER, int(FLOAT_SIZE)*len(textureVertices), gl.Ptr(&textureVertices[0]), gl.STATIC_DRAW)
 
 		gl.VertexAttribPointerWithOffset(0, 2, gl.FLOAT, false, 4*FLOAT_SIZE, 0)
 		gl.VertexAttribPointerWithOffset(1, 2, gl.FLOAT, false, 4*FLOAT_SIZE, 2*FLOAT_SIZE)
 		gl.EnableVertexAttribArray(0)
 		gl.EnableVertexAttribArray(1)
+
+		gl.GenVertexArrays(1, &rTex.outlineVao)
+		gl.GenBuffers(1, &rTex.vbo)
+		gl.BindVertexArray(rTex.outlineVao)
+
+		gl.BindBuffer(gl.ARRAY_BUFFER, rTex.vbo)
+		gl.BufferData(gl.ARRAY_BUFFER, int(FLOAT_SIZE)*len(outlineVertices), gl.Ptr(&outlineVertices[0]), gl.STATIC_DRAW)
+
+		gl.VertexAttribPointerWithOffset(0, 2, gl.FLOAT, false, 4*FLOAT_SIZE, 0)
+		gl.VertexAttribPointerWithOffset(1, 2, gl.FLOAT, false, 4*FLOAT_SIZE, 2*FLOAT_SIZE)
+		gl.EnableVertexAttribArray(0)
+		gl.EnableVertexAttribArray(1)
+
 		gl.BindBuffer(gl.ARRAY_BUFFER, 0)
 		gl.BindVertexArray(0)
 	}
@@ -285,14 +307,17 @@ func RenderTexture(f FrameBuffer, t uint32, zoom, posX, posY, texAspect, width, 
 	moveY := 2 * posY / (size.Y * zoom)
 
 	gl.UseProgram(rTex.shaderHandle)
-	gl.Uniform2f(rTex.uniforms.thickness, 1/(texAspect*size.X*zoom), 1/(size.Y*zoom))
 	gl.Uniform1f(rTex.uniforms.aspect, texAspect)
+	gl.Uniform1i(rTex.uniforms.outline, 0)
 	gl.Uniform1f(rTex.uniforms.zoom, zoom)
 	gl.Uniform2f(rTex.uniforms.move, moveX, moveY)
 
 	gl.ClearColor(0.29, 0.29, 0.39, 1.0)
 	gl.Clear(gl.COLOR_BUFFER_BIT)
-	gl.BindVertexArray(rTex.vao)
+	gl.BindVertexArray(rTex.textureVao)
 	gl.DrawArrays(gl.TRIANGLES, 0, 6)
+	gl.Uniform1i(rTex.uniforms.outline, 1)
+	gl.BindVertexArray(rTex.outlineVao)
+	gl.DrawArrays(gl.LINE_LOOP, 0, 4)
 	gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
 }
