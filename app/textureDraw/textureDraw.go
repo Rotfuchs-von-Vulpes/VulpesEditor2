@@ -141,10 +141,11 @@ type TextureContext struct {
 
 func (s *TextureContext) change_pixel() {
 	var pos [2]float32
-	pos[0] = s.size[0] - s.mousePos[0] - s.pos[0] - s.size[0]/2 + s.size[0]*s.zoom/2
-	pos[1] = s.mousePos[1] + s.pos[1] - s.size[1]/2 + s.size[0]*s.zoom/2
-	pos[0] = pos[0] / (s.size[0] * s.zoom) * float32(s.texture.width)
-	pos[1] = pos[1] / (s.size[0] * s.zoom) * float32(s.texture.height)
+	aspect := float32(s.texture.width) / float32(s.texture.height)
+	pos[0] = s.size[0] - s.mousePos[0] - s.pos[0] - s.size[0]*(1-s.zoom)/2
+	pos[1] = s.mousePos[1] + s.pos[1] - s.size[1]*(1-s.zoom)/2
+	pos[0] = float32(s.texture.width) * ((pos[0]/(s.size[0]*s.zoom)-0.5)/aspect + 1.0/2)
+	pos[1] = float32(s.texture.height) * pos[1] / (s.size[1] * s.zoom)
 	pixel_pos := [2]int32{int32(math.Floor(float64(pos[0]))), int32(math.Floor(float64(pos[1])))}
 	if pixel_pos[0] < 0 || pixel_pos[0] >= int32(s.texture.width) || pixel_pos[1] < 0 || pixel_pos[1] >= int32(s.texture.height) {
 		return
@@ -243,7 +244,7 @@ func (s *TextureContext) Show() {
 		s.buttonRelease(io.MouseReleased())
 	}
 	imgui.End()
-	renderer.RenderTexture(s.textureViewer, s.texture.glID, s.zoom, s.pos[0], s.pos[1])
+	renderer.RenderTexture(s.textureViewer, s.texture.glID, s.zoom, s.pos[0], s.pos[1], float32(s.texture.width)/float32(s.texture.height))
 }
 
 var allTextures []*Texture
