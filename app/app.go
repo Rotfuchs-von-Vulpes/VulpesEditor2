@@ -5,14 +5,13 @@ import (
 	"VulpesEditor/app/textureDraw"
 )
 
-func Init() bool {
+func Init() {
 	textureDraw.Init()
-	return true
 }
 
 func AfterCreateContext() {
 	front.Init()
-	textureDraw.AddTexture(16, 16)
+	textureDraw.AfterCreateContext()
 }
 
 func BeforeDestroyContext() {

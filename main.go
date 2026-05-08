@@ -13,9 +13,8 @@ import (
 var currentBackend backend.Backend[sdlbackend.SDLWindowFlags]
 
 func main() {
-	if !app.Init() {
-		return
-	}
+	app.Init()
+
 	runtime.LockOSThread()
 	currentBackend, _ = backend.CreateBackend(sdlbackend.NewSDLBackend())
 	currentBackend.SetAfterCreateContextHook(app.AfterCreateContext)
