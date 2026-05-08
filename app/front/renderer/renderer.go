@@ -99,34 +99,6 @@ func WriteTexture(id uint32, width, height int32, data []float32) {
 	gl.BindTexture(gl.TEXTURE_2D, 0)
 }
 
-func createFramebuffer(width, height int32) (f FrameBuffer) {
-	f.width = width
-	f.height = height
-	gl.GenTextures(1, &f.colorBuffer)
-	gl.BindTexture(gl.TEXTURE_2D, f.colorBuffer)
-	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGB16F, width, height, 0, gl.RGB, gl.UNSIGNED_BYTE, nil)
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-	gl.BindTexture(gl.TEXTURE_2D, 0)
-	gl.ActiveTexture(gl.TEXTURE1)
-
-	gl.GenTextures(1, &f.depth)
-	gl.BindTexture(gl.TEXTURE_2D, f.depth)
-	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT32, f.width, f.height, 0, gl.DEPTH_COMPONENT, gl.UNSIGNED_INT, nil)
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_BORDER)
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_BORDER)
-
-	gl.GenFramebuffers(1, &f.fbo)
-	gl.BindFramebuffer(gl.FRAMEBUFFER, f.fbo)
-
-	gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, f.colorBuffer, 0)
-	gl.FramebufferTexture(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, f.depth, 0)
-
-	gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
-
-	return f
-}
-
 func Init() {
 	glShaderSource := func(handle uint32, source string) {
 		csource, free := gl.Strs(source + "\x00")
@@ -264,6 +236,34 @@ func NewFrameBuffer(width, height int32) FrameBuffer {
 	return createFramebuffer(width, height)
 }
 
+func createFramebuffer(width, height int32) (f FrameBuffer) {
+	f.width = width
+	f.height = height
+	gl.GenTextures(1, &f.colorBuffer)
+	gl.BindTexture(gl.TEXTURE_2D, f.colorBuffer)
+	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGB16F, f.width, f.height, 0, gl.RGB, gl.UNSIGNED_BYTE, nil)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+	gl.BindTexture(gl.TEXTURE_2D, 0)
+	gl.ActiveTexture(gl.TEXTURE1)
+
+	gl.GenTextures(1, &f.depth)
+	gl.BindTexture(gl.TEXTURE_2D, f.depth)
+	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT32, f.width, f.height, 0, gl.DEPTH_COMPONENT, gl.UNSIGNED_INT, nil)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_BORDER)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_BORDER)
+
+	gl.GenFramebuffers(1, &f.fbo)
+	gl.BindFramebuffer(gl.FRAMEBUFFER, f.fbo)
+
+	gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, f.colorBuffer, 0)
+	gl.FramebufferTexture(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, f.depth, 0)
+
+	gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
+
+	return f
+}
+
 func (f FrameBuffer) Render(clearColor [3]float32, objectColor [3]float32) {
 	gl.Viewport(0, 0, f.width, f.height)
 	gl.BindFramebuffer(gl.FRAMEBUFFER, f.fbo)
@@ -277,6 +277,15 @@ func (f FrameBuffer) Render(clearColor [3]float32, objectColor [3]float32) {
 	gl.BindVertexArray(r.vao)
 	gl.DrawArrays(gl.TRIANGLES, 0, 3)
 	gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
+}
+
+func (f *FrameBuffer) Resize(width, height int32) {
+	f.width = width
+	f.height = height
+	gl.BindTexture(gl.TEXTURE_2D, f.colorBuffer)
+	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGB16F, f.width, f.height, 0, gl.RGB, gl.UNSIGNED_BYTE, nil)
+	gl.BindTexture(gl.TEXTURE_2D, f.depth)
+	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT32, f.width, f.height, 0, gl.DEPTH_COMPONENT, gl.UNSIGNED_INT, nil)
 }
 
 func (f FrameBuffer) Image() uint32 {
@@ -307,7 +316,7 @@ func RenderTexture(f FrameBuffer, t uint32, zoom, posX, posY, texAspect, width, 
 	moveY := 2 * posY / (size.Y * zoom)
 
 	gl.UseProgram(rTex.shaderHandle)
-	gl.Uniform1f(rTex.uniforms.aspect, texAspect)
+	gl.Uniform1f(rTex.uniforms.aspect, float32(f.height)/float32(f.width)*texAspect)
 	gl.Uniform1i(rTex.uniforms.outline, 0)
 	gl.Uniform1f(rTex.uniforms.zoom, zoom)
 	gl.Uniform2f(rTex.uniforms.move, moveX, moveY)

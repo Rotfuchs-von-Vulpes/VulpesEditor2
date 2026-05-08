@@ -137,6 +137,7 @@ type TextureContext struct {
 	mouseCanDrag  bool
 	pos           [2]float32
 	size          [2]float32
+	aspect        float32
 	textureViewer renderer.FrameBuffer
 	texture       *Texture
 }
@@ -145,7 +146,7 @@ func (s *TextureContext) change_pixel() {
 	var pos [2]float32
 	pos[0] = s.size[0] - s.mousePos[0] - s.pos[0] - s.size[0]*(1-s.zoom)/2
 	pos[1] = s.mousePos[1] + s.pos[1] - s.size[1]*(1-s.zoom)/2
-	pos[0] = float32(s.texture.width) * ((pos[0]/(s.size[0]*s.zoom)-0.5)/s.texture.aspect + 1.0/2)
+	pos[0] = float32(s.texture.width) * ((pos[0]/(s.size[0]*s.zoom)-0.5)/(s.aspect*s.texture.aspect) + 1.0/2)
 	pos[1] = float32(s.texture.height) * pos[1] / (s.size[1] * s.zoom)
 	pixel_pos := [2]int32{int32(math.Floor(float64(pos[0]))), int32(math.Floor(float64(pos[1])))}
 	if pixel_pos[0] < 0 || pixel_pos[0] >= int32(s.texture.width) || pixel_pos[1] < 0 || pixel_pos[1] >= int32(s.texture.height) {
@@ -214,6 +215,19 @@ func (s *TextureContext) buttonRelease(buttons [5]bool) {
 
 func (s *TextureContext) Show() {
 	imgui.Begin(s.windowName)
+
+	{
+		wSize := imgui.ContentRegionAvail()
+		width := int32(wSize.X)
+		height := int32(wSize.Y)
+
+		if s.size[0] != wSize.X || s.size[1] != wSize.Y {
+			s.textureViewer.Resize(width, height)
+			s.size[0] = wSize.X
+			s.size[1] = wSize.Y
+			s.aspect = wSize.Y / wSize.X
+		}
+	}
 
 	if imgui.IsWindowFocused() {
 		io := imgui.CurrentContext().IO()
