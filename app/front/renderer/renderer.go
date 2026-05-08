@@ -232,11 +232,8 @@ func Init() {
 	gl.BindRenderbuffer(gl.RENDERBUFFER, 0)
 }
 
-func NewFrameBuffer(width, height int32) FrameBuffer {
-	return createFramebuffer(width, height)
-}
-
-func createFramebuffer(width, height int32) (f FrameBuffer) {
+func CreateFramebuffer(width, height int32) (f *FrameBuffer) {
+	f = new(FrameBuffer)
 	f.width = width
 	f.height = height
 	gl.GenTextures(1, &f.colorBuffer)

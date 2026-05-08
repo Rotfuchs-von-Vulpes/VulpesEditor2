@@ -138,7 +138,7 @@ type TextureContext struct {
 	pos           [2]float32
 	size          [2]float32
 	aspect        float32
-	textureViewer renderer.FrameBuffer
+	textureViewer *renderer.FrameBuffer
 	texture       *Texture
 }
 
@@ -261,7 +261,7 @@ func (s *TextureContext) Show() {
 	imgui.End()
 	x := float32(s.texture.width)
 	y := float32(s.texture.height)
-	renderer.RenderTexture(s.textureViewer, s.texture.glID, s.zoom, s.pos[0], s.pos[1], s.texture.aspect, x, y)
+	renderer.RenderTexture(*s.textureViewer, s.texture.glID, s.zoom, s.pos[0], s.pos[1], s.texture.aspect, x, y)
 }
 
 var AllTextures []*Texture
@@ -270,7 +270,7 @@ var AllCtx []*TextureContext
 func createCtx(tex *Texture) (ctx TextureContext) {
 	ctx.windowName = "Texture #" + strconv.FormatUint(uint64(tex.id), 10)
 	ctx.zoom = 0.9
-	ctx.textureViewer = renderer.NewFrameBuffer(500, 500)
+	ctx.textureViewer = renderer.CreateFramebuffer(500, 500)
 	ctx.size = [2]float32{500, 500}
 	ctx.texture = tex
 	return
