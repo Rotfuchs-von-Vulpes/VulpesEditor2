@@ -142,7 +142,7 @@ type TextureContext struct {
 	texture       *Texture
 }
 
-func (s *TextureContext) change_pixel() {
+func (s *TextureContext) change_pixel(color [4]float32) {
 	var pos [2]float32
 	pos[0] = s.size[0] - s.mousePos[0] - s.pos[0] - s.size[0]*(1-s.zoom)/2
 	pos[1] = s.mousePos[1] + s.pos[1] - s.size[1]*(1-s.zoom)/2
@@ -157,7 +157,7 @@ func (s *TextureContext) change_pixel() {
 	index := pixel_pos[1]*int32(s.texture.width) + pixel_pos[0]
 	change.pos = pixel_pos
 	change.before = s.texture.colors[index]
-	change.after = [4]float32{1, 1, 1, 1}
+	change.after = color
 	s.texture.applyChanges([]pixelChange{change})
 }
 
@@ -183,10 +183,9 @@ func (s *TextureContext) move(pos imgui.Vec2, buttons [5]bool) {
 	s.mousePos = [2]float32{s.size[0] - pos.X, pos.Y}
 
 	if buttons[0] {
-		s.change_pixel()
-		// change_pixel(false)
+		s.change_pixel(color1)
 	} else if buttons[1] {
-		// change_pixel(true)
+		s.change_pixel(color2)
 	}
 
 	if s.mouseCanDrag {
@@ -288,7 +287,14 @@ func OpenTexture(tex *Texture) {
 }
 
 var idSys util.IdSystem
+var color1 [4]float32
+var color2 [4]float32
 
 func Init() {
 	idSys = util.NewIdSystem()
+}
+
+func SetColors(c1, c2 [4]float32) {
+	color1 = c1
+	color2 = c2
 }

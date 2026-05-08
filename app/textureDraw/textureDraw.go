@@ -1,9 +1,13 @@
 package textureDraw
 
-import "VulpesEditor/app/textureDraw/texture"
+import (
+	"VulpesEditor/app/textureDraw/palette"
+	"VulpesEditor/app/textureDraw/texture"
+)
 
 func Init() {
 	texture.Init()
+	palette.Init()
 }
 
 func AfterCreateContext() {
@@ -11,6 +15,8 @@ func AfterCreateContext() {
 }
 
 func Loop() {
+	palette.Loop()
+	texture.SetColors(palette.SelectedColors())
 	for _, c := range texture.AllCtx {
 		c.Show()
 	}
