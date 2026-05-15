@@ -4,6 +4,7 @@ import (
 	"runtime"
 
 	"VulpesEditor/app"
+	"VulpesEditor/data"
 
 	"github.com/AllenDang/cimgui-go/backend"
 	"github.com/AllenDang/cimgui-go/backend/sdlbackend"
@@ -13,6 +14,7 @@ import (
 var currentBackend backend.Backend[sdlbackend.SDLWindowFlags]
 
 func main() {
+	data.Init()
 	app.Init()
 
 	runtime.LockOSThread()

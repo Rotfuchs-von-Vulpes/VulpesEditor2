@@ -1,14 +1,16 @@
 package util
 
 type IdSystem struct {
-	lastId uint32
+	lastId int32
 }
 
-func NewIdSystem() IdSystem {
-	return IdSystem{0}
+func NewIdSystem() (sys *IdSystem) {
+	sys = new(IdSystem)
+	sys.lastId = 0
+	return
 }
 
-func (s *IdSystem) GetID() (id uint32) {
+func (s *IdSystem) GetID() (id int32) {
 	id = s.lastId
 	s.lastId += 1
 	return

@@ -18,7 +18,7 @@ type pixelChange struct {
 type pixelsChange []pixelChange
 
 type Texture struct {
-	id        uint32
+	id        int32
 	width     uint32
 	height    uint32
 	aspect    float32
@@ -286,7 +286,7 @@ func OpenTexture(tex *Texture) {
 	createCtx(tex)
 }
 
-var idSys util.IdSystem
+var idSys *util.IdSystem
 var color1 [4]float32
 var color2 [4]float32
 
