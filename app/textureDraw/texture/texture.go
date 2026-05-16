@@ -136,26 +136,29 @@ type TextureContext struct {
 	mousePressPos [2]float32
 	mouseCanDrag  bool
 	pos           [2]float32
-	size          [2]float32
+	viewrSize     [2]float32
 	aspect        float32
 	textureViewer *renderer.FrameBuffer
 	texture       *Texture
 }
 
 func (s *TextureContext) change_pixel(color [4]float32) {
-	var pos [2]float32
-	pos[0] = s.size[0] - s.mousePos[0] - s.pos[0] - s.size[0]*(1-s.zoom)/2
-	pos[1] = s.mousePos[1] + s.pos[1] - s.size[1]*(1-s.zoom)/2
-	pos[0] = float32(s.texture.width) * ((pos[0]/(s.size[0]*s.zoom)-0.5)/(s.aspect*s.texture.aspect) + 1.0/2)
-	pos[1] = float32(s.texture.height) * pos[1] / (s.size[1] * s.zoom)
-	pixel_pos := [2]int32{int32(math.Floor(float64(pos[0]))), int32(math.Floor(float64(pos[1])))}
-	if pixel_pos[0] < 0 || pixel_pos[0] >= int32(s.texture.width) || pixel_pos[1] < 0 || pixel_pos[1] >= int32(s.texture.height) {
+	var pos1 [2]float32
+	pos1[0] = s.viewrSize[0] - s.mousePos[0] - s.pos[0]*s.aspect
+	pos1[1] = s.viewrSize[1] - s.mousePos[1] - s.pos[1]
+	pos1[0] = 2 * ((pos1[0] / s.viewrSize[0]) - 0.5)
+	pos1[1] = 2 * ((pos1[1] / s.viewrSize[1]) - 0.5)
+	pos1[0] = pos1[0] / (s.zoom * s.aspect * s.texture.aspect)
+	pos1[1] = pos1[1] / s.zoom
+	var pixelPos [2]int32
+	pixelPos[0] = int32(math.Floor(float64(s.texture.width) * float64(pos1[0]/2+0.5)))
+	pixelPos[1] = int32(math.Floor(float64(s.texture.height) * (1 - float64(pos1[1]/2+0.5))))
+	if pixelPos[0] < 0 || pixelPos[0] >= int32(s.texture.width) || pixelPos[1] < 0 || pixelPos[1] >= int32(s.texture.height) {
 		return
 	}
-	//col := &pixels[pixel_pos.y][pixel_pos.x]
 	var change pixelChange
-	index := pixel_pos[1]*int32(s.texture.width) + pixel_pos[0]
-	change.pos = pixel_pos
+	index := pixelPos[1]*int32(s.texture.width) + pixelPos[0]
+	change.pos = pixelPos
 	change.before = s.texture.colors[index]
 	change.after = color
 	s.texture.applyChanges([]pixelChange{change})
@@ -167,7 +170,7 @@ func (s *TextureContext) reset() {
 }
 
 func (s *TextureContext) scroll(yoffset float32) {
-	mouse := [2]float32{s.mousePos[0] - 0.5*s.size[0], s.mousePos[1] - 0.5*s.size[1]}
+	mouse := [2]float32{s.mousePos[0] - 0.5*s.viewrSize[0], s.mousePos[1] - 0.5*s.viewrSize[1]}
 	position := [2]float32{(s.pos[0] + mouse[0]) / s.zoom, (s.pos[1] + mouse[1]) / s.zoom}
 
 	if yoffset < 0 {
@@ -180,7 +183,7 @@ func (s *TextureContext) scroll(yoffset float32) {
 }
 
 func (s *TextureContext) move(pos imgui.Vec2, buttons [5]bool) {
-	s.mousePos = [2]float32{s.size[0] - pos.X, pos.Y}
+	s.mousePos = [2]float32{s.viewrSize[0] - pos.X, pos.Y}
 
 	if buttons[0] {
 		s.change_pixel(color1)
@@ -189,7 +192,7 @@ func (s *TextureContext) move(pos imgui.Vec2, buttons [5]bool) {
 	}
 
 	if s.mouseCanDrag {
-		s.pos[0] = s.mouseTarget[0] - s.mousePos[0] + s.mousePressPos[0]
+		s.pos[0] = (s.mouseTarget[0]-s.mousePos[0])/s.aspect + s.mousePressPos[0]
 		s.pos[1] = s.mouseTarget[1] - s.mousePos[1] + s.mousePressPos[1]
 	}
 }
@@ -220,10 +223,10 @@ func (s *TextureContext) Show() {
 		width := int32(wSize.X)
 		height := int32(wSize.Y)
 
-		if s.size[0] != wSize.X || s.size[1] != wSize.Y {
+		if s.viewrSize[0] != wSize.X || s.viewrSize[1] != wSize.Y {
 			s.textureViewer.Resize(width, height)
-			s.size[0] = wSize.X
-			s.size[1] = wSize.Y
+			s.viewrSize[0] = wSize.X
+			s.viewrSize[1] = wSize.Y
 			s.aspect = wSize.Y / wSize.X
 		}
 	}
@@ -270,7 +273,7 @@ func createCtx(tex *Texture) (ctx TextureContext) {
 	ctx.windowName = "Texture #" + strconv.FormatUint(uint64(tex.id), 10)
 	ctx.zoom = 0.9
 	ctx.textureViewer = renderer.CreateFramebuffer(500, 500)
-	ctx.size = [2]float32{500, 500}
+	ctx.viewrSize = [2]float32{500, 500}
 	ctx.texture = tex
 	return
 }
