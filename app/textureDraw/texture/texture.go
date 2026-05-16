@@ -43,15 +43,16 @@ func flatData(colors [][4]float32) (data []float32) {
 	return
 }
 
-func newTexture(width, height uint32) (tex Texture) {
+func newTexture(width, height uint32) (tex *Texture) {
 	id := idSys.GetID()
 	colors := blankTexture(width, height)
 	glID := renderer.CreateTexture(int32(width), int32(height), flatData(colors))
+	tex = new(Texture)
 	tex.id = id
 	tex.width = width
 	tex.height = height
 	tex.aspect = float32(width) / float32(height)
-	tex.colors = blankTexture(width, height)
+	tex.colors = colors
 	tex.glID = glID
 	return
 }
@@ -80,12 +81,6 @@ func (s *Texture) change(changes []pixelChange) {
 }
 
 func (s *Texture) applyChanges(changes []pixelChange) {
-	if len(s.changes) > 0 {
-		lastChange := s.changes[len(s.changes)-1]
-		if isSameChanges(lastChange, changes) {
-			return
-		}
-	}
 	s.change(changes)
 	s.update()
 	s.changes = s.changes[:len(s.changes)-int(s.undoLevel)]
@@ -161,7 +156,9 @@ func (s *TextureContext) change_pixel(color [4]float32) {
 	change.pos = pixelPos
 	change.before = s.texture.colors[index]
 	change.after = color
-	s.texture.applyChanges([]pixelChange{change})
+	if change.before != change.after {
+		s.texture.applyChanges([]pixelChange{change})
+	}
 }
 
 func (s *TextureContext) reset() {
@@ -280,8 +277,8 @@ func createCtx(tex *Texture) (ctx TextureContext) {
 
 func AddTexture(width, height uint32) {
 	tex := newTexture(width, height)
-	ctx := createCtx(&tex)
-	AllTextures = append(AllTextures, &tex)
+	ctx := createCtx(tex)
+	AllTextures = append(AllTextures, tex)
 	AllCtx = append(AllCtx, &ctx)
 }
 
