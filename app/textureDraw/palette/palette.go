@@ -175,6 +175,7 @@ func Loop() {
 
 		imgui.EndMenuBar()
 	}
+	var width float32 = 46
 	for _, palette := range palettes {
 		if !palette.show {
 			continue
@@ -185,6 +186,7 @@ func Loop() {
 			if color1.id == id || color2.id == id {
 				imgui.PushStyleColorVec4(imgui.ColFrameBg, color.mark)
 			}
+			availableSpace := imgui.ContentRegionAvail().X
 			imgui.PushIDInt(id)
 			imgui.ColorButton("color #"+strconv.FormatInt(int64(i), 10), newVec4(color.value))
 			imgui.PopID()
@@ -201,7 +203,7 @@ func Loop() {
 					color2 = &color
 				}
 			}
-			if i != len(palette.colors)-1 {
+			if i != len(palette.colors)-1 && availableSpace-width > 0 {
 				imgui.SameLine()
 			}
 		}
