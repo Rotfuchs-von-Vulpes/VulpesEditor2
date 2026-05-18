@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -102,7 +103,7 @@ func digestPalette(buff io.Reader) (palette PaletteData) {
 
 func GetPaletteFromLospec(paletteName string) (bool, PaletteData) {
 	strings.ReplaceAll(paletteName, " ", "-")
-	if buff, err := downloadFile("https://Lospec.com/palette-list/"+paletteName+".csv", "UserData/palettes"); err != nil {
+	if buff, err := downloadFile("https://lospec.com/palette-list/"+paletteName+".csv", "UserData/palettes"); err != nil {
 		fmt.Println(err)
 		return false, PaletteData{}
 	} else {
@@ -111,6 +112,11 @@ func GetPaletteFromLospec(paletteName string) (bool, PaletteData) {
 }
 
 func GetPaletteFromLospecLink(palleteLink string) (bool, PaletteData) {
+	if u, err := url.Parse(palleteLink); err == nil {
+		if u.Host != "lospec.com" {
+			return false, PaletteData{}
+		}
+	}
 	if buff, err := downloadFile(palleteLink+".csv", "UserData/palettes"); err != nil {
 		fmt.Println(err)
 		return false, PaletteData{}
