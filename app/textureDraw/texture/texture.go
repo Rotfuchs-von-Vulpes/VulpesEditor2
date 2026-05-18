@@ -215,17 +215,15 @@ func (s *TextureContext) buttonRelease(buttons [5]bool) {
 func (s *TextureContext) Show() {
 	imgui.Begin(s.windowName)
 
-	{
-		wSize := imgui.ContentRegionAvail()
-		width := int32(wSize.X)
-		height := int32(wSize.Y)
+	wSize := imgui.ContentRegionAvail()
+	width := int32(wSize.X)
+	height := int32(wSize.Y)
 
-		if s.viewrSize[0] != wSize.X || s.viewrSize[1] != wSize.Y {
-			s.textureViewer.Resize(width, height)
-			s.viewrSize[0] = wSize.X
-			s.viewrSize[1] = wSize.Y
-			s.aspect = wSize.Y / wSize.X
-		}
+	if s.viewrSize[0] != wSize.X || s.viewrSize[1] != wSize.Y {
+		s.textureViewer.Resize(width, height)
+		s.viewrSize[0] = wSize.X
+		s.viewrSize[1] = wSize.Y
+		s.aspect = wSize.Y / wSize.X
 	}
 
 	if imgui.IsWindowFocused() {

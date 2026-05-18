@@ -25,7 +25,7 @@ type palette struct {
 
 var color1 *color
 var color2 *color
-var palettes []palette
+var palettes []*palette
 
 func highContrast(rgba [4]float32) imgui.Vec4 {
 	hsv := [4]float32{}
@@ -45,17 +45,18 @@ func newVec4(vec [4]float32) imgui.Vec4 {
 	return imgui.NewVec4(vec[0], vec[1], vec[2], vec[3])
 }
 
-func addPalette(data pallete_file.PaletteData, show bool) {
-	var out palette
-	out.id = idSys.GetID()
-	out.name = data.Name
-	out.creator = data.Creator
-	out.show = show
+func addPalette(data pallete_file.PaletteData, show bool) (p *palette) {
+	p = new(palette)
+	p.id = idSys.GetID()
+	p.name = data.Name
+	p.creator = data.Creator
+	p.show = show
 	for _, c := range data.Colors {
 		rgba := [4]float32{c[0], c[1], c[2], 1}
-		out.colors = append(out.colors, color{idSys.GetID(), rgba, highContrast(rgba)})
+		p.colors = append(p.colors, color{idSys.GetID(), rgba, highContrast(rgba)})
 	}
-	palettes = append(palettes, out)
+	palettes = append(palettes, p)
+	return
 }
 
 func addLospecByName(name string) bool {
@@ -79,55 +80,35 @@ var idSys *util.IdSystem
 func Init() {
 	idSys = util.NewIdSystem()
 
-	{
-		colors := []color{}
-
-		var first color
-		var last color
-		{
-			firstIdx := len(colors)
-			colorCount := 10
-			var step float32 = 1 / float32(colorCount)
-			var value float32 = 0
-			for range colorCount {
-				var rgb [3]float32
-				imgui.ColorConvertHSVtoRGB(1, 0, value, &rgb[0], &rgb[1], &rgb[2])
-				value += step
-				rgba := [4]float32{rgb[0], rgb[1], rgb[2], 1}
-				colors = append(colors, color{idSys.GetID(), rgba, highContrast(rgba)})
-			}
-			lastIdx := len(colors) - 1
-			first = colors[firstIdx]
-			last = colors[lastIdx]
-		}
-		color1 = &first
-		color2 = &last
-
-		{
-			colorCount := 20
-			var step float32 = 1 / float32(colorCount)
-			var hue float32 = 0
-			for range colorCount {
-				var rgb [3]float32
-				imgui.ColorConvertHSVtoRGB(hue, 1, 1, &rgb[0], &rgb[1], &rgb[2])
-				hue += step
-				rgba := [4]float32{rgb[0], rgb[1], rgb[2], 1}
-				colors = append(colors, color{idSys.GetID(), rgba, highContrast(rgba)})
-			}
-		}
-		var p palette
-		p.id = idSys.GetID()
-		p.name = "Default"
-		p.creator = "This Program"
-		p.colors = colors
-		p.show = true
-		palettes = append(palettes, p)
+	var step float32
+	pData := pallete_file.PaletteData{}
+	pData.Creator = "This Program"
+	pData.Name = "Default"
+	greyCount := 10
+	step = 1 / float32(greyCount)
+	var value float32 = 0
+	for range greyCount {
+		var rgb [3]float32
+		imgui.ColorConvertHSVtoRGB(1, 0, value, &rgb[0], &rgb[1], &rgb[2])
+		value += step
+		pData.Colors = append(pData.Colors, rgb)
 	}
-	{
-		palettesData := pallete_file.GetAllPalettes()
-		for _, data := range palettesData {
-			addPalette(data, false)
-		}
+	colorCount := 20
+	step = 1 / float32(colorCount)
+	var hue float32 = 0
+	for range colorCount {
+		var rgb [3]float32
+		imgui.ColorConvertHSVtoRGB(hue, 1, 1, &rgb[0], &rgb[1], &rgb[2])
+		hue += step
+		pData.Colors = append(pData.Colors, rgb)
+	}
+	p := addPalette(pData, true)
+	color1 = &p.colors[0]
+	color2 = &p.colors[greyCount-1]
+
+	palettesData := pallete_file.GetAllPalettes()
+	for _, data := range palettesData {
+		addPalette(data, false)
 	}
 }
 
