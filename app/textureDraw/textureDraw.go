@@ -3,11 +3,13 @@ package textureDraw
 import (
 	"VulpesEditor/app/textureDraw/palette"
 	"VulpesEditor/app/textureDraw/texture"
+	"VulpesEditor/app/textureDraw/tools"
 )
 
 func Init() {
 	texture.Init()
 	palette.Init()
+	tools.Init()
 }
 
 func AfterCreateContext() {
