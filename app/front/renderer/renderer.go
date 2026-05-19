@@ -181,6 +181,9 @@ func Init() {
 		rTex.uniforms.outline = gl.GetUniformLocation(rTex.shaderHandle, util.Str("outline"))
 		rTex.uniforms.texUnit = gl.GetUniformLocation(rTex.shaderHandle, util.Str("art"))
 		rTex.uniforms.preUnit = gl.GetUniformLocation(rTex.shaderHandle, util.Str("preview"))
+		gl.UseProgram(rTex.shaderHandle)
+		gl.Uniform1i(rTex.uniforms.texUnit, 0)
+		gl.Uniform1i(rTex.uniforms.preUnit, 1)
 
 		textureVertices := []float32{
 			1.0, -1.0, 1.0, 1.0,
@@ -319,8 +322,6 @@ func RenderTexture(f FrameBuffer, t1, t2 uint32, zoom, posX, posY, texAspect, wi
 	moveY := 2 * posY / (size.Y * zoom)
 
 	gl.UseProgram(rTex.shaderHandle)
-	gl.Uniform1i(rTex.uniforms.texUnit, 0)
-	gl.Uniform1i(rTex.uniforms.preUnit, 1)
 	gl.Uniform1f(rTex.uniforms.aspect, float32(f.height)/float32(f.width)*texAspect)
 	gl.Uniform1i(rTex.uniforms.outline, 0)
 	gl.Uniform1f(rTex.uniforms.zoom, zoom)
