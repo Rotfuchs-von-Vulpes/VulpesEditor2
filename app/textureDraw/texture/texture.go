@@ -231,7 +231,7 @@ func (s *TextureContext) buttonPress(buttons [5]bool) {
 	if buttons[0] || buttons[1] {
 		s.painting = true
 		s.firstButton = buttons[0]
-		tools.ButtonPress(s.getPixelPosMouse())
+		tools.ButtonPress(s.getPixelPosMouse(), s.texture.colors, s.texture.width, s.texture.height)
 	}
 }
 

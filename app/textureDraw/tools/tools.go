@@ -9,6 +9,7 @@ func Init() {
 }
 
 type Tool interface {
+	SendTexture(colors [][4]float32, width, height uint32)
 	ButtonPress(pos [2]int32)
 	ButtonRelease(pos [2]int32)
 	Move(pos1, pos2 [2]int32)
@@ -16,7 +17,8 @@ type Tool interface {
 	Change() [][2]int32
 }
 
-func ButtonPress(pos [2]int32) {
+func ButtonPress(pos [2]int32, colors [][4]float32, width, height uint32) {
+	selectedTool.SendTexture(colors, width, height)
 	selectedTool.ButtonPress(pos)
 }
 
