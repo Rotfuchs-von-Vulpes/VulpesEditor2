@@ -163,6 +163,7 @@ func (s *TextureContext) applyPreview(pixels [][2]int32, color [4]float32) {
 	}
 	if len(changes) > 0 {
 		s.preview.change(changes)
+		s.preview.update()
 	}
 }
 
@@ -176,7 +177,7 @@ func (s *TextureContext) reset() {
 	s.pos = [2]float32{0, 0}
 }
 
-func (s *TextureContext) getPixelPosMouse() (pixelPos [2]int32) {
+func (s *TextureContext) pixelPosMouse() (pixelPos [2]int32) {
 	var pos1 [2]float32
 	pos1[0] = s.viewrSize[0] - s.mousePos[0] - s.pos[0]*s.aspect
 	pos1[1] = s.viewrSize[1] - s.mousePos[1] - s.pos[1]
@@ -205,7 +206,7 @@ func (s *TextureContext) scroll(yoffset float32) {
 func (s *TextureContext) move(pos imgui.Vec2) {
 	s.mousePos = [2]float32{s.viewrSize[0] - pos.X, pos.Y}
 
-	pixel := s.getPixelPosMouse()
+	pixel := s.pixelPosMouse()
 	if (pixel[0] != s.lastPixelPos[0] || pixel[1] != s.lastPixelPos[1]) && s.painting {
 		tools.Move(s.lastPixelPos, pixel)
 		s.resetPreview()
@@ -235,7 +236,7 @@ func (s *TextureContext) buttonPress(buttons [5]bool) {
 	if buttons[0] || buttons[1] {
 		s.painting = true
 		s.firstButton = buttons[0]
-		tools.ButtonPress(s.getPixelPosMouse(), s.texture.colors, s.texture.width, s.texture.height)
+		tools.ButtonPress(s.pixelPosMouse(), s.texture.colors, s.texture.width, s.texture.height)
 	}
 }
 
@@ -249,7 +250,7 @@ func (s *TextureContext) buttonRelease(buttons [5]bool) {
 	}
 	if buttons[0] || buttons[1] {
 		s.painting = false
-		tools.ButtonRelease(s.getPixelPosMouse())
+		tools.ButtonRelease(s.pixelPosMouse())
 		pixels := tools.Change()
 		if s.firstButton {
 			s.changePixels(pixels, color1)

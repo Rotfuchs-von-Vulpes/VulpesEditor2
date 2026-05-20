@@ -67,7 +67,6 @@ func (_ Bucket) Visualize() [][2]int32 {
 }
 
 func (_ Bucket) Change() (toChange [][2]int32) {
-	toChange = make([][2]int32, len(painted))
 	toChange = painted
 	painted = make([][2]int32, 0)
 	texture = make([][][4]float32, 0)

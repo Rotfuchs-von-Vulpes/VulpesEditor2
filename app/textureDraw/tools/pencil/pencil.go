@@ -23,13 +23,12 @@ func (s Pencil) Move(pos1, pos2 [2]int32) {
 	}
 }
 
-func (s Pencil) Visualize() (toPaint [][2]int32) {
+func (s Pencil) Visualize() [][2]int32 {
 	return painted
 }
 
 func (s Pencil) Change() (toChange [][2]int32) {
-	toChange = make([][2]int32, len(painted))
-	copy(toChange, painted)
+	toChange = painted
 	painted = make([][2]int32, 0)
 	return
 }
