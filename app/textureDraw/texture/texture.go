@@ -23,23 +23,29 @@ type Texture struct {
 	width     uint32
 	height    uint32
 	aspect    float32
-	colors    [][4]float32
+	colors    [][][4]float32
 	glID      uint32
 	changes   []pixelsChange
 	undoLevel int32
 }
 
-func blankTexture(width, height uint32) (data [][4]float32) {
-	length := int(width * height)
-	for i := 0; i < int(length); i++ {
-		data = append(data, [4]float32{0, 0, 0, 0})
+func blankTexture(width, height uint32) (data [][][4]float32) {
+	for i := 0; i < int(width); i++ {
+		var line [][4]float32
+		for j := 0; j < int(height); j++ {
+			line = append(line, [4]float32{0, 0, 0, 0})
+		}
+		data = append(data, line)
 	}
 	return
 }
 
-func flatData(colors [][4]float32) (data []float32) {
-	for _, color := range colors {
-		data = append(data, color[0], color[1], color[2], color[3])
+func flatData(colors [][][4]float32) (data []float32) {
+	for i, line := range colors {
+		for j := range line {
+			color := colors[j][i]
+			data = append(data, color[0], color[1], color[2], color[3])
+		}
 	}
 	return
 }
@@ -60,8 +66,7 @@ func newTexture(width, height uint32) (tex *Texture) {
 
 func (s *Texture) change(changes []pixelChange) {
 	for _, change := range changes {
-		index := change.pos[1]*int32(s.width) + change.pos[0]
-		s.colors[index] = change.after
+		s.colors[change.pos[0]][change.pos[1]] = change.after
 	}
 }
 
@@ -134,9 +139,8 @@ func (s *TextureContext) changePixels(pixels [][2]int32, color [4]float32) {
 			continue
 		}
 		var change pixelChange
-		index := pixelPos[1]*int32(s.texture.width) + pixelPos[0]
 		change.pos = pixelPos
-		change.before = s.texture.colors[index]
+		change.before = s.texture.colors[pixelPos[0]][pixelPos[1]]
 		change.after = color
 		changes = append(changes, change)
 	}
@@ -158,7 +162,7 @@ func (s *TextureContext) applyPreview(pixels [][2]int32, color [4]float32) {
 		changes = append(changes, change)
 	}
 	if len(changes) > 0 {
-		s.preview.applyChanges(changes)
+		s.preview.change(changes)
 	}
 }
 

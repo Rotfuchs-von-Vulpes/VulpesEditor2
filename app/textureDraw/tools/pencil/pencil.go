@@ -5,7 +5,7 @@ type Pencil struct{}
 var painting bool
 var painted [][2]int32
 
-func (s Pencil) SendTexture(colors [][4]float32, width, height uint32) {
+func (s Pencil) SendTexture(colors [][][4]float32, width, height uint32) {
 
 }
 
