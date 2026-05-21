@@ -63,6 +63,11 @@ func newTexture(width, height uint32) (tex *Texture) {
 	tex.glID = glID
 	return
 }
+func (s *Texture) unchange(changes []pixelChange) {
+	for _, change := range changes {
+		s.colors[change.pos[0]][change.pos[1]] = change.before
+	}
+}
 
 func (s *Texture) change(changes []pixelChange) {
 	for _, change := range changes {
@@ -82,16 +87,8 @@ func (s *Texture) undo() {
 	changesIdx := len(s.changes) - 1 - int(s.undoLevel)
 	if changesIdx >= 0 {
 		lastChanges := s.changes[changesIdx]
-		var undoChanges []pixelChange
 		s.undoLevel++
-		for _, change := range lastChanges {
-			var undoChange pixelChange
-			undoChange.pos = change.pos
-			undoChange.after = change.before
-			undoChange.before = change.after
-			undoChanges = append(undoChanges, undoChange)
-		}
-		s.change(undoChanges)
+		s.unchange(lastChanges)
 		s.update()
 	}
 }
