@@ -298,7 +298,7 @@ func (s *TextureContext) Show() {
 		mouse_pos_rel.X = mouse_pos_abs.X - screen_pos_abs.X
 		mouse_pos_rel.Y = mouse_pos_abs.Y - screen_pos_abs.Y
 		s.move(mouse_pos_rel)
-		s.buttonPress(io.MouseDown())
+		s.buttonPress(io.MouseClicked())
 		s.buttonRelease(io.MouseReleased())
 	}
 	imgui.End()

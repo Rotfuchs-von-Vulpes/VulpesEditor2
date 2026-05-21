@@ -2,6 +2,7 @@ package tools
 
 import (
 	"VulpesEditor/app/textureDraw/tools/bucket"
+	"VulpesEditor/app/textureDraw/tools/line"
 	"VulpesEditor/app/textureDraw/tools/pencil"
 
 	"github.com/AllenDang/cimgui-go/imgui"
@@ -53,6 +54,10 @@ func Show() {
 	if imgui.Button("Bucket") {
 		selectedTool.Reset()
 		selectedTool = bucket.Bucket{}
+	}
+	if imgui.Button("Line") {
+		selectedTool.Reset()
+		selectedTool = line.Line{}
 	}
 	imgui.End()
 }
