@@ -7,14 +7,13 @@ type Bucket struct {
 
 var texture [][][4]float32
 var height, width uint32
+var painted [][2]int32
 
 func (_ Bucket) SendTexture(colors [][][4]float32, w, h uint32) {
 	texture = colors
 	width = w
 	height = h
 }
-
-var painted [][2]int32
 
 func (_ Bucket) ButtonPress(pos [2]int32) {
 	color := texture[pos[0]][pos[1]]
