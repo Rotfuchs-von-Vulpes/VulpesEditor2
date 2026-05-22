@@ -23,8 +23,9 @@ func (_ Pencil) Move(pos1, pos2 [2]int32) {
 	}
 }
 
-func (_ Pencil) Visualize() [][2]int32 {
-	return painted
+func (_ Pencil) Visualize() (toVisualize [][2]int32) {
+	toVisualize = painted
+	return
 }
 
 func (_ Pencil) Change() (toChange [][2]int32) {
