@@ -4,6 +4,7 @@ import (
 	"VulpesEditor/app/textureDraw/tools/bucket"
 	"VulpesEditor/app/textureDraw/tools/line"
 	"VulpesEditor/app/textureDraw/tools/pencil"
+	"VulpesEditor/app/textureDraw/tools/rectangle"
 
 	"github.com/AllenDang/cimgui-go/imgui"
 )
@@ -58,6 +59,10 @@ func Show() {
 	if imgui.Button("Line") {
 		selectedTool.Reset()
 		selectedTool = line.Line{}
+	}
+	if imgui.Button("Rect") {
+		selectedTool.Reset()
+		selectedTool = rectangle.Rectangle{}
 	}
 	imgui.End()
 }
