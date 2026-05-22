@@ -14,45 +14,35 @@ func abs(v int32) int32 {
 	return v
 }
 
-func line(start, end [2]int32) (points [][2]int32) {
+func line(start, end [2]int32) (out [][2]int32) {
 	x0, y0 := start[0], start[1]
 	x1, y1 := end[0], end[1]
-
 	dx := abs(x1 - x0)
 	dy := -abs(y1 - y0)
-
 	sx := int32(1)
 	if x0 >= x1 {
 		sx = -1
 	}
-
 	sy := int32(1)
 	if y0 >= y1 {
 		sy = -1
 	}
-
 	err := dx + dy
-
 	for {
-		points = append(points, [2]int32{x0, y0})
-
+		out = append(out, [2]int32{x0, y0})
 		if x0 == x1 && y0 == y1 {
 			break
 		}
-
 		e2 := 2 * err
-
 		if e2 >= dy {
 			err += dy
 			x0 += sx
 		}
-
 		if e2 <= dx {
 			err += dx
 			y0 += sy
 		}
 	}
-
 	return
 }
 
