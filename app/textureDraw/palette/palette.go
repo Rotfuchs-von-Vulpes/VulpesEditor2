@@ -112,39 +112,19 @@ func Init() {
 	}
 }
 
-type popUpSchedule struct {
-	stack []string
-}
-
-func (s *popUpSchedule) push(id string) {
-	s.stack = append(s.stack, id)
-}
-
-func (s *popUpSchedule) pop() (ok bool, id string) {
-	if len(s.stack) == 0 {
-		ok = false
-		return
-	}
-	ok = true
-	id = s.stack[len(s.stack)-1]
-	s.stack = s.stack[:len(s.stack)-1]
-	return
-}
-
 var lospecInput string
 
 func Loop() {
-	toPop := popUpSchedule{}
+	var toPop string
 	imgui.BeginV("Color Palette", nil, imgui.WindowFlagsMenuBar)
 	if imgui.BeginMenuBar() {
 		if imgui.BeginMenu("Import") {
 			if imgui.MenuItemBool("Import from Lospec") {
-				toPop.push("Lospec")
+				toPop = "Lospec"
 			}
 			if imgui.MenuItemBool("Import from File") {
-				toPop.push("Not Implement")
+				toPop = "Not Implement"
 			}
-
 			imgui.EndMenu()
 		}
 		if imgui.BeginMenu("View") {
@@ -153,8 +133,39 @@ func Loop() {
 			}
 			imgui.EndMenu()
 		}
-
 		imgui.EndMenuBar()
+	}
+	if toPop != "" {
+		imgui.OpenPopupStr(toPop)
+		toPop = ""
+	}
+	if imgui.BeginPopupModal("Lospec") {
+		imgui.InputTextWithHint("Lospec Palette", "Lospec Palette name or link", &lospecInput, imgui.InputTextFlagsNone, nil)
+		if imgui.Button("Add") {
+			if words := strings.Split(lospecInput, "/"); len(words) > 1 {
+				if addLospecByLink(lospecInput) {
+					lospecInput = ""
+					imgui.CloseCurrentPopup()
+				}
+			} else {
+				if addLospecByName(lospecInput) {
+					lospecInput = ""
+					imgui.CloseCurrentPopup()
+				}
+			}
+		}
+		imgui.SameLine()
+		if imgui.Button("Cancel") {
+			imgui.CloseCurrentPopup()
+		}
+		imgui.EndPopup()
+	}
+	if imgui.BeginPopupModal("Not Implement") {
+		imgui.Text("Not implement yet!")
+		if imgui.Button("OK") {
+			imgui.CloseCurrentPopup()
+		}
+		imgui.EndPopup()
 	}
 	var width float32 = 46
 	for _, palette := range palettes {
@@ -188,41 +199,6 @@ func Loop() {
 				imgui.SameLine()
 			}
 		}
-	}
-	for {
-		ok, id := toPop.pop()
-		if !ok {
-			break
-		}
-		imgui.OpenPopupStr(id)
-	}
-	if imgui.BeginPopupModal("Lospec") {
-		imgui.InputTextWithHint("Lospec Palette", "Lospec Palette name or link", &lospecInput, imgui.InputTextFlagsNone, nil)
-		if imgui.Button("Add") {
-			if words := strings.Split(lospecInput, "/"); len(words) > 1 {
-				if addLospecByLink(lospecInput) {
-					lospecInput = ""
-					imgui.CloseCurrentPopup()
-				}
-			} else {
-				if addLospecByName(lospecInput) {
-					lospecInput = ""
-					imgui.CloseCurrentPopup()
-				}
-			}
-		}
-		imgui.SameLine()
-		if imgui.Button("Cancel") {
-			imgui.CloseCurrentPopup()
-		}
-		imgui.EndPopup()
-	}
-	if imgui.BeginPopupModal("Not Implement") {
-		imgui.Text("Not implement yet!")
-		if imgui.Button("OK") {
-			imgui.CloseCurrentPopup()
-		}
-		imgui.EndPopup()
 	}
 	imgui.End()
 }
