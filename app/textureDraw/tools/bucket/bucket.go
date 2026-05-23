@@ -16,6 +16,9 @@ func (_ Bucket) SendTexture(colors [][][4]float32, w, h uint32) {
 }
 
 func (_ Bucket) ButtonPress(pos [2]int32) {
+	if pos[0] < 0 || pos[1] < 0 || pos[0] >= int32(width) || pos[1] >= int32(height) {
+		return
+	}
 	color := texture[pos[0]][pos[1]]
 	toFill := [][2]int32{pos}
 
