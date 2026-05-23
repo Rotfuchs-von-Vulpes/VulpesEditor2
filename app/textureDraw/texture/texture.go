@@ -4,7 +4,12 @@ import (
 	"VulpesEditor/app/front/renderer"
 	"VulpesEditor/app/textureDraw/tools"
 	"VulpesEditor/app/util"
+	"fmt"
+	"image"
+	"image/color"
+	"image/png"
 	"math"
+	"os"
 	"strconv"
 
 	"github.com/AllenDang/cimgui-go/imgui"
@@ -83,14 +88,16 @@ func (s *Texture) applyChanges(changes []pixelChange) {
 	s.undoLevel = 0
 }
 
-func (s *Texture) undo() {
+func (s *Texture) undo() bool {
 	changesIdx := len(s.changes) - 1 - int(s.undoLevel)
 	if changesIdx >= 0 {
 		lastChanges := s.changes[changesIdx]
 		s.undoLevel++
 		s.unchange(lastChanges)
 		s.update()
+		return true
 	}
+	return false
 }
 
 func (s *Texture) redo() {
@@ -108,6 +115,30 @@ func (s *Texture) redo() {
 func (s *Texture) update() {
 	data := flatData(s.colors)
 	renderer.WriteTexture(s.glID, int32(s.width), int32(s.height), data)
+}
+
+func saveTextureAsFile(tex *Texture, fileName, path string) bool {
+	if err := os.MkdirAll(path, os.ModePerm); err != nil {
+		fmt.Println(err)
+		return false
+	}
+	file, err := os.Create(path + "/" + fileName)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+	defer file.Close()
+	img := image.NewRGBA(image.Rect(0, 0, int(tex.width), int(tex.height)))
+	for x, line := range tex.colors {
+		for y, rgba := range line {
+			img.SetRGBA(x, y, color.RGBA{uint8(255 * rgba[0]), uint8(255 * rgba[1]), uint8(255 * rgba[2]), uint8(255 * rgba[3])})
+		}
+	}
+	if err := png.Encode(file, img); err != nil {
+		fmt.Println(err)
+		return false
+	}
+	return true
 }
 
 type TextureContext struct {
@@ -258,8 +289,52 @@ func (s *TextureContext) buttonRelease(buttons [5]bool) {
 	}
 }
 
+var textureFileName string
+var textureFilePath string
+
 func (s *TextureContext) Show() {
-	imgui.Begin(s.windowName)
+	var toPop string
+	imgui.BeginV(s.windowName, nil, imgui.WindowFlagsMenuBar)
+	if imgui.BeginMenuBar() {
+		if imgui.BeginMenu("Texture") {
+			if imgui.MenuItemBool("Save Texture") {
+				toPop = "Not Implement"
+			}
+			imgui.EndMenu()
+		}
+		if imgui.BeginMenu("Export") {
+			if imgui.MenuItemBool("Export as PNG Image") {
+				toPop = "Export PNG"
+			}
+			imgui.EndMenu()
+		}
+		imgui.EndMenuBar()
+	}
+	if toPop != "" {
+		imgui.OpenPopupStr(toPop)
+		toPop = ""
+	}
+	if imgui.BeginPopupModal("Export PNG") {
+		imgui.InputTextWithHint("File Name", "texure_"+strconv.FormatInt(int64(s.texture.id), 10)+".png", &textureFileName, imgui.InputTextFlagsNone, nil)
+		imgui.InputTextWithHint("File Path", "", &textureFilePath, imgui.InputTextFlagsNone, nil)
+		if imgui.Button("Save") {
+			if ok := saveTextureAsFile(s.texture, textureFileName, textureFilePath); ok {
+				textureFileName = ""
+				imgui.CloseCurrentPopup()
+			}
+		}
+		if imgui.Button("Cancel") {
+			imgui.CloseCurrentPopup()
+		}
+		imgui.EndPopup()
+	}
+	if imgui.BeginPopupModal("Not Implement") {
+		imgui.Text("Not implement yet!")
+		if imgui.Button("OK") {
+			imgui.CloseCurrentPopup()
+		}
+		imgui.EndPopup()
+	}
 
 	wSize := imgui.ContentRegionAvail()
 	width := int32(wSize.X)
