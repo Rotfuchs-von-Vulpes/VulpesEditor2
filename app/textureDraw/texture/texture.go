@@ -56,7 +56,7 @@ func flatData(colors [][][4]float32) (data []float32) {
 }
 
 func newTexture(width, height uint32) (tex *Texture) {
-	id := idSys.GetID()
+	id := textureIdSys.GetID()
 	colors := blankTexture(width, height)
 	glID := renderer.CreateTexture(int32(width), int32(height), flatData(colors))
 	tex = new(Texture)
@@ -142,6 +142,7 @@ func saveTextureAsFile(tex *Texture, fileName, path string) bool {
 }
 
 type TextureContext struct {
+	id            int32
 	windowName    string
 	zoom          float32
 	mousePos      [2]float32
@@ -173,6 +174,7 @@ func (s *TextureContext) changePixels(pixels [][2]int32, color [4]float32) {
 		changes = append(changes, change)
 	}
 	if len(changes) > 0 {
+		lastEditId = s.id
 		s.texture.applyChanges(changes)
 	}
 }
@@ -190,6 +192,7 @@ func (s *TextureContext) applyPreview(pixels [][2]int32, color [4]float32) {
 		changes = append(changes, change)
 	}
 	if len(changes) > 0 {
+		s.preview.colors = blankTexture(s.preview.width, s.preview.height)
 		s.preview.change(changes)
 		s.preview.update()
 	}
@@ -291,6 +294,7 @@ func (s *TextureContext) buttonRelease(buttons [5]bool) {
 
 var textureFileName string
 var textureFilePath string
+var lastEditId int32
 
 func (s *TextureContext) Show() {
 	var toPop string
@@ -347,25 +351,22 @@ func (s *TextureContext) Show() {
 		s.aspect = wSize.Y / wSize.X
 	}
 
-	if imgui.IsWindowFocused() {
-		io := imgui.CurrentContext().IO()
-		if io.KeyCtrl() && imgui.IsKeyPressedBoolV(imgui.KeyZ, true) {
-			s.texture.undo()
-		}
-		if io.KeyCtrl() && imgui.IsKeyPressedBoolV(imgui.KeyY, true) {
-			s.texture.redo()
-		}
-	}
 	imgui.ImageV(
 		*imgui.NewTextureRefTextureID(imgui.TextureID(s.textureViewer.Image())),
 		s.textureViewer.Size(),
 		imgui.NewVec2(0, 1),
 		imgui.NewVec2(1, 0),
 	)
-	if imgui.IsItemHovered() {
+	if lastEditId == s.id {
 		io := imgui.CurrentContext().IO()
 		if io.MouseWheel() != 0 {
 			s.scroll(io.MouseWheel())
+		}
+		if io.KeyCtrl() && imgui.IsKeyPressedBoolV(imgui.KeyZ, true) {
+			s.texture.undo()
+		}
+		if io.KeyCtrl() && imgui.IsKeyPressedBoolV(imgui.KeyY, true) {
+			s.texture.redo()
 		}
 		mouse_pos_abs := io.MousePos()
 		screen_pos_abs := imgui.ItemRectMin()
@@ -384,6 +385,7 @@ var AllTextures []*Texture
 var AllCtx []*TextureContext
 
 func createCtx(tex *Texture) (ctx TextureContext) {
+	ctx.id = windowIdSys.GetID()
 	ctx.windowName = "Texture #" + strconv.FormatUint(uint64(tex.id), 10)
 	ctx.zoom = 0.9
 	ctx.textureViewer = renderer.CreateFramebuffer(500, 500)
@@ -404,12 +406,14 @@ func OpenTexture(tex *Texture) {
 	createCtx(tex)
 }
 
-var idSys *util.IdSystem
+var textureIdSys *util.IdSystem
+var windowIdSys *util.IdSystem
 var color1 [4]float32
 var color2 [4]float32
 
 func Init() {
-	idSys = util.NewIdSystem()
+	textureIdSys = util.NewIdSystem()
+	windowIdSys = util.NewIdSystem()
 }
 
 func SetColors(c1, c2 [4]float32) {
