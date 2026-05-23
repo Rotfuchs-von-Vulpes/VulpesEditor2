@@ -3,6 +3,7 @@
 uniform sampler2D art;
 uniform sampler2D preview;
 uniform int outline;
+uniform vec2 size;
 
 in vec2 TexCoords;
 
@@ -16,7 +17,13 @@ void main () {
         if (color1.a < 0.5) {
             vec4 color2 = texture(art, TexCoords).rgba;
             if (color2.a < 0.5) {
-                gl_FragColor = vec4(0.5, 0.5, 0.5, 1.0);
+                float w = size.x * TexCoords.x * 0.0625;
+                float h = size.y * TexCoords.y * 0.0625;
+                if (fract(w) > 0.5 ^^ fract(h) > 0.5) {
+                    gl_FragColor = vec4(0.25, 0.25, 0.25, 1.0);
+                } else {
+                    gl_FragColor = vec4(0.375, 0.375, 0.375, 1.0);
+                }
             } else {
                 gl_FragColor = color2;
             }

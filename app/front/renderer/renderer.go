@@ -41,6 +41,7 @@ type textureUniforms struct {
 	outline int32
 	texUnit int32
 	preUnit int32
+	size    int32
 }
 
 type textureRender struct {
@@ -181,6 +182,7 @@ func Init() {
 		rTex.uniforms.outline = gl.GetUniformLocation(rTex.shaderHandle, util.Str("outline"))
 		rTex.uniforms.texUnit = gl.GetUniformLocation(rTex.shaderHandle, util.Str("art"))
 		rTex.uniforms.preUnit = gl.GetUniformLocation(rTex.shaderHandle, util.Str("preview"))
+		rTex.uniforms.size = gl.GetUniformLocation(rTex.shaderHandle, util.Str("size"))
 		gl.UseProgram(rTex.shaderHandle)
 		gl.Uniform1i(rTex.uniforms.texUnit, 0)
 		gl.Uniform1i(rTex.uniforms.preUnit, 1)
@@ -307,7 +309,7 @@ func Nuke() {
 	gl.DeleteProgram(r.shaderHandle)
 }
 
-func RenderTexture(f FrameBuffer, t1, t2 uint32, zoom, posX, posY, texAspect, width, height float32) {
+func RenderTexture(f FrameBuffer, t1, t2 uint32, zoom float32, pos [2]float32, texAspect, width, height float32) {
 	gl.Viewport(0, 0, f.width, f.height)
 	gl.BindFramebuffer(gl.FRAMEBUFFER, f.fbo)
 	gl.ActiveTexture(gl.TEXTURE0)
@@ -318,14 +320,15 @@ func RenderTexture(f FrameBuffer, t1, t2 uint32, zoom, posX, posY, texAspect, wi
 	gl.FramebufferTexture(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, f.depth, 0)
 
 	size := f.Size()
-	moveX := 2 * posX / (texAspect * size.X * zoom)
-	moveY := 2 * posY / (size.Y * zoom)
+	moveX := 2 * pos[0] / (texAspect * size.X * zoom)
+	moveY := 2 * pos[1] / (size.Y * zoom)
 
 	gl.UseProgram(rTex.shaderHandle)
 	gl.Uniform1f(rTex.uniforms.aspect, float32(f.height)/float32(f.width)*texAspect)
 	gl.Uniform1i(rTex.uniforms.outline, 0)
 	gl.Uniform1f(rTex.uniforms.zoom, zoom)
 	gl.Uniform2f(rTex.uniforms.move, moveX, moveY)
+	gl.Uniform2f(rTex.uniforms.size, width, height)
 
 	gl.ClearColor(0.29, 0.29, 0.39, 1.0)
 	gl.Clear(gl.COLOR_BUFFER_BIT)

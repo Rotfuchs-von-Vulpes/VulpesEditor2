@@ -377,9 +377,7 @@ func (s *TextureContext) Show() {
 		s.buttonRelease(io.MouseReleased())
 	}
 	imgui.End()
-	x := float32(s.texture.width)
-	y := float32(s.texture.height)
-	renderer.RenderTexture(*s.textureViewer, s.texture.glID, s.preview.glID, s.zoom, s.pos[0], s.pos[1], s.texture.aspect, x, y)
+	renderer.RenderTexture(*s.textureViewer, s.texture.glID, s.preview.glID, s.zoom, s.pos, s.texture.aspect, float32(s.texture.width), float32(s.texture.height))
 }
 
 var AllTextures []*Texture
