@@ -22,8 +22,6 @@ var (
 	selected       bool
 )
 
-var clearColor [3]float32
-
 var spectrumRange float32 = 1
 var intensityRange float32 = 0
 var sigmaRange float32 = 1.5
@@ -51,7 +49,6 @@ func Loop() {
 	imgui.DockSpaceOverViewportV(dockID, imgui.MainViewport(), imgui.DockNodeFlagsNone, imgui.NewEmptyWindowClass())
 
 	ShowWidgetsDemo()
-	ShowPictureLoadingDemo()
 }
 
 func ShowWidgetsDemo() {
@@ -91,13 +88,6 @@ func ShowWidgetsDemo() {
 	value1 = values[0]
 	imgui.ColorEdit4("Color Edit3", &color4)
 
-	imgui.End()
-}
-
-func ShowPictureLoadingDemo() {
-	imgui.Begin("Image")
-
-	imgui.ColorEdit3("clear color", &clearColor)
 	imgui.End()
 }
 
