@@ -131,7 +131,11 @@ func saveTextureAsFile(tex *Texture, fileName, path string) bool {
 	img := image.NewRGBA(image.Rect(0, 0, int(tex.width), int(tex.height)))
 	for x, line := range tex.colors {
 		for y, rgba := range line {
-			img.SetRGBA(x, y, color.RGBA{uint8(255 * rgba[0]), uint8(255 * rgba[1]), uint8(255 * rgba[2]), uint8(255 * rgba[3])})
+			alpha := rgba[3]
+			red := uint8(255 * rgba[0] * alpha)
+			green := uint8(255 * rgba[1] * alpha)
+			blue := uint8(255 * rgba[2] * alpha)
+			img.SetRGBA(x, y, color.RGBA{red, green, blue, uint8(255 * rgba[3])})
 		}
 	}
 	if err := png.Encode(file, img); err != nil {
@@ -175,6 +179,7 @@ func (s *TextureContext) changePixels(pixels [][2]int32, color [4]float32) {
 	}
 	if len(changes) > 0 {
 		lastEditId = s.id
+		toFocus = true
 		s.texture.applyChanges(changes)
 	}
 }
@@ -274,10 +279,6 @@ func (s *TextureContext) buttonPress(buttons [5]bool) {
 func (s *TextureContext) buttonRelease(buttons [5]bool) {
 	if buttons[2] {
 		s.mouseCanDrag = false
-	} else if buttons[3] {
-		s.texture.undo()
-	} else if buttons[4] {
-		s.texture.redo()
 	}
 	if buttons[0] || buttons[1] {
 		s.painting = false
@@ -295,9 +296,14 @@ func (s *TextureContext) buttonRelease(buttons [5]bool) {
 var textureFileName string
 var textureFilePath string
 var lastEditId int32
+var toFocus bool
 
 func (s *TextureContext) Show() {
 	var toPop string
+	if toFocus && lastEditId == s.id {
+		imgui.SetNextWindowFocus()
+		toFocus = false
+	}
 	imgui.BeginV(s.windowName, nil, imgui.WindowFlagsMenuBar)
 	if imgui.BeginMenuBar() {
 		if imgui.BeginMenu("Texture") {
@@ -357,16 +363,10 @@ func (s *TextureContext) Show() {
 		imgui.NewVec2(0, 1),
 		imgui.NewVec2(1, 0),
 	)
-	if lastEditId == s.id {
+	if imgui.IsWindowHovered() {
 		io := imgui.CurrentContext().IO()
 		if io.MouseWheel() != 0 {
 			s.scroll(io.MouseWheel())
-		}
-		if io.KeyCtrl() && imgui.IsKeyPressedBoolV(imgui.KeyZ, true) {
-			s.texture.undo()
-		}
-		if io.KeyCtrl() && imgui.IsKeyPressedBoolV(imgui.KeyY, true) {
-			s.texture.redo()
 		}
 		mouse_pos_abs := io.MousePos()
 		screen_pos_abs := imgui.ItemRectMin()
@@ -376,6 +376,23 @@ func (s *TextureContext) Show() {
 		s.move(mouse_pos_rel)
 		s.buttonPress(io.MouseClicked())
 		s.buttonRelease(io.MouseReleased())
+	} else if s.painting {
+		s.buttonRelease([5]bool{true, true, true, false, false})
+	}
+	if imgui.IsWindowFocused() && lastEditId == s.id {
+		io := imgui.CurrentContext().IO()
+		if io.KeyCtrl() && imgui.IsKeyPressedBoolV(imgui.KeyZ, true) {
+			s.texture.undo()
+		}
+		if io.KeyCtrl() && imgui.IsKeyPressedBoolV(imgui.KeyY, true) {
+			s.texture.redo()
+		}
+		buttons := io.MouseClicked()
+		if buttons[3] {
+			s.texture.undo()
+		} else if buttons[4] {
+			s.texture.redo()
+		}
 	}
 	imgui.End()
 	renderer.RenderTexture(*s.textureViewer, s.texture.glID, s.preview.glID, s.zoom, s.pos, s.texture.aspect, float32(s.texture.width), float32(s.texture.height))

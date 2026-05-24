@@ -11,11 +11,13 @@ func Init() {
 	palette.Init(&color1, &color2)
 }
 
+var change [2]bool
+
 func Loop() {
-	var c [2]bool
-	c = picker.Loop(&color1, &color2)
-	palette.Reset(c)
-	c = palette.Loop(&color1, &color2)
+	picker.Reset(change)
+	change = picker.Loop(&color1, &color2)
+	palette.Reset(change)
+	change = palette.Loop(&color1, &color2)
 }
 
 func SelectedColors() ([4]float32, [4]float32) {
