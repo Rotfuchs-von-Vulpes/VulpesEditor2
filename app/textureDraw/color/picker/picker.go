@@ -42,7 +42,6 @@ func Loop(color1, color2 *[4]float32) (change [2]bool) {
 	}
 	imgui.SameLine()
 	imgui.Text("Second Color")
-	imgui.SeparatorText("History")
 
 	imgui.End()
 	return
