@@ -1,7 +1,7 @@
 package palette
 
 import (
-	pallete_file "VulpesEditor/app/textureDraw/palette/paleteFile"
+	pallete_file "VulpesEditor/app/textureDraw/color/palette/paleteFile"
 	"VulpesEditor/app/util"
 	"strconv"
 	"strings"
@@ -23,8 +23,7 @@ type palette struct {
 	show    bool
 }
 
-var color1 *color
-var color2 *color
+var idSys *util.IdSystem
 var palettes []*palette
 
 func highContrast(rgba [4]float32) imgui.Vec4 {
@@ -75,9 +74,18 @@ func addLospecByLink(link string) bool {
 	return false
 }
 
-var idSys *util.IdSystem
+var color1id, color2id int32
 
-func Init() {
+func Reset(change [2]bool) {
+	if change[0] {
+		color1id = -1
+	}
+	if change[1] {
+		color2id = -1
+	}
+}
+
+func Init(color1, color2 *[4]float32) {
 	idSys = util.NewIdSystem()
 
 	var step float32
@@ -103,8 +111,10 @@ func Init() {
 		pData.Colors = append(pData.Colors, rgb)
 	}
 	p := addPalette(pData, true)
-	color1 = &p.colors[0]
-	color2 = &p.colors[greyCount-1]
+	*color1 = p.colors[0].value
+	color1id = p.colors[0].id
+	*color2 = p.colors[greyCount-1].value
+	color2id = p.colors[greyCount-1].id
 
 	palettesData := pallete_file.GetAllPalettes()
 	for _, data := range palettesData {
@@ -114,7 +124,7 @@ func Init() {
 
 var lospecInput string
 
-func Loop() {
+func Loop(color1, color2 *[4]float32) (changed [2]bool) {
 	var toPop string
 	imgui.BeginV("Color Palette", nil, imgui.WindowFlagsMenuBar)
 	if imgui.BeginMenuBar() {
@@ -175,24 +185,28 @@ func Loop() {
 		imgui.SeparatorText(palette.name)
 		for i, color := range palette.colors {
 			id := color.id
-			if color1.id == id || color2.id == id {
+			if color1id == id || color2id == id {
 				imgui.PushStyleColorVec4(imgui.ColFrameBg, color.mark)
 			}
 			availableSpace := imgui.ContentRegionAvail().X
 			imgui.PushIDInt(id)
 			imgui.ColorButton("color #"+strconv.FormatInt(int64(i), 10), newVec4(color.value))
 			imgui.PopID()
-			if color1.id == id || color2.id == id {
+			if color1id == id || color2id == id {
 				imgui.PopStyleColor()
 			}
 			if imgui.IsItemHovered() {
 				io := imgui.CurrentContext().IO()
 				mouseRelease := io.MouseReleased()
 				if mouseRelease[0] {
-					color1 = &color
+					*color1 = color.value
+					color1id = color.id
+					changed[0] = true
 				}
 				if mouseRelease[1] {
-					color2 = &color
+					*color2 = color.value
+					color2id = color.id
+					changed[1] = true
 				}
 			}
 			if i != len(palette.colors)-1 && availableSpace-width > 0 {
@@ -201,8 +215,5 @@ func Loop() {
 		}
 	}
 	imgui.End()
-}
-
-func SelectedColors() ([4]float32, [4]float32) {
-	return color1.value, color2.value
+	return
 }
