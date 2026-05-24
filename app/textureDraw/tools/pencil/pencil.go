@@ -10,6 +10,7 @@ func (_ Pencil) SendTexture(colors [][][4]float32, width, height uint32) {
 }
 
 func (_ Pencil) ButtonPress(pos [2]int32) {
+	painted = append(painted, pos)
 	painting = true
 }
 
