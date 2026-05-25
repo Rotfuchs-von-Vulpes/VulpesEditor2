@@ -36,7 +36,7 @@ func rectangle(init, end [2]int32) (out [][2]int32) {
 	return
 }
 
-func (_ Rectangle) SendTexture(colors [][][4]float32, width, height uint32) {
+func (_ Rectangle) SendTexture(colors [][4]float32, width, height uint32) {
 
 }
 

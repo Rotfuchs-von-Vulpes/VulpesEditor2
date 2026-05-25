@@ -46,7 +46,7 @@ func line(start, end [2]int32) (out [][2]int32) {
 	return
 }
 
-func (_ Line) SendTexture(colors [][][4]float32, w, h uint32) {
+func (_ Line) SendTexture(colors [][4]float32, w, h uint32) {
 
 }
 

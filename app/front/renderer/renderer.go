@@ -309,7 +309,7 @@ func Nuke() {
 	gl.DeleteProgram(r.shaderHandle)
 }
 
-func RenderTexture(f FrameBuffer, t1, t2 uint32, zoom float32, pos [2]float32, texAspect, width, height float32) {
+func (f *FrameBuffer) RenderTexture(t1, t2 uint32, zoom float32, pos [2]float32, width, height float32) {
 	gl.Viewport(0, 0, f.width, f.height)
 	gl.BindFramebuffer(gl.FRAMEBUFFER, f.fbo)
 	gl.ActiveTexture(gl.TEXTURE0)
@@ -320,6 +320,7 @@ func RenderTexture(f FrameBuffer, t1, t2 uint32, zoom float32, pos [2]float32, t
 	gl.FramebufferTexture(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, f.depth, 0)
 
 	size := f.Size()
+	texAspect := width / height
 	moveX := 2 * pos[0] / (texAspect * size.X * zoom)
 	moveY := 2 * pos[1] / (size.Y * zoom)
 
