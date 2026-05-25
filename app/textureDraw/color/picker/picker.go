@@ -8,7 +8,7 @@ func newVec4(vec [4]float32) imgui.Vec4 {
 	return imgui.NewVec4(vec[0], vec[1], vec[2], vec[3])
 }
 
-var selectedColor = [4]float32{1, 0.5, 0.25, 0.5}
+var selectedColor = [4]float32{0, 0, 0, 1}
 var seekColor1, seekColor2 bool
 
 func Reset(change [2]bool) {
