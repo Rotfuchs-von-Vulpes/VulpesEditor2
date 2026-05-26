@@ -76,12 +76,17 @@ func addLospecByLink(link string) bool {
 
 var color1id, color2id int32
 
-func Reset(change [2]bool) {
+func Reset(change [3]bool) {
 	if change[0] {
 		color1id = -1
 	}
 	if change[1] {
 		color2id = -1
+	}
+	if change[2] {
+		temp := color1id
+		color1id = color2id
+		color2id = temp
 	}
 }
 
@@ -124,7 +129,7 @@ func Init(color1, color2 *[4]float32) {
 
 var lospecInput string
 
-func Loop(color1, color2 *[4]float32) (changed [2]bool) {
+func Loop(color1, color2 *[4]float32) {
 	var toPop string
 	imgui.BeginV("Color Palette", nil, imgui.WindowFlagsMenuBar)
 	if imgui.BeginMenuBar() {
@@ -201,12 +206,10 @@ func Loop(color1, color2 *[4]float32) (changed [2]bool) {
 				if mouseRelease[0] {
 					*color1 = color.value
 					color1id = color.id
-					changed[0] = true
 				}
 				if mouseRelease[1] {
 					*color2 = color.value
 					color2id = color.id
-					changed[1] = true
 				}
 			}
 			if i != len(palette.colors)-1 && availableSpace-width > 0 {
@@ -215,5 +218,4 @@ func Loop(color1, color2 *[4]float32) (changed [2]bool) {
 		}
 	}
 	imgui.End()
-	return
 }
