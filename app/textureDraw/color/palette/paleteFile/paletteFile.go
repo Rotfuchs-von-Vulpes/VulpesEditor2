@@ -28,6 +28,9 @@ func downloadFile(url, path string) (*bytes.Buffer, error) {
 	out := bytes.NewBuffer(nil)
 
 	io.Copy(out, resp.Body)
+	if err := os.MkdirAll(path, os.ModePerm); err != nil {
+		fmt.Println(err)
+	}
 	if f, err := os.Create(path + "/" + fileName); err != nil {
 		fmt.Println(err)
 	} else {
@@ -127,10 +130,7 @@ func GetPaletteFromLospecLink(palleteLink string) (bool, PaletteData) {
 
 func GetAllPalettes() (final []PaletteData) {
 	path := "UserData/palettes/"
-	files, err := os.ReadDir(path)
-	if err != nil {
-		fmt.Println(err)
-	} else {
+	if files, err := os.ReadDir(path); err == nil {
 		for _, file := range files {
 			if !file.IsDir() {
 				if f, err := os.Open(path + file.Name()); err != nil {

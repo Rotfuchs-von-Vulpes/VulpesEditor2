@@ -198,6 +198,9 @@ func (s *TextureEdit) GlID() (uint32, uint32) {
 }
 
 func (s *TextureEdit) SaveTextureAsFile(fileName, path string) bool {
+	if path == "" {
+		path = "./UserData/Textures"
+	}
 	if err := os.MkdirAll(path, os.ModePerm); err != nil {
 		fmt.Println(err)
 		return false
