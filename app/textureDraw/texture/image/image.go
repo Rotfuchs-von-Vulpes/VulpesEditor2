@@ -47,14 +47,26 @@ func NewTexture(width, height uint32) (out *Texture) {
 	return
 }
 
-func (s *Texture) Get(pos [2]int32) [4]float32 {
-	index := pos[1]*int32(s.Height) + pos[0]
-	return s.Colors[index]
+func (s *Texture) Get(pos [2]int32) (ok bool, color [4]float32) {
+	index := int(pos[1]*int32(s.Height) + pos[0])
+	if index < 0 || index > len(s.Colors)-1 {
+		ok = false
+	} else {
+		ok = true
+		color = s.Colors[index]
+	}
+	return
 }
 
-func (s *Texture) Set(pos [2]int32, color [4]float32) {
-	index := pos[1]*int32(s.Height) + pos[0]
-	s.Colors[index] = color
+func (s *Texture) Set(pos [2]int32, color [4]float32) (ok bool) {
+	index := int(pos[1]*int32(s.Height) + pos[0])
+	if index < 0 || index > len(s.Colors)-1 {
+		ok = false
+	} else {
+		ok = true
+		s.Colors[index] = color
+	}
+	return
 }
 
 func (s *Texture) Clear() {
@@ -163,14 +175,13 @@ func (s *TextureEdit) ChangeTexture(pixels [][2]int32, color [4]float32) {
 	if len(pixels) > 0 {
 		changes := []pixelChange{}
 		for _, pixel := range pixels {
-			if pixel[0] < 0 || pixel[0] >= int32(s.texture.Width) || pixel[1] < 0 || pixel[1] >= int32(s.texture.Height) {
-				continue
+			if ok, beforeColor := s.texture.Get(pixel); ok {
+				var change pixelChange
+				change.pos = pixel
+				change.before = beforeColor
+				change.after = color
+				changes = append(changes, change)
 			}
-			var change pixelChange
-			change.pos = pixel
-			change.before = s.texture.Get(pixel)
-			change.after = color
-			changes = append(changes, change)
 		}
 		if len(changes) > 0 {
 			s.applyChanges(changes)
@@ -200,7 +211,7 @@ func (s *TextureEdit) SaveTextureAsFile(fileName, path string) bool {
 	img := image.NewRGBA(image.Rect(0, 0, int(s.texture.Width), int(s.texture.Height)))
 	for x := int32(0); x < int32(s.texture.Width); x++ {
 		for y := int32(0); y < int32(s.texture.Height); y++ {
-			rgba := s.texture.Get([2]int32{x, y})
+			_, rgba := s.texture.Get([2]int32{x, y})
 			alpha := rgba[3]
 			red := uint8(255 * rgba[0] * alpha)
 			green := uint8(255 * rgba[1] * alpha)
