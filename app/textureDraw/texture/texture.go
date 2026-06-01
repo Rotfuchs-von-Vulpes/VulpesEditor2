@@ -94,11 +94,15 @@ func (s *TextureContext) buttonPress(buttons [5]bool) {
 		s.lastMousePos = s.mousePos
 		s.mousePressPos = s.pos
 		s.mouseCanDrag = true
+		toFocus = true
+		lastEditId = s.id
 	}
 	if buttons[0] || buttons[1] {
 		s.painting = true
 		s.firstButton = buttons[0]
 		tools.ButtonPress(s.pixelPosMouse(), s.texture.Colors(), s.texture.Width, s.texture.Height)
+		toFocus = true
+		lastEditId = s.id
 	}
 }
 
