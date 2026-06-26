@@ -193,7 +193,7 @@ func (s *TextureContext) Show() {
 		imgui.NewVec2(0, 1),
 		imgui.NewVec2(1, 0),
 	)
-	if imgui.IsWindowHovered() {
+	if imgui.IsItemHovered() {
 		io := imgui.CurrentContext().IO()
 		if io.MouseWheel() != 0 {
 			s.scroll(io.MouseWheel())
