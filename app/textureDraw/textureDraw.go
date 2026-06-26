@@ -13,6 +13,7 @@ func Init() {
 }
 
 func AfterCreateContext() {
+	tools.AfterCreateContext()
 	texture.AddTexture(16, 16)
 }
 

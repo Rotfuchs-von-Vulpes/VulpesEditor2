@@ -13,7 +13,7 @@ var height, width uint32
 var painted [][2]int32
 
 func Init() {
-	texture = image.NewTexture(0, 0)
+	texture = image.NewTexture(1, 1)
 }
 
 func (_ Bucket) SendTexture(colors [][4]float32, w, h uint32) {

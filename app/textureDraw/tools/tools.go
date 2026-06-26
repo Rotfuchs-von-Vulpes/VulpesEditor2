@@ -13,6 +13,9 @@ var selectedTool Tool
 
 func Init() {
 	selectedTool = pencil.Pencil{}
+}
+
+func AfterCreateContext() {
 	bucket.Init()
 }
 
