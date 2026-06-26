@@ -13,6 +13,7 @@ var selectedTool Tool
 
 func Init() {
 	selectedTool = pencil.Pencil{}
+	bucket.Init()
 }
 
 type Tool interface {
