@@ -8,13 +8,9 @@ import (
 type Bucket struct {
 }
 
-var texture *image.Texture
+var texture = image.NewTexture(1, 1)
 var height, width uint32
 var painted [][2]int32
-
-func Init() {
-	texture = image.NewTexture(1, 1)
-}
 
 func (_ Bucket) SendTexture(colors [][4]float32, w, h uint32) {
 	texture = image.NewTexture(w, h)

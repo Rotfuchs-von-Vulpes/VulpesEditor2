@@ -23,7 +23,7 @@ type palette struct {
 	show    bool
 }
 
-var idSys *util.IdSystem
+var idSys = util.NewIdSystem()
 var palettes []*palette
 
 func highContrast(rgba [4]float32) imgui.Vec4 {
@@ -91,8 +91,6 @@ func Reset(change [3]bool) {
 }
 
 func Init(color1, color2 *[4]float32) {
-	idSys = util.NewIdSystem()
-
 	var step float32
 	pData := pallete_file.PaletteData{}
 	pData.Creator = "This Program"

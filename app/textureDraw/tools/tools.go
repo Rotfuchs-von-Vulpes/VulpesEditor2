@@ -15,10 +15,6 @@ func Init() {
 	selectedTool = pencil.Pencil{}
 }
 
-func AfterCreateContext() {
-	bucket.Init()
-}
-
 type Tool interface {
 	SendTexture(colors [][4]float32, width, height uint32)
 	ButtonPress(pos [2]int32)

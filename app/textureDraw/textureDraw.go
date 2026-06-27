@@ -7,13 +7,11 @@ import (
 )
 
 func Init() {
-	texture.Init()
 	color.Init()
 	tools.Init()
 }
 
 func AfterCreateContext() {
-	tools.AfterCreateContext()
 	texture.AddTexture(16, 16)
 }
 

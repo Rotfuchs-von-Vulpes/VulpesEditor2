@@ -31,19 +31,16 @@ type Texture struct {
 	Width  uint32
 	Height uint32
 	Colors [][4]float32
-	glID   uint32
 }
 
 func NewTexture(width, height uint32) (out *Texture) {
 	id := idSys.GetID()
 	colors := blankTexture(width, height)
-	glID := renderer.CreateTexture(int32(width), int32(height), flatData(colors))
 	out = new(Texture)
 	out.Id = id
 	out.Width = width
 	out.Height = height
 	out.Colors = colors
-	out.glID = glID
 	return
 }
 
@@ -71,12 +68,6 @@ func (s *Texture) Set(pos [2]int32, color [4]float32) (ok bool) {
 
 func (s *Texture) Clear() {
 	s.Colors = blankTexture(s.Width, s.Height)
-	s.update()
-}
-
-func (s *Texture) update() {
-	data := flatData(s.Colors)
-	renderer.WriteTexture(s.glID, int32(s.Width), int32(s.Height), data)
 }
 
 type pixelChange struct {
@@ -88,28 +79,30 @@ type pixelChange struct {
 type pixelsChange []pixelChange
 
 type TextureEdit struct {
-	Id        int32
-	Width     uint32
-	Height    uint32
-	Aspect    float32
-	texture   *Texture
-	preview   *Texture
-	changes   []pixelsChange
-	undoLevel int32
+	Id          int32
+	Width       uint32
+	Height      uint32
+	Aspect      float32
+	texture     *Texture
+	textureGlID uint32
+	previewGlID uint32
+	preview     *Texture
+	changes     []pixelsChange
+	undoLevel   int32
 }
 
 func (s *TextureEdit) unchange(changes []pixelChange) {
 	for _, change := range changes {
 		s.texture.Set(change.pos, change.before)
 	}
-	s.texture.update()
+	renderer.WriteTexture(s.textureGlID, int32(s.Width), int32(s.Height), flatData(s.texture.Colors))
 }
 
 func (s *TextureEdit) change(changes []pixelChange) {
 	for _, change := range changes {
 		s.texture.Set(change.pos, change.after)
 	}
-	s.texture.update()
+	renderer.WriteTexture(s.textureGlID, int32(s.Width), int32(s.Height), flatData(s.texture.Colors))
 }
 
 func (s *TextureEdit) applyChanges(changes []pixelChange) {
@@ -126,6 +119,8 @@ func NewTextureEdit(tex *Texture) (out *TextureEdit) {
 	out.Aspect = float32(tex.Width) / float32(tex.Height)
 	out.texture = tex
 	out.preview = NewTexture(tex.Width, tex.Height)
+	out.textureGlID = renderer.CreateTexture(int32(tex.Width), int32(tex.Height), flatData(tex.Colors))
+	out.previewGlID = renderer.CreateTexture(int32(tex.Width), int32(tex.Height), flatData(out.preview.Colors))
 	return
 }
 
@@ -166,7 +161,7 @@ func (s *TextureEdit) ChangePreview(pixels [][2]int32, color [4]float32) {
 			changed = true
 		}
 		if changed {
-			s.preview.update()
+			renderer.WriteTexture(s.previewGlID, int32(s.Width), int32(s.Height), flatData(s.preview.Colors))
 		}
 	}
 }
@@ -194,7 +189,7 @@ func (s *TextureEdit) ResetPreview() {
 }
 
 func (s *TextureEdit) GlID() (uint32, uint32) {
-	return s.texture.glID, s.preview.glID
+	return s.textureGlID, s.previewGlID
 }
 
 func (s *TextureEdit) SaveTextureAsFile(fileName, path string) bool {
@@ -229,8 +224,4 @@ func (s *TextureEdit) SaveTextureAsFile(fileName, path string) bool {
 	return true
 }
 
-var idSys *util.IdSystem
-
-func Init() {
-	idSys = util.NewIdSystem()
-}
+var idSys = util.NewIdSystem()

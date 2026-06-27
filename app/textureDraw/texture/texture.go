@@ -253,14 +253,9 @@ func OpenTexture(tex *image.Texture) {
 	createCtx(tex)
 }
 
-var windowIdSys *util.IdSystem
+var windowIdSys = util.NewIdSystem()
 var color1 [4]float32
 var color2 [4]float32
-
-func Init() {
-	image.Init()
-	windowIdSys = util.NewIdSystem()
-}
 
 func SetColors(c1, c2 [4]float32) {
 	color1 = c1
