@@ -33,6 +33,18 @@ type Texture struct {
 	Colors [][4]float32
 }
 
+type PixelEdit struct {
+	Pos   [2]int32
+	Color [4]float32
+}
+
+func SetEditColor(pixels [][2]int32, color [4]float32) (out []PixelEdit) {
+	for _, pos := range pixels {
+		out = append(out, PixelEdit{pos, color})
+	}
+	return
+}
+
 func NewTexture(width, height uint32) (out *Texture) {
 	id := idSys.GetID()
 	colors := blankTexture(width, height)
@@ -46,7 +58,7 @@ func NewTexture(width, height uint32) (out *Texture) {
 
 func (s *Texture) Get(pos [2]int32) (ok bool, color [4]float32) {
 	index := int(pos[1]*int32(s.Height) + pos[0])
-	if index < 0 || index > len(s.Colors)-1 {
+	if pos[0] < 0 || pos[0] >= int32(s.Width) || pos[1] < 0 || pos[1] >= int32(s.Height) {
 		ok = false
 	} else {
 		ok = true
@@ -57,11 +69,26 @@ func (s *Texture) Get(pos [2]int32) (ok bool, color [4]float32) {
 
 func (s *Texture) Set(pos [2]int32, color [4]float32) (ok bool) {
 	index := int(pos[1]*int32(s.Height) + pos[0])
-	if index < 0 || index > len(s.Colors)-1 {
+	if pos[0] < 0 || pos[0] >= int32(s.Width) || pos[1] < 0 || pos[1] >= int32(s.Height) {
 		ok = false
 	} else {
 		ok = true
 		s.Colors[index] = color
+	}
+	return
+}
+
+func (s *Texture) BulkSet(pixels []PixelEdit) (ok bool) {
+	for _, pixel := range pixels {
+		newOk := s.Set(pixel.Pos, pixel.Color)
+		ok = newOk || ok
+	}
+	return
+}
+
+func (s *Texture) BulkSetColor(pixels [][2]int32, color [4]float32) (ok bool) {
+	for _, pos := range pixels {
+		ok = ok || s.Set(pos, color)
 	}
 	return
 }
@@ -76,8 +103,6 @@ type pixelChange struct {
 	after  [4]float32
 }
 
-type pixelsChange []pixelChange
-
 type TextureEdit struct {
 	Id          int32
 	Width       uint32
@@ -87,7 +112,7 @@ type TextureEdit struct {
 	textureGlID uint32
 	previewGlID uint32
 	preview     *Texture
-	changes     []pixelsChange
+	changes     [][]pixelChange
 	undoLevel   int32
 }
 
@@ -95,14 +120,14 @@ func (s *TextureEdit) unchange(changes []pixelChange) {
 	for _, change := range changes {
 		s.texture.Set(change.pos, change.before)
 	}
-	renderer.WriteTexture(s.textureGlID, int32(s.Width), int32(s.Height), flatData(s.texture.Colors))
+	s.updateTexture()
 }
 
 func (s *TextureEdit) change(changes []pixelChange) {
 	for _, change := range changes {
 		s.texture.Set(change.pos, change.after)
 	}
-	renderer.WriteTexture(s.textureGlID, int32(s.Width), int32(s.Height), flatData(s.texture.Colors))
+	s.updateTexture()
 }
 
 func (s *TextureEdit) applyChanges(changes []pixelChange) {
@@ -122,6 +147,14 @@ func NewTextureEdit(tex *Texture) (out *TextureEdit) {
 	out.textureGlID = renderer.CreateTexture(int32(tex.Width), int32(tex.Height), flatData(tex.Colors))
 	out.previewGlID = renderer.CreateTexture(int32(tex.Width), int32(tex.Height), flatData(out.preview.Colors))
 	return
+}
+
+func (s *TextureEdit) updateTexture() {
+	renderer.WriteTexture(s.textureGlID, int32(s.Width), int32(s.Height), flatData(s.texture.Colors))
+}
+
+func (s *TextureEdit) updatePreview() {
+	renderer.WriteTexture(s.previewGlID, int32(s.Width), int32(s.Height), flatData(s.preview.Colors))
 }
 
 func (s *TextureEdit) Undo() bool {
@@ -150,31 +183,15 @@ func (s *TextureEdit) Colors() [][4]float32 {
 	return s.texture.Colors
 }
 
-func (s *TextureEdit) ChangePreview(pixels [][2]int32, color [4]float32) {
-	if len(pixels) > 0 {
-		changed := false
-		for _, pixel := range pixels {
-			if pixel[0] < 0 || pixel[0] >= int32(s.texture.Width) || pixel[1] < 0 || pixel[1] >= int32(s.texture.Height) {
-				continue
-			}
-			s.preview.Set(pixel, color)
-			changed = true
-		}
-		if changed {
-			renderer.WriteTexture(s.previewGlID, int32(s.Width), int32(s.Height), flatData(s.preview.Colors))
-		}
-	}
-}
-
-func (s *TextureEdit) ChangeTexture(pixels [][2]int32, color [4]float32) {
+func (s *TextureEdit) Change(pixels []PixelEdit) {
 	if len(pixels) > 0 {
 		changes := []pixelChange{}
 		for _, pixel := range pixels {
-			if ok, beforeColor := s.texture.Get(pixel); ok {
+			if ok, beforeColor := s.texture.Get(pixel.Pos); ok {
 				var change pixelChange
-				change.pos = pixel
+				change.pos = pixel.Pos
 				change.before = beforeColor
-				change.after = color
+				change.after = pixel.Color
 				changes = append(changes, change)
 			}
 		}
@@ -184,8 +201,17 @@ func (s *TextureEdit) ChangeTexture(pixels [][2]int32, color [4]float32) {
 	}
 }
 
+func (s *TextureEdit) ChangePreview(pixels []PixelEdit) {
+	if len(pixels) > 0 {
+		if changed := s.preview.BulkSet(pixels); changed {
+			s.updatePreview()
+		}
+	}
+}
+
 func (s *TextureEdit) ResetPreview() {
 	s.preview.Clear()
+	s.updatePreview()
 }
 
 func (s *TextureEdit) GlID() (uint32, uint32) {

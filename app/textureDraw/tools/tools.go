@@ -1,6 +1,7 @@
 package tools
 
 import (
+	"VulpesEditor/app/textureDraw/texture/image"
 	"VulpesEditor/app/textureDraw/tools/bucket"
 	"VulpesEditor/app/textureDraw/tools/line"
 	"VulpesEditor/app/textureDraw/tools/pencil"
@@ -17,17 +18,17 @@ func Init() {
 
 type Tool interface {
 	SendTexture(colors [][4]float32, width, height uint32)
-	ButtonPress(pos [2]int32)
+	ButtonPress(pos [2]int32, color [4]float32)
 	ButtonRelease(pos [2]int32)
 	Move(pos1, pos2 [2]int32)
-	Visualize() [][2]int32
-	Change() [][2]int32
+	Visualize() []image.PixelEdit
+	Change() []image.PixelEdit
 	Reset()
 }
 
-func ButtonPress(pos [2]int32, colors [][4]float32, width, height uint32) {
+func ButtonPress(pos [2]int32, color [4]float32, colors [][4]float32, width, height uint32) {
 	selectedTool.SendTexture(colors, width, height)
-	selectedTool.ButtonPress(pos)
+	selectedTool.ButtonPress(pos, color)
 }
 
 func ButtonRelease(pos [2]int32) {
@@ -38,11 +39,11 @@ func Move(pos1, pos2 [2]int32) {
 	selectedTool.Move(pos1, pos2)
 }
 
-func Visualize() [][2]int32 {
+func Visualize() []image.PixelEdit {
 	return selectedTool.Visualize()
 }
 
-func Change() [][2]int32 {
+func Change() []image.PixelEdit {
 	return selectedTool.Change()
 }
 

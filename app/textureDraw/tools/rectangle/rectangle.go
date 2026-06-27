@@ -1,10 +1,15 @@
 package rectangle
 
+import (
+	"VulpesEditor/app/textureDraw/texture/image"
+)
+
 type Rectangle struct{}
 
 var initPos [2]int32
 var endPos [2]int32
-var painted [][2]int32
+var color [4]float32
+var painted = []image.PixelEdit{}
 
 func abs(n int32) int32 {
 	if n >= 0 {
@@ -40,7 +45,8 @@ func (_ Rectangle) SendTexture(colors [][4]float32, width, height uint32) {
 
 }
 
-func (_ Rectangle) ButtonPress(pos [2]int32) {
+func (_ Rectangle) ButtonPress(pos [2]int32, col [4]float32) {
+	color = col
 	initPos = pos
 }
 
@@ -50,22 +56,24 @@ func (_ Rectangle) ButtonRelease(pos [2]int32) {
 
 func (_ Rectangle) Move(pos1, pos2 [2]int32) {
 	endPos = pos2
-	painted = rectangle(initPos, endPos)
+
+	painted = make([]image.PixelEdit, 0)
+	painted = image.SetEditColor(rectangle(initPos, endPos), color)
 }
 
-func (_ Rectangle) Visualize() (toVisualize [][2]int32) {
+func (_ Rectangle) Visualize() (toVisualize []image.PixelEdit) {
 	toVisualize = painted
 	return
 }
 
-func (_ Rectangle) Change() (toChange [][2]int32) {
+func (_ Rectangle) Change() (toChange []image.PixelEdit) {
 	toChange = painted
-	painted = make([][2]int32, 0)
+	painted = make([]image.PixelEdit, 0)
 	return
 }
 
 func (_ Rectangle) Reset() {
 	initPos = [2]int32{}
 	endPos = [2]int32{}
-	painted = make([][2]int32, 0)
+	painted = make([]image.PixelEdit, 0)
 }

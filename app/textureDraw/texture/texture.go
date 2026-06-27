@@ -73,11 +73,7 @@ func (s *TextureContext) move(pos imgui.Vec2) {
 		tools.Move(s.lastPixelPos, pixel)
 		s.texture.ResetPreview()
 		pixels := tools.Visualize()
-		if s.firstButton {
-			s.texture.ChangePreview(pixels, color1)
-		} else {
-			s.texture.ChangePreview(pixels, color2)
-		}
+		s.texture.ChangePreview(pixels)
 		s.lastPixelPos = pixel
 	}
 
@@ -100,7 +96,11 @@ func (s *TextureContext) buttonPress(buttons [5]bool) {
 	if buttons[0] || buttons[1] {
 		s.painting = true
 		s.firstButton = buttons[0]
-		tools.ButtonPress(s.pixelPosMouse(), s.texture.Colors(), s.texture.Width, s.texture.Height)
+		if buttons[0] {
+			tools.ButtonPress(s.pixelPosMouse(), color1, s.texture.Colors(), s.texture.Width, s.texture.Height)
+		} else if buttons[1] {
+			tools.ButtonPress(s.pixelPosMouse(), color2, s.texture.Colors(), s.texture.Width, s.texture.Height)
+		}
 		toFocus = true
 		lastEditId = s.id
 	}
@@ -114,11 +114,7 @@ func (s *TextureContext) buttonRelease(buttons [5]bool) {
 		s.painting = false
 		tools.ButtonRelease(s.pixelPosMouse())
 		pixels := tools.Change()
-		if s.firstButton {
-			s.texture.ChangeTexture(pixels, color1)
-		} else {
-			s.texture.ChangeTexture(pixels, color2)
-		}
+		s.texture.Change(pixels)
 		s.texture.ResetPreview()
 	}
 }
@@ -234,7 +230,7 @@ var AllCtx []*TextureContext
 
 func createCtx(tex *image.Texture) (ctx TextureContext) {
 	ctx.id = windowIdSys.GetID()
-	ctx.windowName = "Texture #" + strconv.FormatUint(uint64(tex.Id), 10)
+	ctx.windowName = "Texture #" + strconv.FormatUint(uint64(ctx.id), 10)
 	ctx.zoom = 0.9
 	ctx.textureViewer = renderer.CreateFramebuffer(500, 500)
 	ctx.viewrSize = [2]float32{500, 500}
