@@ -1,14 +1,14 @@
 package pencil
 
 import (
+	"VulpesEditor/app/textureDraw/canvas/texture"
 	"VulpesEditor/app/textureDraw/color"
-	"VulpesEditor/app/textureDraw/texture/image"
 )
 
 type Pencil struct{}
 
 var painting bool
-var painted []image.PixelEdit
+var painted []texture.PixelEdit
 var drawingColor [4]float32
 
 func (_ Pencil) ButtonPress(pos [2]int32, secondButton bool) {
@@ -18,7 +18,7 @@ func (_ Pencil) ButtonPress(pos [2]int32, secondButton bool) {
 	} else {
 		drawingColor = c2
 	}
-	painted = append(painted, image.PixelEdit{Pos: pos, Color: drawingColor})
+	painted = append(painted, texture.PixelEdit{Pos: pos, Color: drawingColor})
 	painting = true
 }
 
@@ -28,22 +28,22 @@ func (_ Pencil) ButtonRelease(pos [2]int32) {
 
 func (_ Pencil) Move(pos1, pos2 [2]int32) {
 	if painting {
-		painted = append(painted, image.PixelEdit{Pos: pos2, Color: drawingColor})
+		painted = append(painted, texture.PixelEdit{Pos: pos2, Color: drawingColor})
 	}
 }
 
-func (_ Pencil) Visualize() (toVisualize []image.PixelEdit) {
+func (_ Pencil) Visualize() (toVisualize []texture.PixelEdit) {
 	toVisualize = painted
 	return
 }
 
-func (_ Pencil) Change() (toChange []image.PixelEdit) {
+func (_ Pencil) Change() (toChange []texture.PixelEdit) {
 	toChange = painted
-	painted = make([]image.PixelEdit, 0)
+	painted = make([]texture.PixelEdit, 0)
 	return
 }
 
 func (_ Pencil) Reset() {
 	painting = false
-	painted = make([]image.PixelEdit, 0)
+	painted = make([]texture.PixelEdit, 0)
 }

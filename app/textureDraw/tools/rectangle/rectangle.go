@@ -1,8 +1,8 @@
 package rectangle
 
 import (
+	"VulpesEditor/app/textureDraw/canvas/texture"
 	"VulpesEditor/app/textureDraw/color"
-	"VulpesEditor/app/textureDraw/texture/image"
 )
 
 type Rectangle struct{}
@@ -10,7 +10,7 @@ type Rectangle struct{}
 var initPos [2]int32
 var endPos [2]int32
 var drawingColor [4]float32
-var painted = []image.PixelEdit{}
+var painted = []texture.PixelEdit{}
 
 func abs(n int32) int32 {
 	if n >= 0 {
@@ -59,23 +59,23 @@ func (_ Rectangle) ButtonRelease(pos [2]int32) {
 func (_ Rectangle) Move(pos1, pos2 [2]int32) {
 	endPos = pos2
 
-	painted = make([]image.PixelEdit, 0)
-	painted = image.SetEditColor(rectangle(initPos, endPos), drawingColor)
+	painted = make([]texture.PixelEdit, 0)
+	painted = texture.SetEditColor(rectangle(initPos, endPos), drawingColor)
 }
 
-func (_ Rectangle) Visualize() (toVisualize []image.PixelEdit) {
+func (_ Rectangle) Visualize() (toVisualize []texture.PixelEdit) {
 	toVisualize = painted
 	return
 }
 
-func (_ Rectangle) Change() (toChange []image.PixelEdit) {
+func (_ Rectangle) Change() (toChange []texture.PixelEdit) {
 	toChange = painted
-	painted = make([]image.PixelEdit, 0)
+	painted = make([]texture.PixelEdit, 0)
 	return
 }
 
 func (_ Rectangle) Reset() {
 	initPos = [2]int32{}
 	endPos = [2]int32{}
-	painted = make([]image.PixelEdit, 0)
+	painted = make([]texture.PixelEdit, 0)
 }

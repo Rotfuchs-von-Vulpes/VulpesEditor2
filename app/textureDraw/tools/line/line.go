@@ -1,8 +1,8 @@
 package line
 
 import (
+	"VulpesEditor/app/textureDraw/canvas/texture"
 	"VulpesEditor/app/textureDraw/color"
-	"VulpesEditor/app/textureDraw/texture/image"
 )
 
 type Line struct {
@@ -10,7 +10,7 @@ type Line struct {
 
 var initPos [2]int32
 var endPos [2]int32
-var painted []image.PixelEdit
+var painted []texture.PixelEdit
 var drawingColor [4]float32
 
 func abs(v int32) int32 {
@@ -67,22 +67,22 @@ func (_ Line) ButtonRelease(pos [2]int32) {
 
 func (_ Line) Move(pos1, pos2 [2]int32) {
 	endPos = pos2
-	painted = make([]image.PixelEdit, 0)
-	painted = image.SetEditColor(line(initPos, endPos), drawingColor)
+	painted = make([]texture.PixelEdit, 0)
+	painted = texture.SetEditColor(line(initPos, endPos), drawingColor)
 }
 
-func (_ Line) Visualize() (toVisualize []image.PixelEdit) {
+func (_ Line) Visualize() (toVisualize []texture.PixelEdit) {
 	return painted
 }
 
-func (_ Line) Change() (toChange []image.PixelEdit) {
+func (_ Line) Change() (toChange []texture.PixelEdit) {
 	toChange = painted
-	painted = make([]image.PixelEdit, 0)
+	painted = make([]texture.PixelEdit, 0)
 	return
 }
 
 func (_ Line) Reset() {
 	initPos = [2]int32{}
 	endPos = [2]int32{}
-	painted = make([]image.PixelEdit, 0)
+	painted = make([]texture.PixelEdit, 0)
 }

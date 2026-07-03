@@ -1,8 +1,9 @@
-package texture
+package canvas
 
 import (
 	"VulpesEditor/app/front/renderer"
-	"VulpesEditor/app/textureDraw/texture/image"
+	"VulpesEditor/app/textureDraw/canvas/texture"
+	"VulpesEditor/app/textureDraw/canvas/textureEdit"
 	"VulpesEditor/app/textureDraw/tools"
 	"VulpesEditor/app/util"
 	"math"
@@ -25,7 +26,7 @@ type TextureContext struct {
 	viewrSize     [2]float32
 	aspect        float32
 	textureViewer *renderer.FrameBuffer
-	texture       *image.TextureEdit
+	texture       *textureEdit.TextureEdit
 	pixelPos      [2]int32
 	lastPixelPos  [2]int32
 }
@@ -225,27 +226,27 @@ func (s *TextureContext) Show() {
 	s.textureViewer.RenderTexture(textureGlID, previewGlID, s.zoom, s.pos, float32(s.texture.Width), float32(s.texture.Height))
 }
 
-// var AllTextures []*image.Texture
+// var AllTextures []*texture.Texture
 var AllCtx []*TextureContext
 
-func createCtx(tex *image.Texture) (ctx TextureContext) {
+func createCtx(tex *texture.Texture) (ctx TextureContext) {
 	ctx.id = windowIdSys.GetID()
 	ctx.windowName = "Texture #" + strconv.FormatUint(uint64(ctx.id), 10)
 	ctx.zoom = 0.9
 	ctx.textureViewer = renderer.CreateFramebuffer(500, 500)
 	ctx.viewrSize = [2]float32{500, 500}
-	ctx.texture = image.NewTextureEdit(tex)
+	ctx.texture = textureEdit.New(tex)
 	return
 }
 
 func AddTexture(width, height uint32) {
-	tex := image.NewTexture(width, height)
+	tex := texture.New(width, height)
 	ctx := createCtx(tex)
 	// AllTextures = append(AllTextures, tex)
 	AllCtx = append(AllCtx, &ctx)
 }
 
-func OpenTexture(tex *image.Texture) {
+func OpenTexture(tex *texture.Texture) {
 	createCtx(tex)
 }
 

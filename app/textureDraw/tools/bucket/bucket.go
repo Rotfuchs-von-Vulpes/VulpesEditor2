@@ -1,17 +1,17 @@
 package bucket
 
 import (
+	"VulpesEditor/app/textureDraw/canvas/texture"
 	"VulpesEditor/app/textureDraw/color"
-	"VulpesEditor/app/textureDraw/texture/image"
 	"slices"
 )
 
 type Bucket struct {
 }
 
-var Texture *image.Texture
+var Texture *texture.Texture
 var height, width uint32
-var painted []image.PixelEdit
+var painted []texture.PixelEdit
 var drawingColor [4]float32
 
 func (_ Bucket) ButtonPress(pos [2]int32, secondButton bool) {
@@ -58,7 +58,7 @@ func (_ Bucket) ButtonPress(pos [2]int32, secondButton bool) {
 			toFill = append(toFill, [2]int32{pos[0], pos[1] + 1})
 		}
 	}
-	painted = image.SetEditColor(toFill, drawingColor)
+	painted = texture.SetEditColor(toFill, drawingColor)
 }
 
 func (_ Bucket) ButtonRelease(pos [2]int32) {
@@ -69,18 +69,18 @@ func (_ Bucket) Move(pos1, pos2 [2]int32) {
 
 }
 
-func (_ Bucket) Visualize() []image.PixelEdit {
+func (_ Bucket) Visualize() []texture.PixelEdit {
 	return painted
 }
 
-func (_ Bucket) Change() (toChange []image.PixelEdit) {
+func (_ Bucket) Change() (toChange []texture.PixelEdit) {
 	toChange = painted
-	painted = make([]image.PixelEdit, 0)
+	painted = make([]texture.PixelEdit, 0)
 	Texture.Clear()
 	return
 }
 
 func (_ Bucket) Reset() {
-	painted = make([]image.PixelEdit, 0)
+	painted = make([]texture.PixelEdit, 0)
 	Texture.Clear()
 }

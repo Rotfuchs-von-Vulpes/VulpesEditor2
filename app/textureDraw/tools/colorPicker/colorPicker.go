@@ -1,13 +1,13 @@
 package colorPicker
 
 import (
+	"VulpesEditor/app/textureDraw/canvas/texture"
 	"VulpesEditor/app/textureDraw/color"
-	"VulpesEditor/app/textureDraw/texture/image"
 )
 
 type ColorPicker struct{}
 
-var Texture *image.Texture
+var Texture *texture.Texture
 var SecondButton bool
 
 func (_ ColorPicker) ButtonPress(pos [2]int32, secondButton bool) {

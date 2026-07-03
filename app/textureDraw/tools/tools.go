@@ -1,7 +1,7 @@
 package tools
 
 import (
-	"VulpesEditor/app/textureDraw/texture/image"
+	"VulpesEditor/app/textureDraw/canvas/texture"
 	"VulpesEditor/app/textureDraw/tools/bucket"
 	"VulpesEditor/app/textureDraw/tools/colorPicker"
 	"VulpesEditor/app/textureDraw/tools/line"
@@ -20,8 +20,8 @@ type tool interface {
 
 type drawingTool interface {
 	tool
-	Visualize() []image.PixelEdit
-	Change() []image.PixelEdit
+	Visualize() []texture.PixelEdit
+	Change() []texture.PixelEdit
 }
 
 var selectedTool tool
@@ -33,7 +33,7 @@ func Init() {
 	selectedTool = pencil.Pencil{}
 }
 
-var Texture *image.Texture = image.NewTexture(1, 1)
+var Texture *texture.Texture = texture.New(1, 1)
 
 func ButtonPress(pos [2]int32, secondButton bool) {
 	if _, ok := selectedTool.(bucket.Bucket); ok {
@@ -52,14 +52,14 @@ func Move(pos1, pos2 [2]int32) {
 	selectedTool.Move(pos1, pos2)
 }
 
-func Visualize() []image.PixelEdit {
+func Visualize() []texture.PixelEdit {
 	if s, ok := selectedTool.(drawingTool); ok {
 		return s.Visualize()
 	}
 	return nil
 }
 
-func Change() []image.PixelEdit {
+func Change() []texture.PixelEdit {
 	if s, ok := selectedTool.(drawingTool); ok {
 		return s.Change()
 	}
