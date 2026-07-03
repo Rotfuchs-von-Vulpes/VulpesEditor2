@@ -56,6 +56,15 @@ func NewTexture(width, height uint32) (out *Texture) {
 	return
 }
 
+func (s *Texture) Resize(width, height uint32) {
+	if width == s.Width && height == s.Height {
+		return
+	}
+	s.Width = width
+	s.Height = height
+	s.Colors = blankTexture(width, height)
+}
+
 func (s *Texture) Get(pos [2]int32) (ok bool, color [4]float32) {
 	index := int(pos[1]*int32(s.Height) + pos[0])
 	if pos[0] < 0 || pos[0] >= int32(s.Width) || pos[1] < 0 || pos[1] >= int32(s.Height) {

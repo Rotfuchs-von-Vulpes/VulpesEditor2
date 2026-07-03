@@ -96,11 +96,9 @@ func (s *TextureContext) buttonPress(buttons [5]bool) {
 	if buttons[0] || buttons[1] {
 		s.painting = true
 		s.firstButton = buttons[0]
-		if buttons[0] {
-			tools.ButtonPress(s.pixelPosMouse(), color1, s.texture.Colors(), s.texture.Width, s.texture.Height)
-		} else if buttons[1] {
-			tools.ButtonPress(s.pixelPosMouse(), color2, s.texture.Colors(), s.texture.Width, s.texture.Height)
-		}
+		tools.Texture.Resize(s.texture.Width, s.texture.Height)
+		tools.Texture.Colors = s.texture.Colors()
+		tools.ButtonPress(s.pixelPosMouse(), buttons[0])
 		toFocus = true
 		lastEditId = s.id
 	}
@@ -116,6 +114,7 @@ func (s *TextureContext) buttonRelease(buttons [5]bool) {
 		pixels := tools.Change()
 		s.texture.Change(pixels)
 		s.texture.ResetPreview()
+		tools.Texture.Colors = s.texture.Colors()
 	}
 }
 
@@ -216,7 +215,8 @@ func (s *TextureContext) Show() {
 		buttons := io.MouseClicked()
 		if buttons[3] {
 			s.texture.Undo()
-		} else if buttons[4] {
+		}
+		if buttons[4] {
 			s.texture.Redo()
 		}
 	}
@@ -250,10 +250,3 @@ func OpenTexture(tex *image.Texture) {
 }
 
 var windowIdSys = util.NewIdSystem()
-var color1 [4]float32
-var color2 [4]float32
-
-func SetColors(c1, c2 [4]float32) {
-	color1 = c1
-	color2 = c2
-}

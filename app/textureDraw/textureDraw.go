@@ -18,7 +18,6 @@ func AfterCreateContext() {
 func Loop() {
 	color.Loop()
 	tools.Show()
-	texture.SetColors(color.SelectedColors())
 	for _, c := range texture.AllCtx {
 		c.Show()
 	}

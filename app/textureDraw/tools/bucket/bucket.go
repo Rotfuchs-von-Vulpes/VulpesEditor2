@@ -1,6 +1,7 @@
 package bucket
 
 import (
+	"VulpesEditor/app/textureDraw/color"
 	"VulpesEditor/app/textureDraw/texture/image"
 	"slices"
 )
@@ -8,28 +9,26 @@ import (
 type Bucket struct {
 }
 
-var texture = image.NewTexture(1, 1)
+var Texture *image.Texture
 var height, width uint32
 var painted []image.PixelEdit
-var color [4]float32
+var drawingColor [4]float32
 
-func (_ Bucket) SendTexture(colors [][4]float32, w, h uint32) {
-	texture = image.NewTexture(w, h)
-	texture.Colors = colors
-	width = w
-	height = h
-}
-
-func (_ Bucket) ButtonPress(pos [2]int32, col [4]float32) {
-	color = col
-	ok, targetColor := texture.Get(pos)
+func (_ Bucket) ButtonPress(pos [2]int32, secondButton bool) {
+	c1, c2 := color.GetColors()
+	if !secondButton {
+		drawingColor = c1
+	} else {
+		drawingColor = c2
+	}
+	ok, targetColor := Texture.Get(pos)
 	if !ok {
 		return
 	}
 	toFill := [][2]int32{pos}
 
 	canSpread := func(newPos [2]int32) bool {
-		ok, c := texture.Get(newPos)
+		ok, c := Texture.Get(newPos)
 		if !ok {
 			return false
 		}
@@ -59,7 +58,7 @@ func (_ Bucket) ButtonPress(pos [2]int32, col [4]float32) {
 			toFill = append(toFill, [2]int32{pos[0], pos[1] + 1})
 		}
 	}
-	painted = image.SetEditColor(toFill, color)
+	painted = image.SetEditColor(toFill, drawingColor)
 }
 
 func (_ Bucket) ButtonRelease(pos [2]int32) {
@@ -77,11 +76,11 @@ func (_ Bucket) Visualize() []image.PixelEdit {
 func (_ Bucket) Change() (toChange []image.PixelEdit) {
 	toChange = painted
 	painted = make([]image.PixelEdit, 0)
-	texture.Clear()
+	Texture.Clear()
 	return
 }
 
 func (_ Bucket) Reset() {
 	painted = make([]image.PixelEdit, 0)
-	texture.Clear()
+	Texture.Clear()
 }

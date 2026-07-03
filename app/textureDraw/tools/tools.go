@@ -3,6 +3,7 @@ package tools
 import (
 	"VulpesEditor/app/textureDraw/texture/image"
 	"VulpesEditor/app/textureDraw/tools/bucket"
+	"VulpesEditor/app/textureDraw/tools/colorPicker"
 	"VulpesEditor/app/textureDraw/tools/line"
 	"VulpesEditor/app/textureDraw/tools/pencil"
 	"VulpesEditor/app/textureDraw/tools/rectangle"
@@ -10,25 +11,37 @@ import (
 	"github.com/AllenDang/cimgui-go/imgui"
 )
 
-var selectedTool Tool
+type tool interface {
+	ButtonPress(pos [2]int32, secondButton bool)
+	ButtonRelease(pos [2]int32)
+	Move(pos1, pos2 [2]int32)
+	Reset()
+}
+
+type drawingTool interface {
+	tool
+	Visualize() []image.PixelEdit
+	Change() []image.PixelEdit
+}
+
+var selectedTool tool
+
+var Color1 *[4]float32
+var Color2 *[4]float32
 
 func Init() {
 	selectedTool = pencil.Pencil{}
 }
 
-type Tool interface {
-	SendTexture(colors [][4]float32, width, height uint32)
-	ButtonPress(pos [2]int32, color [4]float32)
-	ButtonRelease(pos [2]int32)
-	Move(pos1, pos2 [2]int32)
-	Visualize() []image.PixelEdit
-	Change() []image.PixelEdit
-	Reset()
-}
+var Texture *image.Texture = image.NewTexture(1, 1)
 
-func ButtonPress(pos [2]int32, color [4]float32, colors [][4]float32, width, height uint32) {
-	selectedTool.SendTexture(colors, width, height)
-	selectedTool.ButtonPress(pos, color)
+func ButtonPress(pos [2]int32, secondButton bool) {
+	if _, ok := selectedTool.(bucket.Bucket); ok {
+		bucket.Texture = Texture
+	} else if _, ok := selectedTool.(colorPicker.ColorPicker); ok {
+		colorPicker.Texture = Texture
+	}
+	selectedTool.ButtonPress(pos, secondButton)
 }
 
 func ButtonRelease(pos [2]int32) {
@@ -40,11 +53,17 @@ func Move(pos1, pos2 [2]int32) {
 }
 
 func Visualize() []image.PixelEdit {
-	return selectedTool.Visualize()
+	if s, ok := selectedTool.(drawingTool); ok {
+		return s.Visualize()
+	}
+	return nil
 }
 
 func Change() []image.PixelEdit {
-	return selectedTool.Change()
+	if s, ok := selectedTool.(drawingTool); ok {
+		return s.Change()
+	}
+	return nil
 }
 
 func Show() {
@@ -64,6 +83,10 @@ func Show() {
 	if imgui.Button("Rect") {
 		selectedTool.Reset()
 		selectedTool = rectangle.Rectangle{}
+	}
+	if imgui.Button("Color Picker") {
+		selectedTool.Reset()
+		selectedTool = colorPicker.ColorPicker{}
 	}
 	imgui.End()
 }
