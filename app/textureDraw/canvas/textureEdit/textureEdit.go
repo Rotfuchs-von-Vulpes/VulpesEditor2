@@ -3,12 +3,16 @@ package textureEdit
 import (
 	"VulpesEditor/app/front/renderer"
 	"VulpesEditor/app/textureDraw/canvas/texture"
+	"VulpesEditor/app/util"
 	"fmt"
 	"image"
 	"image/color"
 	"image/png"
 	"os"
+	"slices"
 )
+
+var idSys = util.NewIdSystem()
 
 type pixelChange struct {
 	pos    [2]int32
@@ -16,61 +20,39 @@ type pixelChange struct {
 	after  [4]float32
 }
 
-type TextureEdit struct {
-	Id          int32
-	Width       uint32
-	Height      uint32
-	Aspect      float32
-	texture     *texture.Texture
-	textureGlID uint32
-	previewGlID uint32
-	preview     *texture.Texture
-	changes     [][]pixelChange
-	undoLevel   int32
+type LayerEdit struct {
+	parent    *TextureEdit
+	Id        int32
+	width     uint32
+	height    uint32
+	texture   *texture.Texture
+	changes   [][]pixelChange
+	undoLevel int32
+	Show      bool
 }
 
-func (s *TextureEdit) unchange(changes []pixelChange) {
+func (s *LayerEdit) unchange(changes []pixelChange) {
 	for _, change := range changes {
 		s.texture.Set(change.pos, change.before)
 	}
-	s.updateTexture()
+	s.parent.UpdateTexture()
 }
 
-func (s *TextureEdit) change(changes []pixelChange) {
+func (s *LayerEdit) change(changes []pixelChange) {
 	for _, change := range changes {
 		s.texture.Set(change.pos, change.after)
 	}
-	s.updateTexture()
+	s.parent.UpdateTexture()
 }
 
-func (s *TextureEdit) applyChanges(changes []pixelChange) {
+func (s *LayerEdit) applyChanges(changes []pixelChange) {
 	s.change(changes)
 	s.changes = s.changes[:len(s.changes)-int(s.undoLevel)]
 	s.changes = append(s.changes, changes)
 	s.undoLevel = 0
 }
 
-func New(tex *texture.Texture) (out *TextureEdit) {
-	out = new(TextureEdit)
-	out.Width = tex.Width
-	out.Height = tex.Height
-	out.Aspect = float32(tex.Width) / float32(tex.Height)
-	out.texture = tex
-	out.preview = texture.New(tex.Width, tex.Height)
-	out.textureGlID = renderer.CreateTexture(int32(tex.Width), int32(tex.Height), tex.FlatColors())
-	out.previewGlID = renderer.CreateTexture(int32(tex.Width), int32(tex.Height), out.preview.FlatColors())
-	return
-}
-
-func (s *TextureEdit) updateTexture() {
-	renderer.WriteTexture(s.textureGlID, int32(s.Width), int32(s.Height), s.texture.FlatColors())
-}
-
-func (s *TextureEdit) updatePreview() {
-	renderer.WriteTexture(s.previewGlID, int32(s.Width), int32(s.Height), s.preview.FlatColors())
-}
-
-func (s *TextureEdit) Undo() bool {
+func (s *LayerEdit) Undo() bool {
 	changesIdx := len(s.changes) - 1 - int(s.undoLevel)
 	if changesIdx >= 0 {
 		lastChanges := s.changes[changesIdx]
@@ -81,7 +63,7 @@ func (s *TextureEdit) Undo() bool {
 	return false
 }
 
-func (s *TextureEdit) Redo() {
+func (s *LayerEdit) Redo() {
 	if s.undoLevel > 0 {
 		changesIdx := len(s.changes) - int(s.undoLevel)
 		if changesIdx >= 0 {
@@ -92,11 +74,7 @@ func (s *TextureEdit) Redo() {
 	}
 }
 
-func (s *TextureEdit) Colors() [][4]float32 {
-	return s.texture.Colors
-}
-
-func (s *TextureEdit) Change(pixels []texture.PixelEdit) {
+func (s *LayerEdit) Change(pixels []texture.PixelEdit) {
 	if len(pixels) > 0 {
 		changes := []pixelChange{}
 		for _, pixel := range pixels {
@@ -112,6 +90,101 @@ func (s *TextureEdit) Change(pixels []texture.PixelEdit) {
 			s.applyChanges(changes)
 		}
 	}
+}
+
+type TextureEdit struct {
+	Id          int32
+	Width       uint32
+	Height      uint32
+	Aspect      float32
+	textureGlID uint32
+	previewGlID uint32
+	Layers      []*LayerEdit
+	texture     *texture.Texture
+	preview     *texture.Texture
+}
+
+func (s *TextureEdit) AddLayer() {
+	newLayer := new(LayerEdit)
+	newLayer.Id = idSys.GetID()
+	newLayer.parent = s
+	newLayer.width = s.Width
+	newLayer.height = s.Height
+	newLayer.texture = texture.New(s.Width, s.Height)
+	newLayer.Show = true
+	s.Layers = append(s.Layers, newLayer)
+}
+
+func New(tex *texture.Texture) (out *TextureEdit) {
+	out = new(TextureEdit)
+	out.Id = idSys.GetID()
+	out.Width = tex.Width
+	out.Height = tex.Height
+	out.Aspect = float32(tex.Width) / float32(tex.Height)
+	out.AddLayer()
+	out.Layers[0].texture = tex
+	out.texture = texture.New(tex.Width, tex.Height)
+	out.preview = texture.New(tex.Width, tex.Height)
+	out.textureGlID = renderer.CreateTexture(int32(tex.Width), int32(tex.Height), tex.FlatColors())
+	out.previewGlID = renderer.CreateTexture(int32(tex.Width), int32(tex.Height), out.preview.FlatColors())
+	return
+}
+
+func (s *TextureEdit) Merge(merge []bool) {
+	if len(merge) != len(s.Layers) {
+		panic(fmt.Sprintf("Wrong list length: %d merge indexes, %d layers cout", len(merge), len(s.Layers)))
+	}
+	count := 0
+	for _, b := range merge {
+		if b {
+			count += 1
+		}
+	}
+	if count < 2 {
+		return
+	}
+	tempTex := texture.New(s.Width, s.Height)
+	resultIdx := 0
+	first := true
+	toDelete := []int{}
+	for i := range s.Layers {
+		if merge[i] {
+			if first {
+				first = false
+				resultIdx = i
+			} else {
+				toDelete = append(toDelete, i)
+			}
+			tempTex.Colors = texture.Merge(tempTex, s.Layers[i].texture)
+		}
+	}
+	s.Layers[resultIdx].texture.Colors = tempTex.Colors
+	final := []*LayerEdit{}
+	for i := range s.Layers {
+		if !slices.Contains(toDelete, i) {
+			final = append(final, s.Layers[i])
+		}
+	}
+	s.Layers = final
+	s.UpdateTexture()
+}
+
+func (s *TextureEdit) UpdateTexture() {
+	s.texture.Clear()
+	for _, layer := range s.Layers {
+		if layer.Show {
+			s.texture.Colors = texture.Merge(s.texture, layer.texture)
+		}
+	}
+	renderer.WriteTexture(s.textureGlID, int32(s.Width), int32(s.Height), s.texture.FlatColors())
+}
+
+func (s *TextureEdit) updatePreview() {
+	renderer.WriteTexture(s.previewGlID, int32(s.Width), int32(s.Height), s.preview.FlatColors())
+}
+
+func (s *TextureEdit) Colors() [][4]float32 {
+	return s.texture.Colors
 }
 
 func (s *TextureEdit) ChangePreview(pixels []texture.PixelEdit) {
@@ -145,6 +218,12 @@ func (s *TextureEdit) SaveTextureAsFile(fileName, path string) bool {
 		return false
 	}
 	defer file.Close()
+
+	s.texture.Clear()
+	for _, layer := range s.Layers {
+		s.texture.Colors = texture.Merge(s.texture, layer.texture)
+	}
+
 	img := image.NewRGBA(image.Rect(0, 0, int(s.texture.Width), int(s.texture.Height)))
 	for x := int32(0); x < int32(s.texture.Width); x++ {
 		for y := int32(0); y < int32(s.texture.Height); y++ {

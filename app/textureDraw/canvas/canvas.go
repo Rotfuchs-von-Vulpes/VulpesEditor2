@@ -6,6 +6,7 @@ import (
 	"VulpesEditor/app/textureDraw/canvas/textureEdit"
 	"VulpesEditor/app/textureDraw/tools"
 	"VulpesEditor/app/util"
+	"fmt"
 	"math"
 	"strconv"
 
@@ -27,6 +28,7 @@ type TextureContext struct {
 	aspect        float32
 	textureViewer *renderer.FrameBuffer
 	texture       *textureEdit.TextureEdit
+	layer         *textureEdit.LayerEdit
 	pixelPos      [2]int32
 	lastPixelPos  [2]int32
 }
@@ -92,6 +94,7 @@ func (s *TextureContext) buttonPress(buttons [5]bool) {
 		s.mousePressPos = s.pos
 		s.mouseCanDrag = true
 		toFocus = true
+		lastEditCtx = s
 		lastEditId = s.id
 	}
 	if buttons[0] || buttons[1] {
@@ -101,6 +104,7 @@ func (s *TextureContext) buttonPress(buttons [5]bool) {
 		tools.Texture.Colors = s.texture.Colors()
 		tools.ButtonPress(s.pixelPosMouse(), buttons[0])
 		toFocus = true
+		lastEditCtx = s
 		lastEditId = s.id
 	}
 }
@@ -113,9 +117,8 @@ func (s *TextureContext) buttonRelease(buttons [5]bool) {
 		s.painting = false
 		tools.ButtonRelease(s.pixelPosMouse())
 		pixels := tools.Change()
-		s.texture.Change(pixels)
+		s.layer.Change(pixels)
 		s.texture.ResetPreview()
-		tools.Texture.Colors = s.texture.Colors()
 	}
 }
 
@@ -208,17 +211,17 @@ func (s *TextureContext) Show() {
 	if imgui.IsWindowFocused() && lastEditId == s.id {
 		io := imgui.CurrentContext().IO()
 		if io.KeyCtrl() && imgui.IsKeyPressedBoolV(imgui.KeyZ, true) {
-			s.texture.Undo()
+			s.layer.Undo()
 		}
 		if io.KeyCtrl() && imgui.IsKeyPressedBoolV(imgui.KeyY, true) {
-			s.texture.Redo()
+			s.layer.Redo()
 		}
 		buttons := io.MouseClicked()
 		if buttons[3] {
-			s.texture.Undo()
+			s.layer.Undo()
 		}
 		if buttons[4] {
-			s.texture.Redo()
+			s.layer.Redo()
 		}
 	}
 	imgui.End()
@@ -228,6 +231,7 @@ func (s *TextureContext) Show() {
 
 // var AllTextures []*texture.Texture
 var AllCtx []*TextureContext
+var lastEditCtx *TextureContext
 
 func createCtx(tex *texture.Texture) (ctx TextureContext) {
 	ctx.id = windowIdSys.GetID()
@@ -236,6 +240,8 @@ func createCtx(tex *texture.Texture) (ctx TextureContext) {
 	ctx.textureViewer = renderer.CreateFramebuffer(500, 500)
 	ctx.viewrSize = [2]float32{500, 500}
 	ctx.texture = textureEdit.New(tex)
+	ctx.layer = ctx.texture.Layers[0]
+	lastEditId = ctx.id
 	return
 }
 
@@ -244,10 +250,99 @@ func AddTexture(width, height uint32) {
 	ctx := createCtx(tex)
 	// AllTextures = append(AllTextures, tex)
 	AllCtx = append(AllCtx, &ctx)
+	lastEditCtx = AllCtx[len(AllCtx)-1]
 }
 
 func OpenTexture(tex *texture.Texture) {
 	createCtx(tex)
+}
+
+var layersToMerge = []bool{}
+
+func ShowLayers() {
+	var ctx = lastEditCtx
+	var toPop string
+	imgui.BeginV("Layers", nil, imgui.WindowFlagsMenuBar)
+	if imgui.BeginMenuBar() {
+		if imgui.BeginMenu("Edit") {
+			if imgui.MenuItemBool("Add Layer") {
+				lastEditCtx.texture.AddLayer()
+			}
+			if imgui.MenuItemBool("Remove Layer") {
+				toPop = "Not Implement"
+			}
+			if imgui.MenuItemBool("Merge Layer") {
+				toPop = "Merge Layers"
+			}
+			imgui.EndMenu()
+		}
+		imgui.EndMenuBar()
+	}
+	if toPop != "" {
+		imgui.OpenPopupStr(toPop)
+		if toPop == "Merge Layers" {
+			layersToMerge = make([]bool, len(ctx.texture.Layers))
+		}
+		toPop = ""
+	}
+	if imgui.BeginPopupModal("Merge Layers") {
+		imgui.Text("Select Layers to Merge")
+		for i := range ctx.texture.Layers {
+			str := fmt.Sprintf("Layer #%d", i)
+			imgui.Checkbox(str, &layersToMerge[i])
+		}
+		if imgui.Button("Merge") {
+			ctx.texture.Merge(layersToMerge)
+			id := ctx.layer.Id
+			found := false
+			for _, layer := range ctx.texture.Layers {
+				if layer.Id == id {
+					found = true
+					break
+				}
+			}
+			if !found {
+				ctx.layer = ctx.texture.Layers[len(ctx.texture.Layers)-1]
+			}
+			imgui.CloseCurrentPopup()
+		}
+		imgui.SameLine()
+		if imgui.Button("Cancel") {
+			imgui.CloseCurrentPopup()
+		}
+		imgui.EndPopup()
+	}
+	if imgui.BeginPopupModal("Not Implement") {
+		imgui.Text("Not implement yet!")
+		if imgui.Button("OK") {
+			imgui.CloseCurrentPopup()
+		}
+		imgui.EndPopup()
+	}
+	for i, layer := range ctx.texture.Layers {
+		id := ctx.layer.Id
+		str := fmt.Sprintf("Layer #%d", i)
+		if layer.Id == id {
+			// #86BDFFFF
+			imgui.PushStyleColorVec4(imgui.ColText, imgui.NewVec4(0.52, 0.74, 1, 1))
+		}
+		imgui.PushIDStr(str)
+		if imgui.Button("Set") {
+			ctx.layer = ctx.texture.Layers[i]
+			ctx.texture.UpdateTexture()
+		}
+		imgui.SameLine()
+		imgui.Text(str)
+		imgui.SameLine()
+		if imgui.Checkbox("Show", &ctx.texture.Layers[i].Show) {
+			ctx.texture.UpdateTexture()
+		}
+		imgui.PopID()
+		if layer.Id == id {
+			imgui.PopStyleColor()
+		}
+	}
+	imgui.End()
 }
 
 var windowIdSys = util.NewIdSystem()

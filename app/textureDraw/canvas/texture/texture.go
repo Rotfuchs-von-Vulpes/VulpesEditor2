@@ -2,6 +2,7 @@ package texture
 
 import (
 	"VulpesEditor/app/util"
+	"fmt"
 )
 
 func blankTexture(width, height uint32) (data [][4]float32) {
@@ -13,15 +14,7 @@ func blankTexture(width, height uint32) (data [][4]float32) {
 	return
 }
 
-func flatData(colors [][4]float32) (data []float32) {
-	for _, color := range colors {
-		data = append(data, color[0], color[1], color[2], color[3])
-	}
-	return
-}
-
 type Texture struct {
-	Id     int32
 	Width  uint32
 	Height uint32
 	Colors [][4]float32
@@ -40,10 +33,8 @@ func SetEditColor(pixels [][2]int32, color [4]float32) (out []PixelEdit) {
 }
 
 func New(width, height uint32) (out *Texture) {
-	id := idSys.GetID()
 	colors := blankTexture(width, height)
 	out = new(Texture)
-	out.Id = id
 	out.Width = width
 	out.Height = height
 	out.Colors = colors
@@ -100,8 +91,44 @@ func (s *Texture) Clear() {
 	s.Colors = blankTexture(s.Width, s.Height)
 }
 
-func (s *Texture) FlatColors() []float32 {
-	return flatData(s.Colors)
+func (s *Texture) FlatColors() (data []float32) {
+	for _, color := range s.Colors {
+		data = append(data, color[0], color[1], color[2], color[3])
+	}
+	return
+}
+
+func Merge(end, front *Texture) (colors [][4]float32) {
+	if end.Height != front.Height || end.Width != front.Width {
+		panic(fmt.Sprintf("Wrong Size, end size: %d, %d; front size: %d, %d", end.Width, end.Height, front.Width, front.Height))
+	}
+	tempTex := New(end.Width, end.Height)
+	for x := range end.Width {
+		for y := range end.Height {
+			pos := [2]int32{int32(x), int32(y)}
+			_, c1 := end.Get(pos)
+			_, c2 := front.Get(pos)
+			if c2[3] >= 1 {
+				tempTex.Set(pos, c2)
+			} else if c2[3] <= 0 {
+				tempTex.Set(pos, c1)
+			} else {
+				c1[0] *= c1[3]
+				c1[1] *= c1[3]
+				c1[2] *= c1[3]
+				c2[0] *= c2[3]
+				c2[1] *= c2[3]
+				c2[2] *= c2[3]
+				red := (1-c2[3])*c1[0] + c2[0]
+				green := (1-c2[3])*c1[1] + c2[1]
+				blue := (1-c2[3])*c1[2] + c2[2]
+				alpha := 1 - (1-c2[3])*(1-c1[3])
+				c3 := [4]float32{red, green, blue, alpha}
+				tempTex.Set(pos, c3)
+			}
+		}
+	}
+	return tempTex.Colors
 }
 
 var idSys = util.NewIdSystem()

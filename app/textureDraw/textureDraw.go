@@ -21,4 +21,5 @@ func Loop() {
 	for _, c := range canvas.AllCtx {
 		c.Show()
 	}
+	canvas.ShowLayers()
 }
