@@ -4,6 +4,7 @@ import (
 	"VulpesEditor/app/textureDraw/canvas/texture"
 	"VulpesEditor/app/textureDraw/tools/bucket"
 	"VulpesEditor/app/textureDraw/tools/colorPicker"
+	"VulpesEditor/app/textureDraw/tools/eraser"
 	"VulpesEditor/app/textureDraw/tools/line"
 	"VulpesEditor/app/textureDraw/tools/pencil"
 	"VulpesEditor/app/textureDraw/tools/rectangle"
@@ -83,6 +84,10 @@ func Show() {
 	if imgui.Button("Rect") {
 		selectedTool.Reset()
 		selectedTool = rectangle.Rectangle{}
+	}
+	if imgui.Button("Eraser") {
+		selectedTool.Reset()
+		selectedTool = eraser.Eraser{}
 	}
 	if imgui.Button("Color Picker") {
 		selectedTool.Reset()
