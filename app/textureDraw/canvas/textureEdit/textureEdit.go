@@ -9,7 +9,6 @@ import (
 	"image/color"
 	"image/png"
 	"os"
-	"slices"
 )
 
 var idSys = util.NewIdSystem()
@@ -130,6 +129,23 @@ func New(tex *texture.Texture) (out *TextureEdit) {
 	return
 }
 
+func (s *TextureEdit) Remove(toDelete []bool) {
+	if len(toDelete) != len(s.Layers) {
+		panic(fmt.Sprintf("Wrong list length: %d merge indexes, %d layers cout", len(toDelete), len(s.Layers)))
+	}
+	final := []*LayerEdit{}
+	for i := range s.Layers {
+		if !toDelete[i] {
+			final = append(final, s.Layers[i])
+		}
+	}
+	if len(final) == 0 {
+		return
+	}
+	s.Layers = final
+	s.UpdateTexture()
+}
+
 func (s *TextureEdit) Merge(merge []bool) {
 	if len(merge) != len(s.Layers) {
 		panic(fmt.Sprintf("Wrong list length: %d merge indexes, %d layers cout", len(merge), len(s.Layers)))
@@ -146,27 +162,20 @@ func (s *TextureEdit) Merge(merge []bool) {
 	tempTex := texture.New(s.Width, s.Height)
 	resultIdx := 0
 	first := true
-	toDelete := []int{}
+	toDelete := make([]bool, len(s.Layers))
 	for i := range s.Layers {
 		if merge[i] {
 			if first {
 				first = false
 				resultIdx = i
 			} else {
-				toDelete = append(toDelete, i)
+				toDelete[i] = true
 			}
 			tempTex.Colors = texture.Merge(tempTex, s.Layers[i].texture)
 		}
 	}
 	s.Layers[resultIdx].texture.Colors = tempTex.Colors
-	final := []*LayerEdit{}
-	for i := range s.Layers {
-		if !slices.Contains(toDelete, i) {
-			final = append(final, s.Layers[i])
-		}
-	}
-	s.Layers = final
-	s.UpdateTexture()
+	s.Remove(toDelete)
 }
 
 func (s *TextureEdit) UpdateTexture() {

@@ -257,7 +257,21 @@ func OpenTexture(tex *texture.Texture) {
 	createCtx(tex)
 }
 
-var layersToMerge = []bool{}
+var selectedLayers = []bool{}
+
+func updateLayerId() {
+	id := lastEditCtx.layer.Id
+	found := false
+	for _, layer := range lastEditCtx.texture.Layers {
+		if layer.Id == id {
+			found = true
+			break
+		}
+	}
+	if !found {
+		lastEditCtx.layer = lastEditCtx.texture.Layers[len(lastEditCtx.texture.Layers)-1]
+	}
+}
 
 func ShowLayers() {
 	var ctx = lastEditCtx
@@ -268,10 +282,10 @@ func ShowLayers() {
 			if imgui.MenuItemBool("Add Layer") {
 				lastEditCtx.texture.AddLayer()
 			}
-			if imgui.MenuItemBool("Remove Layer") {
-				toPop = "Not Implement"
+			if imgui.MenuItemBool("Remove Layers") {
+				toPop = "Remove Layers"
 			}
-			if imgui.MenuItemBool("Merge Layer") {
+			if imgui.MenuItemBool("Merge Layers") {
 				toPop = "Merge Layers"
 			}
 			imgui.EndMenu()
@@ -279,31 +293,38 @@ func ShowLayers() {
 		imgui.EndMenuBar()
 	}
 	if toPop != "" {
-		imgui.OpenPopupStr(toPop)
-		if toPop == "Merge Layers" {
-			layersToMerge = make([]bool, len(ctx.texture.Layers))
+		if toPop == "Merge Layers" || toPop == "Remove Layers" {
+			selectedLayers = make([]bool, len(ctx.texture.Layers))
 		}
+		imgui.OpenPopupStr(toPop)
 		toPop = ""
 	}
-	if imgui.BeginPopupModal("Merge Layers") {
-		imgui.Text("Select Layers to Merge")
+	if imgui.BeginPopupModal("Remove Layers") {
+		imgui.Text("Select Layers to remove")
 		for i := range ctx.texture.Layers {
 			str := fmt.Sprintf("Layer #%d", i)
-			imgui.Checkbox(str, &layersToMerge[i])
+			imgui.Checkbox(str, &selectedLayers[i])
+		}
+		if imgui.Button("Remove") {
+			ctx.texture.Remove(selectedLayers)
+			updateLayerId()
+			imgui.CloseCurrentPopup()
+		}
+		imgui.SameLine()
+		if imgui.Button("Cancel") {
+			imgui.CloseCurrentPopup()
+		}
+		imgui.EndPopup()
+	}
+	if imgui.BeginPopupModal("Merge Layers") {
+		imgui.Text("Select Layers to merge:")
+		for i := range ctx.texture.Layers {
+			str := fmt.Sprintf("Layer #%d", i)
+			imgui.Checkbox(str, &selectedLayers[i])
 		}
 		if imgui.Button("Merge") {
-			ctx.texture.Merge(layersToMerge)
-			id := ctx.layer.Id
-			found := false
-			for _, layer := range ctx.texture.Layers {
-				if layer.Id == id {
-					found = true
-					break
-				}
-			}
-			if !found {
-				ctx.layer = ctx.texture.Layers[len(ctx.texture.Layers)-1]
-			}
+			ctx.texture.Merge(selectedLayers)
+			updateLayerId()
 			imgui.CloseCurrentPopup()
 		}
 		imgui.SameLine()
