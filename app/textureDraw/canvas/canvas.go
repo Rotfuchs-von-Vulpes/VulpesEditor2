@@ -128,6 +128,8 @@ var lastEditId int32
 var toFocus bool
 
 func (s *TextureContext) Show() {
+	s.texture.UpdateTexture()
+
 	var toPop string
 	if toFocus && lastEditId == s.id {
 		imgui.SetNextWindowFocus()
@@ -225,8 +227,7 @@ func (s *TextureContext) Show() {
 		}
 	}
 	imgui.End()
-	textureGlID, previewGlID := s.texture.GlID()
-	s.textureViewer.RenderTexture(textureGlID, previewGlID, s.zoom, s.pos, float32(s.texture.Width), float32(s.texture.Height))
+	s.textureViewer.RenderTexture(s.texture.GlID, s.zoom, s.pos, float32(s.texture.Width), float32(s.texture.Height))
 }
 
 // var AllTextures []*texture.Texture
@@ -350,14 +351,12 @@ func ShowLayers() {
 		imgui.PushIDStr(str)
 		if imgui.Button("Set") {
 			ctx.layer = ctx.texture.Layers[i]
-			ctx.texture.UpdateTexture()
+			ctx.texture.SetLayer(i)
 		}
 		imgui.SameLine()
 		imgui.Text(str)
 		imgui.SameLine()
-		if imgui.Checkbox("Show", &ctx.texture.Layers[i].Show) {
-			ctx.texture.UpdateTexture()
-		}
+		imgui.Checkbox("Show", &ctx.texture.Layers[i].Show)
 		imgui.PopID()
 		if layer.Id == id {
 			imgui.PopStyleColor()

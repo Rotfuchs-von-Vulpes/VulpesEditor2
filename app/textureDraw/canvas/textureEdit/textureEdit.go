@@ -9,6 +9,7 @@ import (
 	"image/color"
 	"image/png"
 	"os"
+	"slices"
 )
 
 var idSys = util.NewIdSystem()
@@ -91,16 +92,32 @@ func (s *LayerEdit) Change(pixels []texture.PixelEdit) {
 	}
 }
 
+type preview struct {
+	layerIdx int
+	pixels   []texture.PixelEdit
+}
+
+func (s *preview) clear() {
+	s.pixels = make([]texture.PixelEdit, 0)
+}
+
 type TextureEdit struct {
-	Id          int32
-	Width       uint32
-	Height      uint32
-	Aspect      float32
-	textureGlID uint32
-	previewGlID uint32
-	Layers      []*LayerEdit
-	texture     *texture.Texture
-	preview     *texture.Texture
+	Id      int32
+	Width   uint32
+	Height  uint32
+	Aspect  float32
+	GlID    uint32
+	Layers  []*LayerEdit
+	texture *texture.Texture
+	preview *preview
+}
+
+func (s *TextureEdit) SetLayer(idx int) {
+	if idx >= len(s.Layers) || idx < 0 {
+		panic(fmt.Sprintf("Illegal layer index: %d of length %d", idx, len(s.Layers)))
+	}
+	s.preview.clear()
+	s.preview.layerIdx = idx
 }
 
 func (s *TextureEdit) AddLayer() {
@@ -123,9 +140,9 @@ func New(tex *texture.Texture) (out *TextureEdit) {
 	out.AddLayer()
 	out.Layers[0].texture = tex
 	out.texture = texture.New(tex.Width, tex.Height)
-	out.preview = texture.New(tex.Width, tex.Height)
-	out.textureGlID = renderer.CreateTexture(int32(tex.Width), int32(tex.Height), tex.FlatColors())
-	out.previewGlID = renderer.CreateTexture(int32(tex.Width), int32(tex.Height), out.preview.FlatColors())
+	out.GlID = renderer.CreateTexture(int32(tex.Width), int32(tex.Height), tex.FlatColors())
+	out.preview = new(preview)
+	out.preview.layerIdx = 0
 	return
 }
 
@@ -143,7 +160,6 @@ func (s *TextureEdit) Remove(toDelete []bool) {
 		return
 	}
 	s.Layers = final
-	s.UpdateTexture()
 }
 
 func (s *TextureEdit) Merge(merge []bool) {
@@ -180,16 +196,19 @@ func (s *TextureEdit) Merge(merge []bool) {
 
 func (s *TextureEdit) UpdateTexture() {
 	s.texture.Clear()
-	for _, layer := range s.Layers {
+	for i, layer := range s.Layers {
 		if layer.Show {
-			s.texture.Colors = texture.Merge(s.texture, layer.texture)
+			if s.preview.layerIdx == i {
+				tex := texture.New(s.Width, s.Height)
+				tex.Colors = slices.Clone(layer.texture.Colors)
+				tex.BulkSet(s.preview.pixels)
+				s.texture.Colors = texture.Merge(s.texture, tex)
+			} else {
+				s.texture.Colors = texture.Merge(s.texture, layer.texture)
+			}
 		}
 	}
-	renderer.WriteTexture(s.textureGlID, int32(s.Width), int32(s.Height), s.texture.FlatColors())
-}
-
-func (s *TextureEdit) updatePreview() {
-	renderer.WriteTexture(s.previewGlID, int32(s.Width), int32(s.Height), s.preview.FlatColors())
+	renderer.WriteTexture(s.GlID, int32(s.Width), int32(s.Height), s.texture.FlatColors())
 }
 
 func (s *TextureEdit) Colors() [][4]float32 {
@@ -197,20 +216,12 @@ func (s *TextureEdit) Colors() [][4]float32 {
 }
 
 func (s *TextureEdit) ChangePreview(pixels []texture.PixelEdit) {
-	if len(pixels) > 0 {
-		if changed := s.preview.BulkSet(pixels); changed {
-			s.updatePreview()
-		}
-	}
+	s.preview.clear()
+	s.preview.pixels = pixels
 }
 
 func (s *TextureEdit) ResetPreview() {
-	s.preview.Clear()
-	s.updatePreview()
-}
-
-func (s *TextureEdit) GlID() (uint32, uint32) {
-	return s.textureGlID, s.previewGlID
+	s.preview.clear()
 }
 
 func (s *TextureEdit) SaveTextureAsFile(fileName, path string) bool {
