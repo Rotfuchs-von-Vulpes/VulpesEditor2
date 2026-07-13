@@ -160,6 +160,7 @@ func (s *TextureEdit) Remove(toDelete []bool) {
 		return
 	}
 	s.Layers = final
+	s.UpdateTexture()
 }
 
 func (s *TextureEdit) Merge(merge []bool) {
@@ -192,6 +193,7 @@ func (s *TextureEdit) Merge(merge []bool) {
 	}
 	s.Layers[resultIdx].texture.Colors = tempTex.Colors
 	s.Remove(toDelete)
+	s.UpdateTexture()
 }
 
 func (s *TextureEdit) UpdateTexture() {
@@ -218,10 +220,12 @@ func (s *TextureEdit) Colors() [][4]float32 {
 func (s *TextureEdit) ChangePreview(pixels []texture.PixelEdit) {
 	s.preview.clear()
 	s.preview.pixels = pixels
+	s.UpdateTexture()
 }
 
 func (s *TextureEdit) ResetPreview() {
 	s.preview.clear()
+	s.UpdateTexture()
 }
 
 func (s *TextureEdit) SaveTextureAsFile(fileName, path string) bool {

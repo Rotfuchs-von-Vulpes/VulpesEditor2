@@ -128,8 +128,6 @@ var lastEditId int32
 var toFocus bool
 
 func (s *TextureContext) Show() {
-	s.texture.UpdateTexture()
-
 	var toPop string
 	if toFocus && lastEditId == s.id {
 		imgui.SetNextWindowFocus()
@@ -356,7 +354,9 @@ func ShowLayers() {
 		imgui.SameLine()
 		imgui.Text(str)
 		imgui.SameLine()
-		imgui.Checkbox("Show", &ctx.texture.Layers[i].Show)
+		if imgui.Checkbox("Show", &ctx.texture.Layers[i].Show) {
+			ctx.texture.UpdateTexture()
+		}
 		imgui.PopID()
 		if layer.Id == id {
 			imgui.PopStyleColor()
