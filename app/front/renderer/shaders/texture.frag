@@ -17,9 +17,9 @@ void main () {
         float w = size.x * TexCoords.x * 0.0625;
         float h = size.y * TexCoords.y * 0.0625;
         if (fract(w) > 0.5 ^^ fract(h) > 0.5) {
-            background = vec4(0.25, 0.25, 0.25, 1.0);
+            background = vec4(0.25, 0.25, 0.3, 1.0);
         } else {
-            background = vec4(0.375, 0.375, 0.375, 1.0);
+            background = vec4(0.375, 0.375, 0.4, 1.0);
         }
         gl_FragColor = vec4(mix(background.rgb, color.rgb, color.a), 1.0);
     }
