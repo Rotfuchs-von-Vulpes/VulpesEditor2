@@ -281,10 +281,12 @@ func ShowLayers() {
 	}
 	imgui.SameLine()
 	if imgui.Button("Remove") {
+		selectedLayers = make([]bool, len(ctx.texture.Layers))
 		imgui.OpenPopupStr("Remove Layers")
 	}
 	imgui.SameLine()
 	if imgui.Button("Merge") {
+		selectedLayers = make([]bool, len(ctx.texture.Layers))
 		imgui.OpenPopupStr("Merge Layers")
 	}
 
@@ -298,7 +300,7 @@ func ShowLayers() {
 			imgui.PushStyleColorVec4(imgui.ColText, imgui.NewVec4(0.52, 0.74, 1, 1))
 		}
 		imgui.PushIDStr(str)
-		if imgui.Button("Set") {
+		if imgui.ImageButton("Set", layer.Image.Tex.ID, imgui.NewVec2(20, 20)) {
 			ctx.layer = ctx.texture.Layers[i]
 			ctx.texture.SetLayer(i)
 		}
@@ -339,6 +341,8 @@ func ShowLayers() {
 		for i := range ctx.texture.Layers {
 			str := fmt.Sprintf("Layer #%d", i)
 			imgui.Checkbox(str, &selectedLayers[i])
+			imgui.SameLine()
+			imgui.ImageWithBg(ctx.texture.Layers[i].Image.Tex.ID, imgui.NewVec2(15, 15))
 		}
 		if imgui.Button("Remove") {
 			ctx.texture.Remove(selectedLayers)
@@ -357,6 +361,8 @@ func ShowLayers() {
 		for i := range ctx.texture.Layers {
 			str := fmt.Sprintf("Layer #%d", i)
 			imgui.Checkbox(str, &selectedLayers[i])
+			imgui.SameLine()
+			imgui.ImageWithBg(ctx.texture.Layers[i].Image.Tex.ID, imgui.NewVec2(15, 15))
 		}
 		if imgui.Button("Merge") {
 			ctx.texture.Merge(selectedLayers)

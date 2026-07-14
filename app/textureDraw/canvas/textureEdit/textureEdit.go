@@ -8,8 +8,11 @@ import (
 	"image"
 	"image/color"
 	"image/png"
+	"math"
 	"os"
 	"slices"
+
+	"github.com/AllenDang/cimgui-go/backend"
 )
 
 var idSys = util.NewIdSystem()
@@ -18,6 +21,11 @@ type pixelChange struct {
 	pos    [2]int32
 	before [4]float32
 	after  [4]float32
+}
+
+type Image struct {
+	Img *image.RGBA
+	Tex *backend.Texture
 }
 
 type LayerEdit struct {
@@ -29,12 +37,35 @@ type LayerEdit struct {
 	changes   [][]pixelChange
 	undoLevel int32
 	Show      bool
+	Image     *Image
+}
+
+func (s *LayerEdit) updatePreview() {
+	floatData := s.Texture.FlatColors()
+
+	for i := 0; i < int(s.Texture.Width*s.Texture.Height); i++ {
+		offset := i * 4
+
+		r := uint8(math.Min(255.0, float64(floatData[offset])*255.0))
+		g := uint8(math.Min(255.0, float64(floatData[offset+1])*255.0))
+		b := uint8(math.Min(255.0, float64(floatData[offset+2])*255.0))
+		a := uint8(math.Min(255.0, float64(floatData[offset+3])*255.0))
+
+		s.Image.Img.Pix[offset] = r
+		s.Image.Img.Pix[offset+1] = g
+		s.Image.Img.Pix[offset+2] = b
+		s.Image.Img.Pix[offset+3] = a
+	}
+
+	s.Image.Tex.Release()
+	s.Image.Tex = backend.NewTextureFromRgba(s.Image.Img)
 }
 
 func (s *LayerEdit) unchange(changes []pixelChange) {
 	for _, change := range changes {
 		s.Texture.Set(change.pos, change.before)
 	}
+	s.updatePreview()
 	s.parent.UpdateTexture()
 }
 
@@ -42,6 +73,7 @@ func (s *LayerEdit) change(changes []pixelChange) {
 	for _, change := range changes {
 		s.Texture.Set(change.pos, change.after)
 	}
+	s.updatePreview()
 	s.parent.UpdateTexture()
 }
 
@@ -138,6 +170,9 @@ func (s *TextureEdit) AddLayer() {
 	newLayer.height = s.Height
 	newLayer.Texture = texture.New(s.Width, s.Height)
 	newLayer.Show = true
+	newLayer.Image = new(Image)
+	newLayer.Image.Img = image.NewRGBA(image.Rect(0, 0, int(s.Width), int(s.Height)))
+	newLayer.Image.Tex = backend.NewTextureFromRgba(newLayer.Image.Img)
 	s.Layers = append(s.Layers, newLayer)
 }
 
