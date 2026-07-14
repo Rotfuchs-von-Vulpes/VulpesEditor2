@@ -274,30 +274,65 @@ func updateLayerId() {
 
 func ShowLayers() {
 	var ctx = lastEditCtx
-	var toPop string
-	imgui.BeginV("Layers", nil, imgui.WindowFlagsMenuBar)
-	if imgui.BeginMenuBar() {
-		if imgui.BeginMenu("Edit") {
-			if imgui.MenuItemBool("Add Layer") {
-				lastEditCtx.texture.AddLayer()
-			}
-			if imgui.MenuItemBool("Remove Layers") {
-				toPop = "Remove Layers"
-			}
-			if imgui.MenuItemBool("Merge Layers") {
-				toPop = "Merge Layers"
-			}
-			imgui.EndMenu()
-		}
-		imgui.EndMenuBar()
+	imgui.Begin("Layers")
+	if imgui.Button("Add") {
+		ctx.texture.AddLayer()
 	}
-	if toPop != "" {
-		if toPop == "Merge Layers" || toPop == "Remove Layers" {
-			selectedLayers = make([]bool, len(ctx.texture.Layers))
-		}
-		imgui.OpenPopupStr(toPop)
-		toPop = ""
+	imgui.SameLine()
+	if imgui.Button("Remove") {
+		imgui.OpenPopupStr("Remove Layers")
 	}
+	imgui.SameLine()
+	if imgui.Button("Merge") {
+		imgui.OpenPopupStr("Merge Layers")
+	}
+
+	for i, layer := range ctx.texture.Layers {
+		downDis := i == 0
+		upDis := i == len(ctx.texture.Layers)-1
+		selected := layer.Id == ctx.layer.Id
+		str := fmt.Sprintf("Layer #%d", i)
+		if selected {
+			// #86BDFFFF
+			imgui.PushStyleColorVec4(imgui.ColText, imgui.NewVec4(0.52, 0.74, 1, 1))
+		}
+		imgui.PushIDStr(str)
+		if imgui.Button("Set") {
+			ctx.layer = ctx.texture.Layers[i]
+			ctx.texture.SetLayer(i)
+		}
+		imgui.SameLine()
+		imgui.Text(str)
+		imgui.SameLine()
+		if downDis {
+			imgui.BeginDisabled()
+		}
+		if imgui.Button("down") {
+			ctx.texture.Swap(i, i-1)
+		}
+		if downDis {
+			imgui.EndDisabled()
+		}
+		imgui.SameLine()
+		if upDis {
+			imgui.BeginDisabled()
+		}
+		if imgui.Button("up") {
+			ctx.texture.Swap(i, i+1)
+		}
+		if upDis {
+			imgui.EndDisabled()
+		}
+		imgui.SameLine()
+		if imgui.Checkbox("Show", &ctx.texture.Layers[i].Show) {
+			ctx.texture.UpdateTexture()
+		}
+		imgui.PopID()
+		if selected {
+			imgui.PopStyleColor()
+		}
+	}
+
 	if imgui.BeginPopupModal("Remove Layers") {
 		imgui.Text("Select Layers to remove")
 		for i := range ctx.texture.Layers {
@@ -315,6 +350,7 @@ func ShowLayers() {
 		}
 		imgui.EndPopup()
 	}
+
 	if imgui.BeginPopupModal("Merge Layers") {
 		imgui.Text("Select Layers to merge:")
 		for i := range ctx.texture.Layers {
@@ -332,36 +368,7 @@ func ShowLayers() {
 		}
 		imgui.EndPopup()
 	}
-	if imgui.BeginPopupModal("Not Implement") {
-		imgui.Text("Not implement yet!")
-		if imgui.Button("OK") {
-			imgui.CloseCurrentPopup()
-		}
-		imgui.EndPopup()
-	}
-	for i, layer := range ctx.texture.Layers {
-		id := ctx.layer.Id
-		str := fmt.Sprintf("Layer #%d", i)
-		if layer.Id == id {
-			// #86BDFFFF
-			imgui.PushStyleColorVec4(imgui.ColText, imgui.NewVec4(0.52, 0.74, 1, 1))
-		}
-		imgui.PushIDStr(str)
-		if imgui.Button("Set") {
-			ctx.layer = ctx.texture.Layers[i]
-			ctx.texture.SetLayer(i)
-		}
-		imgui.SameLine()
-		imgui.Text(str)
-		imgui.SameLine()
-		if imgui.Checkbox("Show", &ctx.texture.Layers[i].Show) {
-			ctx.texture.UpdateTexture()
-		}
-		imgui.PopID()
-		if layer.Id == id {
-			imgui.PopStyleColor()
-		}
-	}
+
 	imgui.End()
 }
 

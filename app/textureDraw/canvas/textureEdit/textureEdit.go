@@ -112,6 +112,16 @@ type TextureEdit struct {
 	preview *preview
 }
 
+func (s *TextureEdit) Swap(idx1, idx2 int) {
+	if idx1 < 0 || idx1 >= len(s.Layers) || idx2 < 0 || idx2 >= len(s.Layers) || idx1 == idx2 {
+		return
+	}
+	temp := s.Layers[idx1]
+	s.Layers[idx1] = s.Layers[idx2]
+	s.Layers[idx2] = temp
+	s.UpdateTexture()
+}
+
 func (s *TextureEdit) SetLayer(idx int) {
 	if idx >= len(s.Layers) || idx < 0 {
 		panic(fmt.Sprintf("Illegal layer index: %d of length %d", idx, len(s.Layers)))
