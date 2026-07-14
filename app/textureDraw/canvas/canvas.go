@@ -8,6 +8,7 @@ import (
 	"VulpesEditor/app/util"
 	"fmt"
 	"math"
+	"slices"
 	"strconv"
 
 	"github.com/AllenDang/cimgui-go/imgui"
@@ -101,7 +102,7 @@ func (s *TextureContext) buttonPress(buttons [5]bool) {
 		s.painting = true
 		s.firstButton = buttons[0]
 		tools.Texture.Resize(s.texture.Width, s.texture.Height)
-		tools.Texture.Colors = s.texture.Colors()
+		tools.Texture.Colors = slices.Clone(s.layer.Texture.Colors)
 		tools.ButtonPress(s.pixelPosMouse(), buttons[0])
 		toFocus = true
 		lastEditCtx = s

@@ -25,7 +25,7 @@ type LayerEdit struct {
 	Id        int32
 	width     uint32
 	height    uint32
-	texture   *texture.Texture
+	Texture   *texture.Texture
 	changes   [][]pixelChange
 	undoLevel int32
 	Show      bool
@@ -33,14 +33,14 @@ type LayerEdit struct {
 
 func (s *LayerEdit) unchange(changes []pixelChange) {
 	for _, change := range changes {
-		s.texture.Set(change.pos, change.before)
+		s.Texture.Set(change.pos, change.before)
 	}
 	s.parent.UpdateTexture()
 }
 
 func (s *LayerEdit) change(changes []pixelChange) {
 	for _, change := range changes {
-		s.texture.Set(change.pos, change.after)
+		s.Texture.Set(change.pos, change.after)
 	}
 	s.parent.UpdateTexture()
 }
@@ -78,7 +78,7 @@ func (s *LayerEdit) Change(pixels []texture.PixelEdit) {
 	if len(pixels) > 0 {
 		changes := []pixelChange{}
 		for _, pixel := range pixels {
-			if ok, beforeColor := s.texture.Get(pixel.Pos); ok {
+			if ok, beforeColor := s.Texture.Get(pixel.Pos); ok {
 				var change pixelChange
 				change.pos = pixel.Pos
 				change.before = beforeColor
@@ -136,7 +136,7 @@ func (s *TextureEdit) AddLayer() {
 	newLayer.parent = s
 	newLayer.width = s.Width
 	newLayer.height = s.Height
-	newLayer.texture = texture.New(s.Width, s.Height)
+	newLayer.Texture = texture.New(s.Width, s.Height)
 	newLayer.Show = true
 	s.Layers = append(s.Layers, newLayer)
 }
@@ -148,7 +148,7 @@ func New(tex *texture.Texture) (out *TextureEdit) {
 	out.Height = tex.Height
 	out.Aspect = float32(tex.Width) / float32(tex.Height)
 	out.AddLayer()
-	out.Layers[0].texture = tex
+	out.Layers[0].Texture = tex
 	out.texture = texture.New(tex.Width, tex.Height)
 	out.GlID = renderer.CreateTexture(int32(tex.Width), int32(tex.Height), tex.FlatColors())
 	out.preview = new(preview)
@@ -198,10 +198,10 @@ func (s *TextureEdit) Merge(merge []bool) {
 			} else {
 				toDelete[i] = true
 			}
-			tempTex.Colors = texture.Merge(tempTex, s.Layers[i].texture)
+			tempTex.Colors = texture.Merge(tempTex, s.Layers[i].Texture)
 		}
 	}
-	s.Layers[resultIdx].texture.Colors = tempTex.Colors
+	s.Layers[resultIdx].Texture.Colors = tempTex.Colors
 	s.Remove(toDelete)
 	s.UpdateTexture()
 }
@@ -212,11 +212,11 @@ func (s *TextureEdit) UpdateTexture() {
 		if layer.Show {
 			if s.preview.layerIdx == i {
 				tex := texture.New(s.Width, s.Height)
-				tex.Colors = slices.Clone(layer.texture.Colors)
+				tex.Colors = slices.Clone(layer.Texture.Colors)
 				tex.BulkSet(s.preview.pixels)
 				s.texture.Colors = texture.Merge(s.texture, tex)
 			} else {
-				s.texture.Colors = texture.Merge(s.texture, layer.texture)
+				s.texture.Colors = texture.Merge(s.texture, layer.Texture)
 			}
 		}
 	}
@@ -255,7 +255,7 @@ func (s *TextureEdit) SaveTextureAsFile(fileName, path string) bool {
 
 	s.texture.Clear()
 	for _, layer := range s.Layers {
-		s.texture.Colors = texture.Merge(s.texture, layer.texture)
+		s.texture.Colors = texture.Merge(s.texture, layer.Texture)
 	}
 
 	img := image.NewRGBA(image.Rect(0, 0, int(s.texture.Width), int(s.texture.Height)))
