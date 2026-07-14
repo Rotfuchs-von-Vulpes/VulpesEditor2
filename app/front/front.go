@@ -3,11 +3,11 @@ package front
 import (
 	"VulpesEditor/app/front/renderer"
 
-	"github.com/AllenDang/cimgui-go/imgui"
+	im "github.com/AllenDang/cimgui-go/imgui"
 )
 
 var (
-	dockID         imgui.ID
+	dockID         im.ID
 	showDemoWindow bool
 	value1         int32
 	value2         int32
@@ -33,62 +33,62 @@ func Init() {
 var first = true
 
 func Loop() {
-	imgui.ClearSizeCallbackPool()
-	dockID = imgui.IDStr("My Dockspace")
+	im.ClearSizeCallbackPool()
+	dockID = im.IDStr("My Dockspace")
 	if first {
 		first = false
-		// imgui.InternalDockBuilderAddNodeV(dockID, imgui.DockNodeFlags(imgui.DockNodeFlagsDockSpace))
-		// imgui.InternalDockBuilderSetNodeSize(dockID, imgui.MainViewport().Size())
-		// var down imgui.ID = 0
-		// var main imgui.ID = dockID
-		// imgui.InternalDockBuilderSplitNode(main, imgui.DirLeft, 0.5, &down, &main)
-		// imgui.InternalDockBuilderDockWindow("Window 1", main)
-		// imgui.InternalDockBuilderDockWindow("Image", down)
-		// imgui.InternalDockBuilderFinish(dockID)
+		// im.InternalDockBuilderAddNodeV(dockID, im.DockNodeFlags(im.DockNodeFlagsDockSpace))
+		// im.InternalDockBuilderSetNodeSize(dockID, im.MainViewport().Size())
+		// var down im.ID = 0
+		// var main im.ID = dockID
+		// im.InternalDockBuilderSplitNode(main, im.DirLeft, 0.5, &down, &main)
+		// im.InternalDockBuilderDockWindow("Window 1", main)
+		// im.InternalDockBuilderDockWindow("Image", down)
+		// im.InternalDockBuilderFinish(dockID)
 	}
-	imgui.DockSpaceOverViewportV(dockID, imgui.MainViewport(), imgui.DockNodeFlagsNone, imgui.NewEmptyWindowClass())
+	im.DockSpaceOverViewportV(dockID, im.MainViewport(), im.DockNodeFlagsNone, im.NewEmptyWindowClass())
 
 	ShowWidgetsDemo()
 }
 
 func ShowWidgetsDemo() {
 	if showDemoWindow {
-		imgui.ShowDemoWindowV(&showDemoWindow)
+		im.ShowDemoWindowV(&showDemoWindow)
 	}
 
-	imgui.Begin("Window 1")
+	im.Begin("Window 1")
 
-	if imgui.ButtonV("Click Me", imgui.NewVec2(80, 20)) {
+	if im.ButtonV("Click Me", im.NewVec2(80, 20)) {
 
 	}
-	imgui.TextUnformatted("Unformatted text")
-	imgui.Checkbox("Show demo window", &showDemoWindow)
-	if imgui.BeginCombo("Combo", "Combo preview") {
-		imgui.SelectableBoolPtr("Item 1", &selected)
-		imgui.SelectableBool("Item 2")
-		imgui.SelectableBool("Item 3")
-		imgui.EndCombo()
+	im.TextUnformatted("Unformatted text")
+	im.Checkbox("Show demo window", &showDemoWindow)
+	if im.BeginCombo("Combo", "Combo preview") {
+		im.SelectableBoolPtr("Item 1", &selected)
+		im.SelectableBool("Item 2")
+		im.SelectableBool("Item 3")
+		im.EndCombo()
 	}
 
-	if imgui.RadioButtonBool("Radio button1", selected) {
+	if im.RadioButtonBool("Radio button1", selected) {
 		selected = true
 	}
 
-	imgui.SameLine()
+	im.SameLine()
 
-	if imgui.RadioButtonBool("Radio button2", !selected) {
+	if im.RadioButtonBool("Radio button2", !selected) {
 		selected = false
 	}
 
-	imgui.InputTextWithHint("Name", "write your name here", &content, 0, nil)
-	imgui.Text(content)
-	imgui.SliderInt("Slider int", &value3, 0, 100)
-	imgui.DragInt("Drag int", &value1)
-	imgui.DragInt2("Drag int2", &values)
+	im.InputTextWithHint("Name", "write your name here", &content, 0, nil)
+	im.Text(content)
+	im.SliderInt("Slider int", &value3, 0, 100)
+	im.DragInt("Drag int", &value1)
+	im.DragInt2("Drag int2", &values)
 	value1 = values[0]
-	imgui.ColorEdit4("Color Edit3", &color4)
+	im.ColorEdit4("Color Edit3", &color4)
 
-	imgui.End()
+	im.End()
 }
 
 func Nuke() {

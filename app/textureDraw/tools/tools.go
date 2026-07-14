@@ -9,7 +9,7 @@ import (
 	"VulpesEditor/app/textureDraw/tools/pencil"
 	"VulpesEditor/app/textureDraw/tools/rectangle"
 
-	"github.com/AllenDang/cimgui-go/imgui"
+	im "github.com/AllenDang/cimgui-go/imgui"
 )
 
 type tool interface {
@@ -68,30 +68,30 @@ func Change() []texture.PixelEdit {
 }
 
 func Show() {
-	imgui.Begin("Tools")
-	if imgui.Button("Pencil") {
+	im.Begin("Tools")
+	if im.Button("Pencil") {
 		selectedTool.Reset()
 		selectedTool = pencil.Pencil{}
 	}
-	if imgui.Button("Bucket") {
+	if im.Button("Bucket") {
 		selectedTool.Reset()
 		selectedTool = bucket.Bucket{}
 	}
-	if imgui.Button("Line") {
+	if im.Button("Line") {
 		selectedTool.Reset()
 		selectedTool = line.Line{}
 	}
-	if imgui.Button("Rect") {
+	if im.Button("Rect") {
 		selectedTool.Reset()
 		selectedTool = rectangle.Rectangle{}
 	}
-	if imgui.Button("Eraser") {
+	if im.Button("Eraser") {
 		selectedTool.Reset()
 		selectedTool = eraser.Eraser{}
 	}
-	if imgui.Button("Color Picker") {
+	if im.Button("Color Picker") {
 		selectedTool.Reset()
 		selectedTool = colorPicker.ColorPicker{}
 	}
-	imgui.End()
+	im.End()
 }
