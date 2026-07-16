@@ -3,6 +3,7 @@ package textureEdit
 import (
 	"VulpesEditor/app/front/renderer"
 	"VulpesEditor/app/textureDraw/canvas/texture"
+	"VulpesEditor/app/textureDraw/history"
 	"VulpesEditor/app/util"
 	"fmt"
 	"image"
@@ -29,15 +30,13 @@ type Image struct {
 }
 
 type LayerEdit struct {
-	parent    *TextureEdit
-	Id        int32
-	width     uint32
-	height    uint32
-	Texture   *texture.Texture
-	changes   [][]pixelChange
-	undoLevel int32
-	Show      bool
-	Image     *Image
+	parent  *TextureEdit
+	Id      int32
+	width   uint32
+	height  uint32
+	Texture *texture.Texture
+	Show    bool
+	Image   *Image
 }
 
 func (s *LayerEdit) updatePreview() {
@@ -77,33 +76,17 @@ func (s *LayerEdit) change(changes []pixelChange) {
 	s.parent.UpdateTexture()
 }
 
-func (s *LayerEdit) applyChanges(changes []pixelChange) {
-	s.change(changes)
-	s.changes = s.changes[:len(s.changes)-int(s.undoLevel)]
-	s.changes = append(s.changes, changes)
-	s.undoLevel = 0
+type TextureChange struct {
+	parent  *LayerEdit
+	changes []pixelChange
 }
 
-func (s *LayerEdit) Undo() bool {
-	changesIdx := len(s.changes) - 1 - int(s.undoLevel)
-	if changesIdx >= 0 {
-		lastChanges := s.changes[changesIdx]
-		s.undoLevel++
-		s.unchange(lastChanges)
-		return true
-	}
-	return false
+func (s *TextureChange) Undo() {
+	s.parent.unchange(s.changes)
 }
 
-func (s *LayerEdit) Redo() {
-	if s.undoLevel > 0 {
-		changesIdx := len(s.changes) - int(s.undoLevel)
-		if changesIdx >= 0 {
-			lastChanges := s.changes[changesIdx]
-			s.undoLevel--
-			s.change(lastChanges)
-		}
-	}
+func (s *TextureChange) Redo() {
+	s.parent.change(s.changes)
 }
 
 func (s *LayerEdit) Change(pixels []texture.PixelEdit) {
@@ -119,7 +102,11 @@ func (s *LayerEdit) Change(pixels []texture.PixelEdit) {
 			}
 		}
 		if len(changes) > 0 {
-			s.applyChanges(changes)
+			s.change(changes)
+			c := new(TextureChange)
+			c.parent = s
+			c.changes = changes
+			history.Append(c)
 		}
 	}
 }

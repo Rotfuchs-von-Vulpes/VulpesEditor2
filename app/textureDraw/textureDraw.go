@@ -3,6 +3,7 @@ package textureDraw
 import (
 	"VulpesEditor/app/textureDraw/canvas"
 	"VulpesEditor/app/textureDraw/color"
+	"VulpesEditor/app/textureDraw/history"
 	"VulpesEditor/app/textureDraw/tools"
 )
 
@@ -22,4 +23,5 @@ func Loop() {
 		c.Show()
 	}
 	canvas.ShowLayers()
+	history.Loop()
 }

@@ -209,22 +209,6 @@ func (s *TextureContext) Show() {
 	} else if s.painting {
 		s.buttonRelease([5]bool{true, true, true, false, false})
 	}
-	if im.IsWindowFocused() && lastEditId == s.id {
-		io := im.CurrentContext().IO()
-		if io.KeyCtrl() && im.IsKeyPressedBoolV(im.KeyZ, true) {
-			s.layer.Undo()
-		}
-		if io.KeyCtrl() && im.IsKeyPressedBoolV(im.KeyY, true) {
-			s.layer.Redo()
-		}
-		buttons := io.MouseClicked()
-		if buttons[3] {
-			s.layer.Undo()
-		}
-		if buttons[4] {
-			s.layer.Redo()
-		}
-	}
 	im.End()
 	s.textureViewer.RenderTexture(s.texture.GlID, s.zoom, s.pos, float32(s.texture.Width), float32(s.texture.Height))
 }
