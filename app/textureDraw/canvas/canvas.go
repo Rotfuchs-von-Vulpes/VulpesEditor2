@@ -261,7 +261,7 @@ func ShowLayers() {
 	var ctx = lastEditCtx
 	im.Begin("Layers")
 	if im.Button("Add") {
-		ctx.texture.AddLayer()
+		ctx.texture.AppendLayer()
 	}
 	im.SameLine()
 	if im.Button("Remove") {

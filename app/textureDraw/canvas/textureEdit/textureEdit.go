@@ -149,18 +149,27 @@ func (s *TextureEdit) SetLayer(idx int) {
 	s.preview.layerIdx = idx
 }
 
-func (s *TextureEdit) AddLayer() {
-	newLayer := new(LayerEdit)
-	newLayer.Id = idSys.GetID()
-	newLayer.parent = s
-	newLayer.width = s.Width
-	newLayer.height = s.Height
-	newLayer.Texture = texture.New(s.Width, s.Height)
-	newLayer.Show = true
-	newLayer.Image = new(Image)
-	newLayer.Image.Img = image.NewRGBA(image.Rect(0, 0, int(s.Width), int(s.Height)))
-	newLayer.Image.Tex = backend.NewTextureFromRgba(newLayer.Image.Img)
-	s.Layers = append(s.Layers, newLayer)
+func (s *TextureEdit) AddLayer(idx int, tex *texture.Texture) {
+	layer := new(LayerEdit)
+	layer.Id = idSys.GetID()
+	layer.parent = s
+	layer.width = s.Width
+	layer.height = s.Height
+	layer.Texture = tex
+	layer.Show = true
+	layer.Image = new(Image)
+	layer.Image.Img = image.NewRGBA(image.Rect(0, 0, int(s.Width), int(s.Height)))
+	layer.Image.Tex = backend.NewTextureFromRgba(layer.Image.Img)
+	s.Layers = slices.Insert(s.Layers, idx, layer)
+}
+
+func (s *TextureEdit) AppendLayer() {
+	c := new(LayersChange)
+	c.parent = s
+	c.before = slices.Clone(s.Layers)
+	s.AddLayer(len(s.Layers), texture.New(s.Width, s.Height))
+	c.after = slices.Clone(s.Layers)
+	history.Append(c)
 }
 
 func New(tex *texture.Texture) (out *TextureEdit) {
@@ -169,8 +178,7 @@ func New(tex *texture.Texture) (out *TextureEdit) {
 	out.Width = tex.Width
 	out.Height = tex.Height
 	out.Aspect = float32(tex.Width) / float32(tex.Height)
-	out.AddLayer()
-	out.Layers[0].Texture = tex
+	out.AddLayer(0, tex)
 	out.texture = texture.New(tex.Width, tex.Height)
 	out.GlID = renderer.CreateTexture(int32(tex.Width), int32(tex.Height), tex.FlatColors())
 	out.preview = new(preview)
@@ -178,7 +186,30 @@ func New(tex *texture.Texture) (out *TextureEdit) {
 	return
 }
 
-func (s *TextureEdit) Remove(toDelete []bool) {
+type LayersChange struct {
+	parent *TextureEdit
+	before []*LayerEdit
+	after  []*LayerEdit
+}
+
+func (s *LayersChange) Undo() {
+	s.parent.Layers = slices.Clone(s.before)
+	s.parent.update()
+}
+
+func (s *LayersChange) Redo() {
+	s.parent.Layers = slices.Clone(s.after)
+	s.parent.update()
+}
+
+func (s *TextureEdit) update() {
+	for _, layer := range s.Layers {
+		layer.updatePreview()
+	}
+	s.UpdateTexture()
+}
+
+func (s *TextureEdit) delete(toDelete []bool) {
 	if len(toDelete) != len(s.Layers) {
 		panic(fmt.Sprintf("Wrong list length: %d remove indices, %d layers count", len(toDelete), len(s.Layers)))
 	}
@@ -188,11 +219,29 @@ func (s *TextureEdit) Remove(toDelete []bool) {
 			final = append(final, s.Layers[i])
 		}
 	}
-	if len(final) == 0 {
+	s.Layers = final
+}
+
+func (s *TextureEdit) Remove(toDelete []bool) {
+	if len(toDelete) != len(s.Layers) {
+		panic(fmt.Sprintf("Wrong list length: %d remove indices, %d layers count", len(toDelete), len(s.Layers)))
+	}
+	count := 0
+	for _, b := range toDelete {
+		if b {
+			count += 1
+		}
+	}
+	if count == len(s.Layers) {
 		return
 	}
-	s.Layers = final
-	s.UpdateTexture()
+	c := new(LayersChange)
+	c.parent = s
+	c.before = slices.Clone(s.Layers)
+	s.delete(toDelete)
+	c.after = slices.Clone(s.Layers)
+	history.Append(c)
+	s.update()
 }
 
 func (s *TextureEdit) Merge(merge []bool) {
@@ -217,15 +266,19 @@ func (s *TextureEdit) Merge(merge []bool) {
 			if first {
 				first = false
 				resultIdx = i
-			} else {
-				toDelete[i] = true
 			}
+			toDelete[i] = true
 			tempTex.Colors = texture.Merge(tempTex, s.Layers[i].Texture)
 		}
 	}
-	s.Layers[resultIdx].Texture.Colors = tempTex.Colors
-	s.Remove(toDelete)
-	s.UpdateTexture()
+	c := new(LayersChange)
+	c.parent = s
+	c.before = slices.Clone(s.Layers)
+	s.delete(toDelete)
+	s.AddLayer(resultIdx, tempTex)
+	c.after = slices.Clone(s.Layers)
+	history.Append(c)
+	s.update()
 }
 
 func (s *TextureEdit) UpdateTexture() {
