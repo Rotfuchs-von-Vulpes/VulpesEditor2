@@ -180,7 +180,7 @@ func New(tex *texture.Texture) (out *TextureEdit) {
 
 func (s *TextureEdit) Remove(toDelete []bool) {
 	if len(toDelete) != len(s.Layers) {
-		panic(fmt.Sprintf("Wrong list length: %d merge indices, %d layers count", len(toDelete), len(s.Layers)))
+		panic(fmt.Sprintf("Wrong list length: %d remove indices, %d layers count", len(toDelete), len(s.Layers)))
 	}
 	final := []*LayerEdit{}
 	for i := range s.Layers {
