@@ -121,14 +121,15 @@ func (s *preview) clear() {
 }
 
 type TextureEdit struct {
-	Id      int32
-	Width   uint32
-	Height  uint32
-	Aspect  float32
-	GlID    uint32
-	Layers  []*LayerEdit
-	texture *texture.Texture
-	preview *preview
+	Id          int32
+	Width       uint32
+	Height      uint32
+	Aspect      float32
+	GlID        uint32
+	Layers      []*LayerEdit
+	texture     *texture.Texture
+	preview     *preview
+	OnLayerUndo func()
 }
 
 func (s *TextureEdit) SetLayer(idx int) {
@@ -185,11 +186,13 @@ type LayersChange struct {
 func (s *LayersChange) Undo() {
 	s.parent.Layers = slices.Clone(s.before)
 	s.parent.update()
+	s.parent.OnLayerUndo()
 }
 
 func (s *LayersChange) Redo() {
 	s.parent.Layers = slices.Clone(s.after)
 	s.parent.update()
+	s.parent.OnLayerUndo()
 }
 
 func (s *TextureEdit) update() {
@@ -222,11 +225,12 @@ func (s *TextureEdit) Remove(toDelete []bool) {
 			count += 1
 		}
 	}
+	length := len(s.Layers)
 	c := new(LayersChange)
 	c.parent = s
 	c.before = slices.Clone(s.Layers)
 	s.delete(toDelete)
-	if count == len(s.Layers) {
+	if count == length {
 		s.addLayer(len(s.Layers), texture.New(s.Width, s.Height))
 	}
 	c.after = slices.Clone(s.Layers)

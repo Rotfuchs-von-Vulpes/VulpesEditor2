@@ -217,7 +217,8 @@ func (s *TextureContext) Show() {
 var AllCtx []*TextureContext
 var lastEditCtx *TextureContext
 
-func createCtx(tex *texture.Texture) (ctx TextureContext) {
+func createCtx(tex *texture.Texture) (ctx *TextureContext) {
+	ctx = new(TextureContext)
 	ctx.id = windowIdSys.GetID()
 	ctx.windowName = "Texture #" + strconv.FormatUint(uint64(ctx.id), 10)
 	ctx.zoom = 0.9
@@ -226,6 +227,22 @@ func createCtx(tex *texture.Texture) (ctx TextureContext) {
 	ctx.texture = textureEdit.New(tex)
 	ctx.layer = ctx.texture.Layers[0]
 	lastEditId = ctx.id
+
+	ctx.texture.OnLayerUndo = func() {
+		found := false
+		for _, layer := range ctx.texture.Layers {
+			if layer.Id == ctx.layer.Id {
+				found = true
+				break
+			}
+		}
+		if !found {
+			idx := len(ctx.texture.Layers) - 1
+			ctx.texture.SetLayer(idx)
+			ctx.layer = ctx.texture.Layers[idx]
+		}
+	}
+
 	return
 }
 
@@ -233,7 +250,7 @@ func AddTexture(width, height uint32) {
 	tex := texture.New(width, height)
 	ctx := createCtx(tex)
 	// AllTextures = append(AllTextures, tex)
-	AllCtx = append(AllCtx, &ctx)
+	AllCtx = append(AllCtx, ctx)
 	lastEditCtx = AllCtx[len(AllCtx)-1]
 }
 
@@ -253,7 +270,9 @@ func updateLayerId() {
 		}
 	}
 	if !found {
-		lastEditCtx.layer = lastEditCtx.texture.Layers[len(lastEditCtx.texture.Layers)-1]
+		idx := len(lastEditCtx.texture.Layers) - 1
+		lastEditCtx.texture.SetLayer(idx)
+		lastEditCtx.layer = lastEditCtx.texture.Layers[idx]
 	}
 }
 
