@@ -177,6 +177,31 @@ func New(tex *texture.Texture) (out *TextureEdit) {
 	return
 }
 
+var isEditing = false
+var layerChange *LayersChange
+
+func (s *TextureEdit) beginLayerEdit() {
+	if isEditing {
+		panic("Too much begin edit call")
+	}
+	isEditing = true
+	layerChange = new(LayersChange)
+	layerChange.parent = s
+	layerChange.before = slices.Clone(s.Layers)
+}
+
+func (s *TextureEdit) endLayerEdit() {
+	if !isEditing {
+		panic("Too much end edit call")
+	}
+	isEditing = false
+	layerChange.after = slices.Clone(s.Layers)
+	c := *layerChange
+	history.Append(&c)
+	layerChange = nil
+	s.update()
+}
+
 type LayersChange struct {
 	parent *TextureEdit
 	before []*LayerEdit
@@ -226,31 +251,29 @@ func (s *TextureEdit) Remove(toDelete []bool) {
 		}
 	}
 	length := len(s.Layers)
-	c := new(LayersChange)
-	c.parent = s
-	c.before = slices.Clone(s.Layers)
+	s.beginLayerEdit()
 	s.delete(toDelete)
 	if count == length {
 		s.addLayer(len(s.Layers), texture.New(s.Width, s.Height))
 	}
-	c.after = slices.Clone(s.Layers)
-	history.Append(c)
-	s.update()
+	s.endLayerEdit()
 }
 
 func (s *TextureEdit) Swap(idx1, idx2 int) {
-	if idx1 < 0 || idx1 >= len(s.Layers) || idx2 < 0 || idx2 >= len(s.Layers) || idx1 == idx2 {
-		return
+	if idx1 < 0 || idx1 >= len(s.Layers) {
+		panic(fmt.Sprintf("Out of bounds: %d of length %d", idx1, len(s.Layers)))
 	}
-	c := new(LayersChange)
-	c.parent = s
-	c.before = slices.Clone(s.Layers)
+	if idx2 < 0 || idx2 >= len(s.Layers) {
+		panic(fmt.Sprintf("Out of bounds: %d of length %d", idx2, len(s.Layers)))
+	}
+	if idx1 == idx2 {
+		panic(fmt.Sprintf("Same indices: %d and %d", idx1, idx2))
+	}
+	s.beginLayerEdit()
 	temp := s.Layers[idx1]
 	s.Layers[idx1] = s.Layers[idx2]
 	s.Layers[idx2] = temp
-	c.after = slices.Clone(s.Layers)
-	history.Append(c)
-	s.update()
+	s.endLayerEdit()
 }
 
 func (s *TextureEdit) Merge(merge []bool) {
@@ -280,14 +303,10 @@ func (s *TextureEdit) Merge(merge []bool) {
 			tempTex.Colors = texture.Merge(tempTex, s.Layers[i].Texture)
 		}
 	}
-	c := new(LayersChange)
-	c.parent = s
-	c.before = slices.Clone(s.Layers)
+	s.beginLayerEdit()
 	s.delete(toDelete)
 	s.addLayer(resultIdx, tempTex)
-	c.after = slices.Clone(s.Layers)
-	history.Append(c)
-	s.update()
+	s.endLayerEdit()
 }
 
 func (s *TextureEdit) UpdateTexture() {
