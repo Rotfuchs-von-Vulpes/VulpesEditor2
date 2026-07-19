@@ -25,7 +25,7 @@ type TextureContext struct {
 	painting      bool
 	firstButton   bool
 	pos           [2]float32
-	viewrSize     [2]float32
+	viwerSize     [2]float32
 	aspect        float32
 	textureViewer *renderer.FrameBuffer
 	texture       *textureEdit.TextureEdit
@@ -45,10 +45,10 @@ func (s *TextureContext) reset() {
 
 func (s *TextureContext) pixelPosMouse() (pixelPos [2]int32) {
 	var pos1 [2]float32
-	pos1[0] = s.viewrSize[0] - s.mousePos[0] - s.pos[0]*s.aspect
-	pos1[1] = s.viewrSize[1] - s.mousePos[1] - s.pos[1]
-	pos1[0] = 2 * ((pos1[0] / s.viewrSize[0]) - 0.5)
-	pos1[1] = 2 * ((pos1[1] / s.viewrSize[1]) - 0.5)
+	pos1[0] = s.viwerSize[0] - s.mousePos[0] - s.pos[0]*s.aspect
+	pos1[1] = s.viwerSize[1] - s.mousePos[1] - s.pos[1]
+	pos1[0] = 2 * ((pos1[0] / s.viwerSize[0]) - 0.5)
+	pos1[1] = 2 * ((pos1[1] / s.viwerSize[1]) - 0.5)
 	pos1[0] = pos1[0] / (s.zoom * s.aspect * s.texture.Aspect)
 	pos1[1] = pos1[1] / s.zoom
 	pixelPos[0] = int32(math.Floor(float64(s.texture.Width) * float64(pos1[0]/2+0.5)))
@@ -57,7 +57,7 @@ func (s *TextureContext) pixelPosMouse() (pixelPos [2]int32) {
 }
 
 func (s *TextureContext) scroll(yoffset float32) {
-	mouse := [2]float32{s.mousePos[0] - 0.5*s.viewrSize[0], s.mousePos[1] - 0.5*s.viewrSize[1]}
+	mouse := [2]float32{s.mousePos[0] - 0.5*s.viwerSize[0], s.mousePos[1] - 0.5*s.viwerSize[1]}
 	position := [2]float32{(s.pos[0] + mouse[0]) / s.zoom, (s.pos[1] + mouse[1]) / s.zoom}
 
 	if yoffset < 0 {
@@ -70,7 +70,7 @@ func (s *TextureContext) scroll(yoffset float32) {
 }
 
 func (s *TextureContext) move(pos im.Vec2) {
-	s.mousePos = [2]float32{s.viewrSize[0] - pos.X, pos.Y}
+	s.mousePos = [2]float32{s.viwerSize[0] - pos.X, pos.Y}
 
 	pixel := s.pixelPosMouse()
 	if (pixel[0] != s.lastPixelPos[0] || pixel[1] != s.lastPixelPos[1]) && s.painting {
@@ -180,10 +180,10 @@ func (s *TextureContext) Show() {
 	width := int32(wSize.X)
 	height := int32(wSize.Y)
 
-	if s.viewrSize[0] != wSize.X || s.viewrSize[1] != wSize.Y {
+	if s.viwerSize[0] != wSize.X || s.viwerSize[1] != wSize.Y {
 		s.textureViewer.Resize(width, height)
-		s.viewrSize[0] = wSize.X
-		s.viewrSize[1] = wSize.Y
+		s.viwerSize[0] = wSize.X
+		s.viwerSize[1] = wSize.Y
 		s.aspect = wSize.Y / wSize.X
 	}
 
@@ -223,7 +223,7 @@ func createCtx(tex *texture.Texture) (ctx *TextureContext) {
 	ctx.windowName = "Texture #" + strconv.FormatUint(uint64(ctx.id), 10)
 	ctx.zoom = 0.9
 	ctx.textureViewer = renderer.CreateFramebuffer(500, 500)
-	ctx.viewrSize = [2]float32{500, 500}
+	ctx.viwerSize = [2]float32{500, 500}
 	ctx.texture = textureEdit.New(tex)
 	ctx.layer = ctx.texture.Layers[0]
 	lastEditId = ctx.id
