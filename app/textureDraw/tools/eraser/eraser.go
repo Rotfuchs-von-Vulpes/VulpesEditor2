@@ -10,7 +10,7 @@ var erasing bool
 var erased []texture.PixelEdit
 var trasnparent = [4]float32{0, 0, 0, 0}
 
-func (_ Eraser) ButtonPress(pos [2]int32, secondButton bool) {
+func (_ Eraser) ButtonPress(pos [2]int32, firstButton bool) {
 	erased = append(erased, texture.PixelEdit{Pos: pos, Color: trasnparent})
 	erasing = true
 }

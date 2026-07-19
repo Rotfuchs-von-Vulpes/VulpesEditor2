@@ -52,9 +52,9 @@ func line(start, end [2]int32) (out [][2]int32) {
 	return
 }
 
-func (_ Line) ButtonPress(pos [2]int32, secondButton bool) {
+func (_ Line) ButtonPress(pos [2]int32, firstButton bool) {
 	c1, c2 := color.GetColors()
-	if !secondButton {
+	if firstButton {
 		drawingColor = c1
 	} else {
 		drawingColor = c2

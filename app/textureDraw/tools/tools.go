@@ -13,7 +13,7 @@ import (
 )
 
 type tool interface {
-	ButtonPress(pos [2]int32, secondButton bool)
+	ButtonPress(pos [2]int32, firstButton bool)
 	ButtonRelease(pos [2]int32)
 	Move(pos1, pos2 [2]int32)
 	Reset()
@@ -36,13 +36,13 @@ func Init() {
 
 var Texture *texture.Texture = texture.New(1, 1)
 
-func ButtonPress(pos [2]int32, secondButton bool) {
+func ButtonPress(pos [2]int32, firstButton bool) {
 	if _, ok := selectedTool.(bucket.Bucket); ok {
 		bucket.Texture = Texture
 	} else if _, ok := selectedTool.(colorPicker.ColorPicker); ok {
 		colorPicker.Texture = Texture
 	}
-	selectedTool.ButtonPress(pos, secondButton)
+	selectedTool.ButtonPress(pos, firstButton)
 }
 
 func ButtonRelease(pos [2]int32) {

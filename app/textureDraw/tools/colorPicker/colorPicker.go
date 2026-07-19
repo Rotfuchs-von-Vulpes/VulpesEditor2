@@ -8,16 +8,16 @@ import (
 type ColorPicker struct{}
 
 var Texture *texture.Texture
-var SecondButton bool
+var FirstButton bool
 
-func (_ ColorPicker) ButtonPress(pos [2]int32, secondButton bool) {
-	SecondButton = secondButton
+func (_ ColorPicker) ButtonPress(pos [2]int32, firstButton bool) {
+	FirstButton = firstButton
 }
 
 func (_ ColorPicker) ButtonRelease(pos [2]int32) {
 	ok, targetColor := Texture.Get(pos)
 	if ok {
-		if !SecondButton {
+		if FirstButton {
 			color.Setcolor1(targetColor)
 		} else {
 			color.SetColor2(targetColor)

@@ -14,9 +14,9 @@ var height, width uint32
 var painted []texture.PixelEdit
 var drawingColor [4]float32
 
-func (_ Bucket) ButtonPress(pos [2]int32, secondButton bool) {
+func (_ Bucket) ButtonPress(pos [2]int32, firstButton bool) {
 	c1, c2 := color.GetColors()
-	if !secondButton {
+	if firstButton {
 		drawingColor = c1
 	} else {
 		drawingColor = c2
