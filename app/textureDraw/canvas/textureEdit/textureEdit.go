@@ -40,7 +40,7 @@ type TextureEdit struct {
 	Layers      []*LayerEdit
 	texture     *texture.Texture
 	preview     *preview
-	OnLayerUndo func()
+	OnLayerEdit func()
 }
 
 func (s *TextureEdit) SetLayer(idx int) {
@@ -122,13 +122,13 @@ type LayersChange struct {
 func (s *LayersChange) Undo() {
 	s.parent.Layers = slices.Clone(s.before)
 	s.parent.update()
-	s.parent.OnLayerUndo()
+	s.parent.OnLayerEdit()
 }
 
 func (s *LayersChange) Redo() {
 	s.parent.Layers = slices.Clone(s.after)
 	s.parent.update()
-	s.parent.OnLayerUndo()
+	s.parent.OnLayerEdit()
 }
 
 func (s *TextureEdit) update() {
@@ -168,6 +168,7 @@ func (s *TextureEdit) Remove(toDelete []bool) {
 		s.addLayer(len(s.Layers), texture.New(s.Width, s.Height))
 	}
 	s.endLayerEdit()
+	s.OnLayerEdit()
 }
 
 func (s *TextureEdit) Swap(idx1, idx2 int) {
@@ -185,6 +186,7 @@ func (s *TextureEdit) Swap(idx1, idx2 int) {
 	s.Layers[idx1] = s.Layers[idx2]
 	s.Layers[idx2] = temp
 	s.endLayerEdit()
+	s.OnLayerEdit()
 }
 
 func (s *TextureEdit) Merge(merge []bool) {
@@ -218,6 +220,7 @@ func (s *TextureEdit) Merge(merge []bool) {
 	s.delete(toDelete)
 	s.addLayer(resultIdx, tempTex)
 	s.endLayerEdit()
+	s.OnLayerEdit()
 }
 
 func (s *TextureEdit) UpdateTexture() {

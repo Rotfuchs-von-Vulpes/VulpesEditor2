@@ -228,7 +228,7 @@ func createCtx(tex *texture.Texture) (ctx *TextureContext) {
 	ctx.layer = ctx.texture.Layers[0]
 	lastEditId = ctx.id
 
-	ctx.texture.OnLayerUndo = func() {
+	ctx.texture.OnLayerEdit = func() {
 		found := false
 		for _, layer := range ctx.texture.Layers {
 			if layer.Id == ctx.layer.Id {
@@ -259,22 +259,6 @@ func OpenTexture(tex *texture.Texture) {
 }
 
 var selectedLayers = []bool{}
-
-func updateLayerId() {
-	id := lastEditCtx.layer.Id
-	found := false
-	for _, layer := range lastEditCtx.texture.Layers {
-		if layer.Id == id {
-			found = true
-			break
-		}
-	}
-	if !found {
-		idx := len(lastEditCtx.texture.Layers) - 1
-		lastEditCtx.texture.SetLayer(idx)
-		lastEditCtx.layer = lastEditCtx.texture.Layers[idx]
-	}
-}
 
 func ShowLayers() {
 	var ctx = lastEditCtx
@@ -349,7 +333,6 @@ func ShowLayers() {
 		}
 		if im.Button("Remove") {
 			ctx.texture.Remove(selectedLayers)
-			updateLayerId()
 			im.CloseCurrentPopup()
 		}
 		im.SameLine()
@@ -369,7 +352,6 @@ func ShowLayers() {
 		}
 		if im.Button("Merge") {
 			ctx.texture.Merge(selectedLayers)
-			updateLayerId()
 			im.CloseCurrentPopup()
 		}
 		im.SameLine()
