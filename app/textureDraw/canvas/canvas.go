@@ -277,9 +277,11 @@ func ShowLayers() {
 		im.OpenPopupStr("Merge Layers")
 	}
 
-	for i, layer := range ctx.texture.Layers {
-		downDis := i == 0
-		upDis := i == len(ctx.texture.Layers)-1
+	for idx := range ctx.texture.Layers {
+		i := len(ctx.texture.Layers) - idx - 1
+		layer := ctx.texture.Layers[i]
+		cannotDown := i == 0
+		cannotUp := i == len(ctx.texture.Layers)-1
 		selected := layer.Id == ctx.layer.Id
 		str := fmt.Sprintf("Layer #%d", i)
 		if selected {
@@ -294,23 +296,23 @@ func ShowLayers() {
 		im.SameLine()
 		im.Text(str)
 		im.SameLine()
-		if downDis {
+		if cannotDown {
 			im.BeginDisabled()
 		}
 		if im.Button("down") {
 			ctx.texture.Swap(i, i-1)
 		}
-		if downDis {
+		if cannotDown {
 			im.EndDisabled()
 		}
 		im.SameLine()
-		if upDis {
+		if cannotUp {
 			im.BeginDisabled()
 		}
 		if im.Button("up") {
 			ctx.texture.Swap(i, i+1)
 		}
-		if upDis {
+		if cannotUp {
 			im.EndDisabled()
 		}
 		im.SameLine()
