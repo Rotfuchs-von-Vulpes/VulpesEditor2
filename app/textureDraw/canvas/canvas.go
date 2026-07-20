@@ -96,17 +96,15 @@ func (s *TextureContext) buttonPress(buttons [5]bool) {
 		s.mouseCanDrag = true
 		toFocus = true
 		lastEditCtx = s
-		lastEditId = s.id
 	}
 	if buttons[0] || buttons[1] {
 		s.painting = true
 		s.firstButton = buttons[0]
-		tools.Texture.Resize(s.texture.Width, s.texture.Height)
-		tools.Texture.Colors = slices.Clone(s.layer.Texture.Colors)
+		tools.Resize(s.texture.Width, s.texture.Height)
+		tools.SetColors(slices.Clone(s.layer.Texture.Colors))
 		tools.ButtonPress(s.pixelPosMouse(), buttons[0])
 		toFocus = true
 		lastEditCtx = s
-		lastEditId = s.id
 	}
 }
 
@@ -125,12 +123,11 @@ func (s *TextureContext) buttonRelease(buttons [5]bool) {
 
 var textureFileName string
 var textureFilePath string
-var lastEditId int32
 var toFocus bool
 
 func (s *TextureContext) Show() {
 	var toPop string
-	if toFocus && lastEditId == s.id {
+	if toFocus {
 		im.SetNextWindowFocus()
 		toFocus = false
 	}
@@ -226,7 +223,6 @@ func createCtx(tex *texture.Texture) (ctx *TextureContext) {
 	ctx.viwerSize = [2]float32{500, 500}
 	ctx.texture = textureEdit.New(tex)
 	ctx.layer = ctx.texture.Layers[0]
-	lastEditId = ctx.id
 
 	ctx.texture.OnLayerEdit = func() {
 		found := false

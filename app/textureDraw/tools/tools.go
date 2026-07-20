@@ -25,13 +25,24 @@ type drawingTool interface {
 	Change() []texture.PixelEdit
 }
 
-var Texture *texture.Texture = texture.New(1, 1)
+type data struct {
+	selectedTool tool
+	texture      *texture.Texture
+}
+
+func Resize(width, height uint32) {
+	currentCtx.texture.Resize(width, height)
+}
+
+func SetColors(c [][4]float32) {
+	currentCtx.texture.Colors = c
+}
 
 func ButtonPress(pos [2]int32, firstButton bool) {
 	if _, ok := currentCtx.selectedTool.(bucket.Bucket); ok {
-		bucket.Texture = Texture
+		bucket.Texture = currentCtx.texture
 	} else if _, ok := currentCtx.selectedTool.(colorPicker.ColorPicker); ok {
-		colorPicker.Texture = Texture
+		colorPicker.Texture = currentCtx.texture
 	}
 	currentCtx.selectedTool.ButtonPress(pos, firstButton)
 }

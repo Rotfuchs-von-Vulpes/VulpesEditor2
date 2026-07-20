@@ -2,12 +2,9 @@ package tools
 
 import (
 	"VulpesEditor/app/context"
+	"VulpesEditor/app/textureDraw/canvas/texture"
 	"VulpesEditor/app/textureDraw/tools/pencil"
 )
-
-type data struct {
-	selectedTool tool
-}
 
 func (s *data) Use() {
 	currentCtx = s
@@ -27,5 +24,6 @@ func End() {
 func New(id int32) {
 	ctx := new(data)
 	ctx.selectedTool = pencil.Pencil{}
+	ctx.texture = texture.New(1, 1)
 	ctxManager.Add(id, ctx)
 }
