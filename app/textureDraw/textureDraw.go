@@ -39,7 +39,7 @@ func ShowNewTextureWindow() {
 		}
 
 		if im.BeginPopupModal("New Texture") {
-			im.DragInt2V("Texture Size", &textureSize, 1, 1, 1024, "", im.SliderFlagsNone)
+			im.DragInt2V("Texture Size", &textureSize, 1, 1, 1024, "%d", im.SliderFlagsNone)
 			if im.Button("Create") {
 				open(canvas.AddTexture(uint32(textureSize[0]), uint32(textureSize[1])))
 				CloseNewTextureWindow()
