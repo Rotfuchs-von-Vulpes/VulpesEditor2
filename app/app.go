@@ -3,9 +3,15 @@ package app
 import (
 	"VulpesEditor/app/front"
 	"VulpesEditor/app/textureDraw"
+	"strconv"
 
 	im "github.com/AllenDang/cimgui-go/imgui"
 )
+
+type Tab interface {
+	Name() string
+	Show()
+}
 
 func Init() {
 	textureDraw.Init()
@@ -23,6 +29,11 @@ func BeforeDestroyContext() {
 var first = true
 
 func Loop() {
+	var allTabs []Tab
+	for _, itc := range textureDraw.Instances {
+		allTabs = append(allTabs, itc)
+	}
+
 	im.ClearSizeCallbackPool()
 
 	workerAreaFlags := im.WindowFlagsNoTitleBar |
@@ -39,24 +50,41 @@ func Loop() {
 		dockspaceId := im.IDStr("Dockspace")
 		if im.BeginTabBar("AAA") {
 			if im.BeginTabItem("Home") {
-				// var childSize = new Vector2(RainedLogo.Width, RainedLogo.Height - 100f + ImGui.GetFrameHeight() * 16f);
-				im.BeginChildStr("Contents")
-				im.Text("Teste")
+				childSize := im.NewVec2(200, 100+im.FrameHeight()*16)
+				im.SetCursorPos(im.WindowSize().Sub(childSize).Div(2))
+				im.BeginChildStrV("Contents", childSize, im.ChildFlagsNone, im.WindowFlagsNone)
+				size := im.NewVec2(-0.00001, 0)
+				if im.ButtonV("New Texture...", size) {
+					textureDraw.OpenNewTextureWindow()
+				}
+				if im.ButtonV("Open Texture...", size) {
+
+				}
 				im.EndChild()
 				im.EndTabItem()
 			}
+
 			if im.BeginTabItem("Debug") {
 				im.DockSpace(dockspaceId)
 				front.Loop()
 				im.EndTabItem()
 			}
-			if im.BeginTabItem("Texture Draw") {
-				im.DockSpace(dockspaceId)
-				textureDraw.Loop()
-				im.EndTabItem()
+
+			for i, t := range allTabs {
+				tabID := t.Name() + "###" + strconv.FormatInt(int64(i), 10)
+				im.PushIDStr(tabID)
+				if im.BeginTabItem(t.Name()) {
+					im.DockSpace(dockspaceId)
+					t.Show()
+					im.EndTabItem()
+				}
+				im.PopID()
 			}
+
 			im.EndTabBar()
 		}
 	}
 	im.End()
+
+	textureDraw.ShowNewTextureWindow()
 }

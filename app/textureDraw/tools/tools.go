@@ -25,43 +25,34 @@ type drawingTool interface {
 	Change() []texture.PixelEdit
 }
 
-var selectedTool tool
-
-var Color1 *[4]float32
-var Color2 *[4]float32
-
-func Init() {
-	selectedTool = pencil.Pencil{}
-}
-
 var Texture *texture.Texture = texture.New(1, 1)
 
 func ButtonPress(pos [2]int32, firstButton bool) {
-	if _, ok := selectedTool.(bucket.Bucket); ok {
+	if _, ok := currentCtx.selectedTool.(bucket.Bucket); ok {
 		bucket.Texture = Texture
-	} else if _, ok := selectedTool.(colorPicker.ColorPicker); ok {
+	} else if _, ok := currentCtx.selectedTool.(colorPicker.ColorPicker); ok {
 		colorPicker.Texture = Texture
 	}
-	selectedTool.ButtonPress(pos, firstButton)
+	currentCtx.selectedTool.ButtonPress(pos, firstButton)
 }
 
 func ButtonRelease(pos [2]int32) {
-	selectedTool.ButtonRelease(pos)
+	currentCtx.selectedTool.ButtonRelease(pos)
 }
 
 func Move(pos1, pos2 [2]int32) {
-	selectedTool.Move(pos1, pos2)
+	currentCtx.selectedTool.Move(pos1, pos2)
 }
 
 func Visualize() []texture.PixelEdit {
-	if s, ok := selectedTool.(drawingTool); ok {
+	if s, ok := currentCtx.selectedTool.(drawingTool); ok {
 		return s.Visualize()
 	}
 	return nil
 }
 
 func Change() []texture.PixelEdit {
-	if s, ok := selectedTool.(drawingTool); ok {
+	if s, ok := currentCtx.selectedTool.(drawingTool); ok {
 		return s.Change()
 	}
 	return nil
@@ -70,28 +61,28 @@ func Change() []texture.PixelEdit {
 func Show() {
 	im.Begin("Tools")
 	if im.Button("Pencil") {
-		selectedTool.Reset()
-		selectedTool = pencil.Pencil{}
+		currentCtx.selectedTool.Reset()
+		currentCtx.selectedTool = pencil.Pencil{}
 	}
 	if im.Button("Bucket") {
-		selectedTool.Reset()
-		selectedTool = bucket.Bucket{}
+		currentCtx.selectedTool.Reset()
+		currentCtx.selectedTool = bucket.Bucket{}
 	}
 	if im.Button("Line") {
-		selectedTool.Reset()
-		selectedTool = line.Line{}
+		currentCtx.selectedTool.Reset()
+		currentCtx.selectedTool = line.Line{}
 	}
 	if im.Button("Rect") {
-		selectedTool.Reset()
-		selectedTool = rectangle.Rectangle{}
+		currentCtx.selectedTool.Reset()
+		currentCtx.selectedTool = rectangle.Rectangle{}
 	}
 	if im.Button("Eraser") {
-		selectedTool.Reset()
-		selectedTool = eraser.Eraser{}
+		currentCtx.selectedTool.Reset()
+		currentCtx.selectedTool = eraser.Eraser{}
 	}
 	if im.Button("Color Picker") {
-		selectedTool.Reset()
-		selectedTool = colorPicker.ColorPicker{}
+		currentCtx.selectedTool.Reset()
+		currentCtx.selectedTool = colorPicker.ColorPicker{}
 	}
 	im.End()
 }

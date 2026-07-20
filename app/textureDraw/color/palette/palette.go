@@ -20,11 +20,22 @@ type palette struct {
 	name    string
 	creator string
 	colors  []color
+}
+
+type entry struct {
+	palette *palette
 	show    bool
 }
 
-var idSys = util.NewIdSystem()
+type data struct {
+	palettes map[int32]bool
+	color1id int32
+	color2id int32
+}
+
 var palettes []*palette
+
+var idSys = util.NewIdSystem()
 
 func highContrast(rgba [4]float32) im.Vec4 {
 	hsv := [4]float32{}
@@ -49,7 +60,7 @@ func addPalette(data pallete_file.PaletteData, show bool) (p *palette) {
 	p.id = idSys.GetID()
 	p.name = data.Name
 	p.creator = data.Creator
-	p.show = show
+	// p.show = show
 	for _, c := range data.Colors {
 		rgba := [4]float32{c[0], c[1], c[2], 1}
 		p.colors = append(p.colors, color{idSys.GetID(), rgba, highContrast(rgba)})
@@ -60,7 +71,8 @@ func addPalette(data pallete_file.PaletteData, show bool) (p *palette) {
 
 func addLospecByName(name string) bool {
 	if ok, data := pallete_file.GetPaletteFromLospec(name); ok {
-		addPalette(data, true)
+		p := addPalette(data, true)
+		currentCtx.palettes[p.id] = true
 		return true
 	}
 	return false
@@ -68,29 +80,28 @@ func addLospecByName(name string) bool {
 
 func addLospecByLink(link string) bool {
 	if ok, data := pallete_file.GetPaletteFromLospecLink(link); ok {
-		addPalette(data, true)
+		p := addPalette(data, true)
+		currentCtx.palettes[p.id] = true
 		return true
 	}
 	return false
 }
 
-var color1id, color2id int32
-
 func Reset(change [3]bool) {
 	if change[0] {
-		color1id = -1
+		currentCtx.color1id = -1
 	}
 	if change[1] {
-		color2id = -1
+		currentCtx.color2id = -1
 	}
 	if change[2] {
-		temp := color1id
-		color1id = color2id
-		color2id = temp
+		temp := currentCtx.color1id
+		currentCtx.color1id = currentCtx.color2id
+		currentCtx.color2id = temp
 	}
 }
 
-func Init(color1, color2 *[4]float32) {
+func Init() {
 	var step float32
 	pData := pallete_file.PaletteData{}
 	pData.Creator = "This Program"
@@ -113,11 +124,7 @@ func Init(color1, color2 *[4]float32) {
 		hue += step
 		pData.Colors = append(pData.Colors, rgb)
 	}
-	p := addPalette(pData, true)
-	*color1 = p.colors[0].value
-	color1id = p.colors[0].id
-	*color2 = p.colors[greyCount-1].value
-	color2id = p.colors[greyCount-1].id
+	addPalette(pData, true)
 
 	palettesData := pallete_file.GetAllPalettes()
 	for _, data := range palettesData {
@@ -141,8 +148,10 @@ func Loop(color1, color2 *[4]float32) {
 			im.EndMenu()
 		}
 		if im.BeginMenu("View") {
-			for i := range palettes {
-				im.MenuItemBoolPtr(palettes[i].name, "", &palettes[i].show)
+			for _, p := range palettes {
+				show := currentCtx.palettes[p.id]
+				im.MenuItemBoolPtr(p.name, "", &show)
+				currentCtx.palettes[p.id] = show
 			}
 			im.EndMenu()
 		}
@@ -182,20 +191,20 @@ func Loop(color1, color2 *[4]float32) {
 	}
 	var width float32 = 46
 	for _, palette := range palettes {
-		if !palette.show {
+		if !currentCtx.palettes[palette.id] {
 			continue
 		}
 		im.SeparatorText(palette.name)
 		for i, color := range palette.colors {
 			id := color.id
-			if color1id == id || color2id == id {
+			if currentCtx.color1id == id || currentCtx.color2id == id {
 				im.PushStyleColorVec4(im.ColFrameBg, color.mark)
 			}
 			availableSpace := im.ContentRegionAvail().X
 			im.PushIDInt(id)
 			im.ColorButton("color #"+strconv.FormatInt(int64(i), 10), newVec4(color.value))
 			im.PopID()
-			if color1id == id || color2id == id {
+			if currentCtx.color1id == id || currentCtx.color2id == id {
 				im.PopStyleColor()
 			}
 			if im.IsItemHovered() {
@@ -203,11 +212,11 @@ func Loop(color1, color2 *[4]float32) {
 				mouseRelease := io.MouseReleased()
 				if mouseRelease[0] {
 					*color1 = color.value
-					color1id = color.id
+					currentCtx.color1id = color.id
 				}
 				if mouseRelease[1] {
 					*color2 = color.value
-					color2id = color.id
+					currentCtx.color2id = color.id
 				}
 			}
 			if i != len(palette.colors)-1 && availableSpace-width > 0 {

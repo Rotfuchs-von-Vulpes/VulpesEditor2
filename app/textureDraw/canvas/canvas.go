@@ -246,12 +246,10 @@ func createCtx(tex *texture.Texture) (ctx *TextureContext) {
 	return
 }
 
-func AddTexture(width, height uint32) {
+func AddTexture(width, height uint32) (ctx *TextureContext) {
 	tex := texture.New(width, height)
-	ctx := createCtx(tex)
-	// AllTextures = append(AllTextures, tex)
-	AllCtx = append(AllCtx, ctx)
-	lastEditCtx = AllCtx[len(AllCtx)-1]
+	ctx = createCtx(tex)
+	return
 }
 
 func OpenTexture(tex *texture.Texture) {
@@ -260,29 +258,29 @@ func OpenTexture(tex *texture.Texture) {
 
 var selectedLayers = []bool{}
 
-func ShowLayers() {
-	var ctx = lastEditCtx
+func (s *TextureContext) ShowLayers() {
 	im.Begin("Layers")
+
 	if im.Button("Add") {
-		ctx.texture.AppendLayer()
+		s.texture.AppendLayer()
 	}
 	im.SameLine()
 	if im.Button("Remove") {
-		selectedLayers = make([]bool, len(ctx.texture.Layers))
+		selectedLayers = make([]bool, len(s.texture.Layers))
 		im.OpenPopupStr("Remove Layers")
 	}
 	im.SameLine()
 	if im.Button("Merge") {
-		selectedLayers = make([]bool, len(ctx.texture.Layers))
+		selectedLayers = make([]bool, len(s.texture.Layers))
 		im.OpenPopupStr("Merge Layers")
 	}
 
-	for idx := range ctx.texture.Layers {
-		i := len(ctx.texture.Layers) - idx - 1
-		layer := ctx.texture.Layers[i]
+	for idx := range s.texture.Layers {
+		i := len(s.texture.Layers) - idx - 1
+		layer := s.texture.Layers[i]
 		cannotDown := i == 0
-		cannotUp := i == len(ctx.texture.Layers)-1
-		selected := layer.Id == ctx.layer.Id
+		cannotUp := i == len(s.texture.Layers)-1
+		selected := layer.Id == s.layer.Id
 		str := fmt.Sprintf("Layer #%d", i)
 		if selected {
 			// #86BDFFFF
@@ -290,8 +288,8 @@ func ShowLayers() {
 		}
 		im.PushIDStr(str)
 		if im.ImageButton("Set", layer.Image.Tex.ID, im.NewVec2(20, 20)) {
-			ctx.layer = ctx.texture.Layers[i]
-			ctx.texture.SetLayer(i)
+			s.layer = s.texture.Layers[i]
+			s.texture.SetLayer(i)
 		}
 		im.SameLine()
 		im.Text(str)
@@ -300,7 +298,7 @@ func ShowLayers() {
 			im.BeginDisabled()
 		}
 		if im.Button("down") {
-			ctx.texture.Swap(i, i-1)
+			s.texture.Swap(i, i-1)
 		}
 		if cannotDown {
 			im.EndDisabled()
@@ -310,14 +308,14 @@ func ShowLayers() {
 			im.BeginDisabled()
 		}
 		if im.Button("up") {
-			ctx.texture.Swap(i, i+1)
+			s.texture.Swap(i, i+1)
 		}
 		if cannotUp {
 			im.EndDisabled()
 		}
 		im.SameLine()
-		if im.Checkbox("Show", &ctx.texture.Layers[i].Show) {
-			ctx.texture.UpdateTexture()
+		if im.Checkbox("Show", &s.texture.Layers[i].Show) {
+			s.texture.UpdateTexture()
 		}
 		im.PopID()
 		if selected {
@@ -327,14 +325,14 @@ func ShowLayers() {
 
 	if im.BeginPopupModal("Remove Layers") {
 		im.Text("Select Layers to remove")
-		for i := range ctx.texture.Layers {
+		for i := range s.texture.Layers {
 			str := fmt.Sprintf("Layer #%d", i)
 			im.Checkbox(str, &selectedLayers[i])
 			im.SameLine()
-			im.ImageWithBg(ctx.texture.Layers[i].Image.Tex.ID, im.NewVec2(15, 15))
+			im.ImageWithBg(s.texture.Layers[i].Image.Tex.ID, im.NewVec2(15, 15))
 		}
 		if im.Button("Remove") {
-			ctx.texture.Remove(selectedLayers)
+			s.texture.Remove(selectedLayers)
 			im.CloseCurrentPopup()
 		}
 		im.SameLine()
@@ -346,14 +344,14 @@ func ShowLayers() {
 
 	if im.BeginPopupModal("Merge Layers") {
 		im.Text("Select Layers to merge:")
-		for i := range ctx.texture.Layers {
+		for i := range s.texture.Layers {
 			str := fmt.Sprintf("Layer #%d", i)
 			im.Checkbox(str, &selectedLayers[i])
 			im.SameLine()
-			im.ImageWithBg(ctx.texture.Layers[i].Image.Tex.ID, im.NewVec2(15, 15))
+			im.ImageWithBg(s.texture.Layers[i].Image.Tex.ID, im.NewVec2(15, 15))
 		}
 		if im.Button("Merge") {
-			ctx.texture.Merge(selectedLayers)
+			s.texture.Merge(selectedLayers)
 			im.CloseCurrentPopup()
 		}
 		im.SameLine()
