@@ -51,7 +51,7 @@ func (s *Texture) Resize(width, height uint32) {
 }
 
 func (s *Texture) Get(pos [2]int32) (ok bool, color [4]float32) {
-	index := int(pos[1]*int32(s.Height) + pos[0])
+	index := int(pos[1]*int32(s.Width) + pos[0])
 	if pos[0] < 0 || pos[0] >= int32(s.Width) || pos[1] < 0 || pos[1] >= int32(s.Height) {
 		ok = false
 	} else {
@@ -62,7 +62,7 @@ func (s *Texture) Get(pos [2]int32) (ok bool, color [4]float32) {
 }
 
 func (s *Texture) Set(pos [2]int32, color [4]float32) (ok bool) {
-	index := int(pos[1]*int32(s.Height) + pos[0])
+	index := int(pos[1]*int32(s.Width) + pos[0])
 	if pos[0] < 0 || pos[0] >= int32(s.Width) || pos[1] < 0 || pos[1] >= int32(s.Height) {
 		ok = false
 	} else {
