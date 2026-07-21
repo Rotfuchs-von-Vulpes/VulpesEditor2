@@ -5,16 +5,20 @@ import (
 	"VulpesEditor/app/textureDraw/color/palette"
 )
 
-type data struct {
+type colorData struct {
 	color1 [4]float32
 	color2 [4]float32
 }
 
-func (s *data) Use() {
-	currentCtx = s
+func (s *colorData) Use() {
+	ctx = s
 }
 
-var currentCtx *data
+func (s *colorData) Reset() {
+	ctx = nil
+}
+
+var ctx *colorData
 var ctxManager = context.New()
 
 func Begin(id int32) {
@@ -28,7 +32,7 @@ func End() {
 }
 
 func New(id int32) {
-	ctx := new(data)
+	c := new(colorData)
 	palette.New(id)
-	ctxManager.Add(id, ctx)
+	ctxManager.Add(id, c)
 }

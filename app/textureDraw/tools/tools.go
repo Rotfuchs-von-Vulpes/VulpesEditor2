@@ -25,45 +25,45 @@ type drawingTool interface {
 	Change() []texture.PixelEdit
 }
 
-type data struct {
+type toolsData struct {
 	selectedTool tool
 	texture      *texture.Texture
 }
 
 func Resize(width, height uint32) {
-	currentCtx.texture.Resize(width, height)
+	ctx.texture.Resize(width, height)
 }
 
 func SetColors(c [][4]float32) {
-	currentCtx.texture.Colors = c
+	ctx.texture.Colors = c
 }
 
 func ButtonPress(pos [2]int32, firstButton bool) {
-	if _, ok := currentCtx.selectedTool.(bucket.Bucket); ok {
-		bucket.Texture = currentCtx.texture
-	} else if _, ok := currentCtx.selectedTool.(colorPicker.ColorPicker); ok {
-		colorPicker.Texture = currentCtx.texture
+	if _, ok := ctx.selectedTool.(bucket.Bucket); ok {
+		bucket.Texture = ctx.texture
+	} else if _, ok := ctx.selectedTool.(colorPicker.ColorPicker); ok {
+		colorPicker.Texture = ctx.texture
 	}
-	currentCtx.selectedTool.ButtonPress(pos, firstButton)
+	ctx.selectedTool.ButtonPress(pos, firstButton)
 }
 
 func ButtonRelease(pos [2]int32) {
-	currentCtx.selectedTool.ButtonRelease(pos)
+	ctx.selectedTool.ButtonRelease(pos)
 }
 
 func Move(pos1, pos2 [2]int32) {
-	currentCtx.selectedTool.Move(pos1, pos2)
+	ctx.selectedTool.Move(pos1, pos2)
 }
 
 func Visualize() []texture.PixelEdit {
-	if s, ok := currentCtx.selectedTool.(drawingTool); ok {
+	if s, ok := ctx.selectedTool.(drawingTool); ok {
 		return s.Visualize()
 	}
 	return nil
 }
 
 func Change() []texture.PixelEdit {
-	if s, ok := currentCtx.selectedTool.(drawingTool); ok {
+	if s, ok := ctx.selectedTool.(drawingTool); ok {
 		return s.Change()
 	}
 	return nil
@@ -72,28 +72,28 @@ func Change() []texture.PixelEdit {
 func Show() {
 	im.Begin("Tools")
 	if im.Button("Pencil") {
-		currentCtx.selectedTool.Reset()
-		currentCtx.selectedTool = pencil.Pencil{}
+		ctx.selectedTool.Reset()
+		ctx.selectedTool = pencil.Pencil{}
 	}
 	if im.Button("Bucket") {
-		currentCtx.selectedTool.Reset()
-		currentCtx.selectedTool = bucket.Bucket{}
+		ctx.selectedTool.Reset()
+		ctx.selectedTool = bucket.Bucket{}
 	}
 	if im.Button("Line") {
-		currentCtx.selectedTool.Reset()
-		currentCtx.selectedTool = line.Line{}
+		ctx.selectedTool.Reset()
+		ctx.selectedTool = line.Line{}
 	}
 	if im.Button("Rect") {
-		currentCtx.selectedTool.Reset()
-		currentCtx.selectedTool = rectangle.Rectangle{}
+		ctx.selectedTool.Reset()
+		ctx.selectedTool = rectangle.Rectangle{}
 	}
 	if im.Button("Eraser") {
-		currentCtx.selectedTool.Reset()
-		currentCtx.selectedTool = eraser.Eraser{}
+		ctx.selectedTool.Reset()
+		ctx.selectedTool = eraser.Eraser{}
 	}
 	if im.Button("Color Picker") {
-		currentCtx.selectedTool.Reset()
-		currentCtx.selectedTool = colorPicker.ColorPicker{}
+		ctx.selectedTool.Reset()
+		ctx.selectedTool = colorPicker.ColorPicker{}
 	}
 	im.End()
 }

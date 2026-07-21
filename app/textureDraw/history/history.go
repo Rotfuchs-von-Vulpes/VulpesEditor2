@@ -9,33 +9,33 @@ type change interface {
 	Redo()
 }
 
-type data struct {
+type historyData struct {
 	history   []change
 	idx       int
 	undoLevel int
 }
 
 func Append(c change) {
-	currentCtx.history = currentCtx.history[:len(currentCtx.history)-currentCtx.undoLevel]
-	currentCtx.history = append(currentCtx.history, c)
-	currentCtx.undoLevel = 0
+	ctx.history = ctx.history[:len(ctx.history)-ctx.undoLevel]
+	ctx.history = append(ctx.history, c)
+	ctx.undoLevel = 0
 }
 
 func undo() {
-	changeIdx := len(currentCtx.history) - 1 - currentCtx.undoLevel
+	changeIdx := len(ctx.history) - 1 - ctx.undoLevel
 	if changeIdx >= 0 {
-		change := currentCtx.history[changeIdx]
-		currentCtx.undoLevel += 1
+		change := ctx.history[changeIdx]
+		ctx.undoLevel += 1
 		change.Undo()
 	}
 }
 
 func redo() {
-	if currentCtx.undoLevel > 0 {
-		changesIdx := len(currentCtx.history) - int(currentCtx.undoLevel)
+	if ctx.undoLevel > 0 {
+		changesIdx := len(ctx.history) - int(ctx.undoLevel)
 		if changesIdx >= 0 {
-			change := currentCtx.history[changesIdx]
-			currentCtx.undoLevel--
+			change := ctx.history[changesIdx]
+			ctx.undoLevel--
 			change.Redo()
 		}
 	}

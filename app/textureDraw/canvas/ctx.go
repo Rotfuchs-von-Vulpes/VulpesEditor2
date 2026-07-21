@@ -1,20 +1,19 @@
-package tools
+package canvas
 
 import (
 	"VulpesEditor/app/context"
 	"VulpesEditor/app/textureDraw/canvas/texture"
-	"VulpesEditor/app/textureDraw/tools/pencil"
 )
 
-func (s *toolsData) Use() {
+func (s *TextureContext) Use() {
 	ctx = s
 }
 
-func (s *toolsData) Reset() {
+func (s *TextureContext) Reset() {
 	ctx = nil
 }
 
-var ctx *toolsData
+var ctx *TextureContext
 var ctxManager = context.New()
 
 func Begin(id int32) {
@@ -26,8 +25,6 @@ func End() {
 }
 
 func New(id int32, w, h uint32) {
-	c := new(toolsData)
-	c.selectedTool = pencil.Pencil{}
-	c.texture = texture.New(w, h)
+	c := createCtx(texture.New(w, h))
 	ctxManager.Add(id, c)
 }

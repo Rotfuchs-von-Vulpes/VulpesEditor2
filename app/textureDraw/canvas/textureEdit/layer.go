@@ -15,7 +15,7 @@ type pixelChange struct {
 }
 
 type TextureChange struct {
-	parent  *LayerEdit
+	parent  *layerEdit
 	changes []pixelChange
 }
 
@@ -27,7 +27,7 @@ func (s *TextureChange) Redo() {
 	s.parent.change(s.changes)
 }
 
-type LayerEdit struct {
+type layerEdit struct {
 	parent  *TextureEdit
 	Id      int32
 	width   uint32
@@ -37,7 +37,7 @@ type LayerEdit struct {
 	Image   *Image
 }
 
-func (s *LayerEdit) updatePreview() {
+func (s *layerEdit) updatePreview() {
 	floatData := s.Texture.FlatColors()
 
 	for i := 0; i < int(s.Texture.Width*s.Texture.Height); i++ {
@@ -58,7 +58,7 @@ func (s *LayerEdit) updatePreview() {
 	s.Image.Tex = backend.NewTextureFromRgba(s.Image.Img)
 }
 
-func (s *LayerEdit) unchange(changes []pixelChange) {
+func (s *layerEdit) unchange(changes []pixelChange) {
 	for _, change := range changes {
 		s.Texture.Set(change.pos, change.before)
 	}
@@ -66,7 +66,7 @@ func (s *LayerEdit) unchange(changes []pixelChange) {
 	s.parent.UpdateTexture()
 }
 
-func (s *LayerEdit) change(changes []pixelChange) {
+func (s *layerEdit) change(changes []pixelChange) {
 	for _, change := range changes {
 		s.Texture.Set(change.pos, change.after)
 	}
@@ -74,7 +74,7 @@ func (s *LayerEdit) change(changes []pixelChange) {
 	s.parent.UpdateTexture()
 }
 
-func (s *LayerEdit) Change(pixels []texture.PixelEdit) {
+func (s *layerEdit) ApplyChange(pixels []texture.PixelEdit) {
 	if len(pixels) > 0 {
 		changes := []pixelChange{}
 		for _, pixel := range pixels {

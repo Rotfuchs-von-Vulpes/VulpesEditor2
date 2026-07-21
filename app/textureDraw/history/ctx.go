@@ -4,11 +4,15 @@ import (
 	"VulpesEditor/app/context"
 )
 
-func (s *data) Use() {
-	currentCtx = s
+func (s *historyData) Use() {
+	ctx = s
 }
 
-var currentCtx *data
+func (s *historyData) Reset() {
+	ctx = nil
+}
+
+var ctx *historyData
 var ctxManager = context.New()
 
 func Begin(id int32) {
@@ -20,7 +24,7 @@ func End() {
 }
 
 func New(id int32) {
-	ctx := new(data)
-	ctx.history = make([]change, 0)
-	ctxManager.Add(id, ctx)
+	c := new(historyData)
+	c.history = make([]change, 0)
+	ctxManager.Add(id, c)
 }

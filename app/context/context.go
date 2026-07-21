@@ -2,11 +2,13 @@ package context
 
 type Context interface {
 	Use()
+	Reset()
 }
 
 type Manager struct {
 	data   map[int32]Context
 	inside bool
+	ctx    Context
 }
 
 func (s *Manager) Add(key int32, value Context) {
@@ -22,17 +24,19 @@ func (s *Manager) Begin(id int32) {
 		panic("Too much begin call")
 	}
 	s.inside = true
-	ctx, ok := s.data[id]
+	var ok bool
+	s.ctx, ok = s.data[id]
 	if !ok {
 		panic("Unknow Id")
 	}
-	ctx.Use()
+	s.ctx.Use()
 }
 
 func (s *Manager) End() {
 	if !s.inside {
 		panic("Too much end call")
 	}
+	s.ctx.Reset()
 	s.inside = false
 }
 

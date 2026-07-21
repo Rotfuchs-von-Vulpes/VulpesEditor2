@@ -27,7 +27,7 @@ type entry struct {
 	show    bool
 }
 
-type data struct {
+type paletteData struct {
 	palettes map[int32]bool
 	color1id int32
 	color2id int32
@@ -72,7 +72,7 @@ func addPalette(data pallete_file.PaletteData, show bool) (p *palette) {
 func addLospecByName(name string) bool {
 	if ok, data := pallete_file.GetPaletteFromLospec(name); ok {
 		p := addPalette(data, true)
-		currentCtx.palettes[p.id] = true
+		ctx.palettes[p.id] = true
 		return true
 	}
 	return false
@@ -81,7 +81,7 @@ func addLospecByName(name string) bool {
 func addLospecByLink(link string) bool {
 	if ok, data := pallete_file.GetPaletteFromLospecLink(link); ok {
 		p := addPalette(data, true)
-		currentCtx.palettes[p.id] = true
+		ctx.palettes[p.id] = true
 		return true
 	}
 	return false
@@ -89,15 +89,15 @@ func addLospecByLink(link string) bool {
 
 func Reset(change [3]bool) {
 	if change[0] {
-		currentCtx.color1id = -1
+		ctx.color1id = -1
 	}
 	if change[1] {
-		currentCtx.color2id = -1
+		ctx.color2id = -1
 	}
 	if change[2] {
-		temp := currentCtx.color1id
-		currentCtx.color1id = currentCtx.color2id
-		currentCtx.color2id = temp
+		temp := ctx.color1id
+		ctx.color1id = ctx.color2id
+		ctx.color2id = temp
 	}
 }
 
@@ -149,9 +149,9 @@ func Loop(color1, color2 *[4]float32) {
 		}
 		if im.BeginMenu("View") {
 			for _, p := range palettes {
-				show := currentCtx.palettes[p.id]
+				show := ctx.palettes[p.id]
 				im.MenuItemBoolPtr(p.name, "", &show)
-				currentCtx.palettes[p.id] = show
+				ctx.palettes[p.id] = show
 			}
 			im.EndMenu()
 		}
@@ -191,20 +191,20 @@ func Loop(color1, color2 *[4]float32) {
 	}
 	var width float32 = 46
 	for _, palette := range palettes {
-		if !currentCtx.palettes[palette.id] {
+		if !ctx.palettes[palette.id] {
 			continue
 		}
 		im.SeparatorText(palette.name)
 		for i, color := range palette.colors {
 			id := color.id
-			if currentCtx.color1id == id || currentCtx.color2id == id {
+			if ctx.color1id == id || ctx.color2id == id {
 				im.PushStyleColorVec4(im.ColFrameBg, color.mark)
 			}
 			availableSpace := im.ContentRegionAvail().X
 			im.PushIDInt(id)
 			im.ColorButton("color #"+strconv.FormatInt(int64(i), 10), newVec4(color.value))
 			im.PopID()
-			if currentCtx.color1id == id || currentCtx.color2id == id {
+			if ctx.color1id == id || ctx.color2id == id {
 				im.PopStyleColor()
 			}
 			if im.IsItemHovered() {
@@ -212,11 +212,11 @@ func Loop(color1, color2 *[4]float32) {
 				mouseRelease := io.MouseReleased()
 				if mouseRelease[0] {
 					*color1 = color.value
-					currentCtx.color1id = color.id
+					ctx.color1id = color.id
 				}
 				if mouseRelease[1] {
 					*color2 = color.value
-					currentCtx.color2id = color.id
+					ctx.color2id = color.id
 				}
 			}
 			if i != len(palette.colors)-1 && availableSpace-width > 0 {
