@@ -63,14 +63,11 @@ type creationData struct {
 }
 
 type instance struct {
-	id int32
+	id    int32
+	focus bool
 }
 
 var Instances []*instance
-
-func (s *instance) Name() string {
-	return "Texture #" + strconv.FormatInt(int64(s.id), 10)
-}
 
 func (s *instance) init(c creationData) {
 	color.New(s.id)
@@ -93,6 +90,18 @@ func (s *instance) end() {
 	canvas.End()
 }
 
+func (s *instance) Focus() bool {
+	if s.focus {
+		s.focus = false
+		return true
+	}
+	return false
+}
+
+func (s *instance) Name() string {
+	return "Texture #" + strconv.FormatInt(int64(s.id), 10)
+}
+
 func (s *instance) Show() {
 	s.begin()
 	color.Loop()
@@ -106,6 +115,7 @@ func (s *instance) Show() {
 func open(c creationData) {
 	itc := new(instance)
 	itc.id = count
+	itc.focus = true
 	itc.init(c)
 	Instances = append(Instances, itc)
 	count += 1

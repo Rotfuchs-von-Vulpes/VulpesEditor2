@@ -11,6 +11,7 @@ import (
 type Tab interface {
 	Name() string
 	Show()
+	Focus() bool
 }
 
 func Init() {
@@ -74,9 +75,13 @@ func Loop() {
 			}
 
 			for i, t := range allTabs {
+				f := im.TabItemFlagsNone
+				if t.Focus() {
+					f |= im.TabItemFlagsSetSelected
+				}
 				tabID := t.Name() + "###" + strconv.FormatInt(int64(i), 10)
 				im.PushIDStr(tabID)
-				if im.BeginTabItem(t.Name()) {
+				if im.BeginTabItemV(t.Name(), nil, f) {
 					im.DockSpace(dockspaceId)
 					t.Show()
 					im.EndTabItem()
