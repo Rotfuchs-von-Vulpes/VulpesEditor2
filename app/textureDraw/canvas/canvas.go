@@ -1,6 +1,7 @@
 package canvas
 
 import (
+	"VulpesEditor/app/front"
 	"VulpesEditor/app/front/renderer"
 	"VulpesEditor/app/textureDraw/canvas/texture"
 	"VulpesEditor/app/textureDraw/canvas/textureEdit"
@@ -163,13 +164,8 @@ func Show() {
 		}
 		im.EndPopup()
 	}
-	if im.BeginPopupModal("Not Implement") {
-		im.Text("Not implement yet!")
-		if im.Button("OK") {
-			im.CloseCurrentPopup()
-		}
-		im.EndPopup()
-	}
+
+	front.NotImplementPopUp()
 
 	wSize := im.ContentRegionAvail()
 	width := int32(wSize.X)
@@ -214,13 +210,10 @@ func ShowLayers() {
 
 func createCtx(tex *texture.Texture) (ctx *TextureContext) {
 	ctx = new(TextureContext)
-	// ctx.id = windowIdSys.GetID()
-	// ctx.windowName = "Texture #" + strconv.FormatUint(uint64(ctx.id), 10)
 	ctx.zoom = 0.9
 	ctx.textureViewer = renderer.CreateFramebuffer(500, 500)
 	viwerSize = [2]float32{500, 500}
 	ctx.texture = textureEdit.New(tex)
-	//ctx.layer = ctx.texture.Layers[0]
 
 	return
 }

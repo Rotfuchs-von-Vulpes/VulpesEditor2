@@ -24,3 +24,13 @@ func Loop() {
 	im.Checkbox("Show demo window", &showDemoWindow)
 	im.End()
 }
+
+func NotImplementPopUp() {
+	if im.BeginPopupModal("Not Implement") {
+		im.Text("Not implement yet!")
+		if im.Button("Ok") {
+			im.CloseCurrentPopup()
+		}
+		im.EndPopup()
+	}
+}

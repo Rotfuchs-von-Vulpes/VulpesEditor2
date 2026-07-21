@@ -58,8 +58,11 @@ func Loop() {
 					textureDraw.OpenNewTextureWindow()
 				}
 				if im.ButtonV("Open Texture...", size) {
-
+					im.OpenPopupStr("Not Implement")
 				}
+
+				front.NotImplementPopUp()
+
 				im.EndChild()
 				im.EndTabItem()
 			}

@@ -1,6 +1,7 @@
 package palette
 
 import (
+	"VulpesEditor/app/front"
 	pallete_file "VulpesEditor/app/textureDraw/color/palette/paleteFile"
 	"VulpesEditor/app/util"
 	"strconv"
@@ -182,13 +183,9 @@ func Loop(color1, color2 *[4]float32) {
 		}
 		im.EndPopup()
 	}
-	if im.BeginPopupModal("Not Implement") {
-		im.Text("Not implement yet!")
-		if im.Button("OK") {
-			im.CloseCurrentPopup()
-		}
-		im.EndPopup()
-	}
+
+	front.NotImplementPopUp()
+
 	var width float32 = 46
 	for _, palette := range palettes {
 		if !ctx.palettes[palette.id] {
