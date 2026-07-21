@@ -33,6 +33,8 @@ func End() {
 
 func New(id int32) {
 	c := new(colorData)
+	c.color1 = [4]float32{1, 1, 1, 1}
+	c.color2 = [4]float32{0, 0, 0, 1}
 	palette.New(id)
 	ctxManager.Add(id, c)
 }
