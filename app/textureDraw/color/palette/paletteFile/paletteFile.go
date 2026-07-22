@@ -1,4 +1,4 @@
-package pallete_file
+package paletteFile
 
 import (
 	"bytes"
@@ -12,6 +12,19 @@ import (
 	"strconv"
 	"strings"
 )
+
+var palettesDir string
+
+func Init() {
+	userConfigDir, err := os.UserConfigDir()
+	if err != nil {
+		panic(err)
+	}
+	palettesDir = filepath.Join(userConfigDir, "VulpesEditor", "resources", "palettes")
+	if err := os.MkdirAll(palettesDir, os.ModePerm); err != nil {
+		panic(err)
+	}
+}
 
 func downloadFile(url, path string) (*bytes.Buffer, error) {
 	fileName := filepath.Base(url)
@@ -106,7 +119,7 @@ func digestPalette(buff io.Reader) (palette PaletteData) {
 
 func GetPaletteFromLospec(paletteName string) (bool, PaletteData) {
 	strings.ReplaceAll(paletteName, " ", "-")
-	if buff, err := downloadFile("https://lospec.com/palette-list/"+paletteName+".csv", "UserData/palettes"); err != nil {
+	if buff, err := downloadFile("https://lospec.com/palette-list/"+paletteName+".csv", palettesDir); err != nil {
 		fmt.Println(err)
 		return false, PaletteData{}
 	} else {
@@ -120,7 +133,7 @@ func GetPaletteFromLospecLink(palleteLink string) (bool, PaletteData) {
 			return false, PaletteData{}
 		}
 	}
-	if buff, err := downloadFile(palleteLink+".csv", "UserData/palettes"); err != nil {
+	if buff, err := downloadFile(palleteLink+".csv", palettesDir); err != nil {
 		fmt.Println(err)
 		return false, PaletteData{}
 	} else {
@@ -129,11 +142,10 @@ func GetPaletteFromLospecLink(palleteLink string) (bool, PaletteData) {
 }
 
 func GetAllPalettes() (final []PaletteData) {
-	path := "UserData/palettes/"
-	if files, err := os.ReadDir(path); err == nil {
+	if files, err := os.ReadDir(palettesDir); err == nil {
 		for _, file := range files {
 			if !file.IsDir() {
-				if f, err := os.Open(path + file.Name()); err != nil {
+				if f, err := os.Open(filepath.Join(palettesDir, file.Name())); err != nil {
 					fmt.Println(err)
 				} else {
 					p := digestPalette(f)

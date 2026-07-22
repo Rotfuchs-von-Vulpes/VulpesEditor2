@@ -2,7 +2,7 @@ package palette
 
 import (
 	"VulpesEditor/app/front"
-	pallete_file "VulpesEditor/app/textureDraw/color/palette/paleteFile"
+	"VulpesEditor/app/textureDraw/color/palette/paletteFile"
 	"VulpesEditor/app/util"
 	"strconv"
 	"strings"
@@ -56,7 +56,7 @@ func newVec4(vec [4]float32) im.Vec4 {
 	return im.NewVec4(vec[0], vec[1], vec[2], vec[3])
 }
 
-func addPalette(data pallete_file.PaletteData) (p *palette) {
+func addPalette(data paletteFile.PaletteData) (p *palette) {
 	p = new(palette)
 	p.id = idSys.GetID()
 	p.name = data.Name
@@ -70,7 +70,7 @@ func addPalette(data pallete_file.PaletteData) (p *palette) {
 }
 
 func addLospecByName(name string) bool {
-	if ok, data := pallete_file.GetPaletteFromLospec(name); ok {
+	if ok, data := paletteFile.GetPaletteFromLospec(name); ok {
 		p := addPalette(data)
 		ctx.palettes[p.id] = true
 		return true
@@ -79,7 +79,7 @@ func addLospecByName(name string) bool {
 }
 
 func addLospecByLink(link string) bool {
-	if ok, data := pallete_file.GetPaletteFromLospecLink(link); ok {
+	if ok, data := paletteFile.GetPaletteFromLospecLink(link); ok {
 		p := addPalette(data)
 		ctx.palettes[p.id] = true
 		return true
@@ -102,8 +102,10 @@ func Reset(change [3]bool) {
 }
 
 func Init() {
+	paletteFile.Init()
+
 	var step float32
-	pData := pallete_file.PaletteData{}
+	pData := paletteFile.PaletteData{}
 	pData.Creator = "This Program"
 	pData.Name = "Default"
 	greyCount := 10
@@ -126,7 +128,7 @@ func Init() {
 	}
 	addPalette(pData)
 
-	palettesData := pallete_file.GetAllPalettes()
+	palettesData := paletteFile.GetAllPalettes()
 	for _, data := range palettesData {
 		addPalette(data)
 	}
