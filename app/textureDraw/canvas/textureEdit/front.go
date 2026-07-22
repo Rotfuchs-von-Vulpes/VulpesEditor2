@@ -39,7 +39,6 @@ func (s *TextureEdit) ShowLayers() {
 		im.PushIDStr(str)
 		if im.ImageButton("Set", layer.Image.Tex.ID, im.NewVec2(20, 20)) {
 			s.layer = s.layers[i]
-			s.SetLayer(i)
 		}
 		im.SameLine()
 		im.Text(str)

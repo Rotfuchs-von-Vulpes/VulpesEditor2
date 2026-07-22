@@ -18,8 +18,7 @@ import (
 var idSys = util.NewIdSystem()
 
 type preview struct {
-	layerIdx int
-	pixels   []texture.PixelEdit
+	pixels []texture.PixelEdit
 }
 
 func (s *preview) clear() {
@@ -43,15 +42,6 @@ type TextureEdit struct {
 	preview *preview
 }
 
-func (s *TextureEdit) SetLayer(idx int) {
-	if idx >= len(s.layers) || idx < 0 {
-		panic(fmt.Sprintf("Illegal layer index: %d of length %d", idx, len(s.layers)))
-	}
-	s.preview.clear()
-	s.preview.layerIdx = idx
-	s.layer = s.layers[idx]
-}
-
 func (s *TextureEdit) addLayer(idx int, tex *texture.Texture) {
 	layer := new(layerEdit)
 	layer.Id = idSys.GetID()
@@ -71,6 +61,7 @@ func (s *TextureEdit) AppendLayer() {
 	c.parent = s
 	c.before = slices.Clone(s.layers)
 	s.addLayer(len(s.layers), texture.New(s.Width, s.Height))
+	s.layer = s.layers[len(s.layers)-1]
 	c.after = slices.Clone(s.layers)
 	history.Append(c)
 }
@@ -86,7 +77,6 @@ func New(tex *texture.Texture) (out *TextureEdit) {
 	out.texture = texture.New(tex.Width, tex.Height)
 	out.GlID = renderer.CreateTexture(int32(tex.Width), int32(tex.Height), tex.FlatColors())
 	out.preview = new(preview)
-	out.preview.layerIdx = 0
 	return
 }
 
@@ -102,8 +92,7 @@ func (s *TextureEdit) onLayerEdit() {
 		}
 	}
 	if !found {
-		idx := len(s.layers) - 1
-		s.SetLayer(idx)
+		s.layer = s.layers[len(s.layers)-1]
 	}
 }
 
@@ -241,9 +230,9 @@ func (s *TextureEdit) Merge(merge []bool) {
 
 func (s *TextureEdit) UpdateTexture() {
 	s.texture.Clear()
-	for i, layer := range s.layers {
+	for _, layer := range s.layers {
 		if layer.Show {
-			if s.preview.layerIdx == i {
+			if s.layer.Id == layer.Id {
 				tex := texture.New(s.Width, s.Height)
 				tex.Colors = slices.Clone(layer.Texture.Colors)
 				tex.BulkSet(s.preview.pixels)
