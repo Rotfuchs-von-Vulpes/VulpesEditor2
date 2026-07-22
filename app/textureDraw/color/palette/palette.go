@@ -56,12 +56,11 @@ func newVec4(vec [4]float32) im.Vec4 {
 	return im.NewVec4(vec[0], vec[1], vec[2], vec[3])
 }
 
-func addPalette(data pallete_file.PaletteData, show bool) (p *palette) {
+func addPalette(data pallete_file.PaletteData) (p *palette) {
 	p = new(palette)
 	p.id = idSys.GetID()
 	p.name = data.Name
 	p.creator = data.Creator
-	// p.show = show
 	for _, c := range data.Colors {
 		rgba := [4]float32{c[0], c[1], c[2], 1}
 		p.colors = append(p.colors, color{idSys.GetID(), rgba, highContrast(rgba)})
@@ -72,7 +71,7 @@ func addPalette(data pallete_file.PaletteData, show bool) (p *palette) {
 
 func addLospecByName(name string) bool {
 	if ok, data := pallete_file.GetPaletteFromLospec(name); ok {
-		p := addPalette(data, true)
+		p := addPalette(data)
 		ctx.palettes[p.id] = true
 		return true
 	}
@@ -81,7 +80,7 @@ func addLospecByName(name string) bool {
 
 func addLospecByLink(link string) bool {
 	if ok, data := pallete_file.GetPaletteFromLospecLink(link); ok {
-		p := addPalette(data, true)
+		p := addPalette(data)
 		ctx.palettes[p.id] = true
 		return true
 	}
@@ -125,11 +124,11 @@ func Init() {
 		hue += step
 		pData.Colors = append(pData.Colors, rgb)
 	}
-	addPalette(pData, true)
+	addPalette(pData)
 
 	palettesData := pallete_file.GetAllPalettes()
 	for _, data := range palettesData {
-		addPalette(data, false)
+		addPalette(data)
 	}
 }
 
