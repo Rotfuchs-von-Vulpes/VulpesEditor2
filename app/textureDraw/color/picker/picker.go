@@ -14,7 +14,7 @@ func Reset(change [2]bool) {
 
 func Loop(color1, color2 *[4]float32) (change [3]bool) {
 	im.Begin("Color Picker")
-	if im.ColorPicker4("Color", color1) {
+	if im.ColorPicker4V("Color", color1, im.ColorEditFlagsPickerHueWheel, nil) {
 		change[0] = true
 	}
 	im.ColorButton("Color 1", newVec4(*color1))
