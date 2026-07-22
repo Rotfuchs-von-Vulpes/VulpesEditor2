@@ -1,7 +1,6 @@
 package renderer
 
 import (
-	"VulpesEditor/util"
 	_ "embed"
 	"fmt"
 	"strings"
@@ -9,6 +8,10 @@ import (
 	"github.com/AllenDang/cimgui-go/imgui"
 	"github.com/go-gl/gl/v3.3-core/gl"
 )
+
+func Str(str string) *uint8 {
+	return gl.Str(str + "\x00")
+}
 
 const FLOAT_SIZE = 4
 
@@ -138,7 +141,7 @@ func Init() {
 		gl.DeleteShader(vertHandle)
 		gl.DeleteShader(fragHandle)
 
-		r.uniforms.color = gl.GetUniformLocation(r.shaderHandle, util.Str("color"))
+		r.uniforms.color = gl.GetUniformLocation(r.shaderHandle, Str("color"))
 
 		vertices := []float32{
 			-0.5, -0.5, 0.0,
@@ -176,13 +179,13 @@ func Init() {
 		gl.DeleteShader(vertHandle)
 		gl.DeleteShader(fragHandle)
 
-		rTex.uniforms.move = gl.GetUniformLocation(rTex.shaderHandle, util.Str("move"))
-		rTex.uniforms.zoom = gl.GetUniformLocation(rTex.shaderHandle, util.Str("zoom"))
-		rTex.uniforms.aspect = gl.GetUniformLocation(rTex.shaderHandle, util.Str("aspect"))
-		rTex.uniforms.outline = gl.GetUniformLocation(rTex.shaderHandle, util.Str("outline"))
-		rTex.uniforms.texUnit = gl.GetUniformLocation(rTex.shaderHandle, util.Str("art"))
-		rTex.uniforms.preUnit = gl.GetUniformLocation(rTex.shaderHandle, util.Str("preview"))
-		rTex.uniforms.size = gl.GetUniformLocation(rTex.shaderHandle, util.Str("size"))
+		rTex.uniforms.move = gl.GetUniformLocation(rTex.shaderHandle, Str("move"))
+		rTex.uniforms.zoom = gl.GetUniformLocation(rTex.shaderHandle, Str("zoom"))
+		rTex.uniforms.aspect = gl.GetUniformLocation(rTex.shaderHandle, Str("aspect"))
+		rTex.uniforms.outline = gl.GetUniformLocation(rTex.shaderHandle, Str("outline"))
+		rTex.uniforms.texUnit = gl.GetUniformLocation(rTex.shaderHandle, Str("art"))
+		rTex.uniforms.preUnit = gl.GetUniformLocation(rTex.shaderHandle, Str("preview"))
+		rTex.uniforms.size = gl.GetUniformLocation(rTex.shaderHandle, Str("size"))
 		gl.UseProgram(rTex.shaderHandle)
 		gl.Uniform1i(rTex.uniforms.texUnit, 0)
 		gl.Uniform1i(rTex.uniforms.preUnit, 1)
