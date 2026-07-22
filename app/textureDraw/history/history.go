@@ -41,7 +41,9 @@ func redo() {
 	}
 }
 
-func Loop() {
+func Loop(id int32) {
+	ctxManager.Check(id)
+
 	io := im.CurrentContext().IO()
 	if io.KeyCtrl() && im.IsKeyPressedBoolV(im.KeyZ, true) {
 		undo()

@@ -14,22 +14,8 @@ func (s *colorData) Use() {
 	ctx = s
 }
 
-func (s *colorData) Reset() {
-	ctx = nil
-}
-
 var ctx *colorData
 var ctxManager = context.New()
-
-func Begin(id int32) {
-	ctxManager.Begin(id)
-	palette.Begin(id)
-}
-
-func End() {
-	ctxManager.End()
-	palette.End()
-}
 
 func New(id int32) {
 	c := new(colorData)

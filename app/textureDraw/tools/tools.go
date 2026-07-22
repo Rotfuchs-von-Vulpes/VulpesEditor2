@@ -69,7 +69,9 @@ func Change() []texture.PixelEdit {
 	return nil
 }
 
-func Show() {
+func Show(id int32) {
+	ctxManager.Check(id)
+
 	im.Begin("Tools")
 	if im.Button("Pencil") {
 		ctx.selectedTool.Reset()

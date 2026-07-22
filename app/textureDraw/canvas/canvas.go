@@ -124,7 +124,9 @@ var textureFileName string
 var textureFilePath string
 var toFocus bool
 
-func Show() {
+func Show(id int32) {
+	ctxManager.Check(id)
+
 	var toPop string
 	if toFocus {
 		im.SetNextWindowFocus()
@@ -201,11 +203,10 @@ func Show() {
 		buttonRelease([5]bool{true, true, true, false, false})
 	}
 	im.End()
-	ctx.textureViewer.RenderTexture(ctx.texture.GlID, ctx.zoom, ctx.pos, float32(ctx.texture.Width), float32(ctx.texture.Height))
-}
 
-func ShowLayers() {
 	ctx.texture.ShowLayers()
+
+	ctx.textureViewer.RenderTexture(ctx.texture.GlID, ctx.zoom, ctx.pos, float32(ctx.texture.Width), float32(ctx.texture.Height))
 }
 
 func createCtx(tex *texture.Texture) (ctx *TextureContext) {

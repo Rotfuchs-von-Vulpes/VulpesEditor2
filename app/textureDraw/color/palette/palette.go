@@ -135,7 +135,9 @@ func Init() {
 
 var lospecInput string
 
-func Loop(color1, color2 *[4]float32) {
+func Loop(id int32, color1, color2 *[4]float32) {
+	ctxManager.Check(id)
+
 	var toPop string
 	im.BeginV("Color Palette", nil, im.WindowFlagsMenuBar)
 	if im.BeginMenuBar() {

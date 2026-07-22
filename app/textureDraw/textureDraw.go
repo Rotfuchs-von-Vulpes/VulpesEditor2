@@ -70,24 +70,10 @@ type instance struct {
 var Instances []*instance
 
 func (s *instance) init(c creationData) {
+	history.New(s.id)
 	color.New(s.id)
 	tools.New(s.id, c.width, c.height)
-	history.New(s.id)
 	canvas.New(s.id, c.width, c.height)
-}
-
-func (s *instance) begin() {
-	color.Begin(s.id)
-	tools.Begin(s.id)
-	history.Begin(s.id)
-	canvas.Begin(s.id)
-}
-
-func (s *instance) end() {
-	color.End()
-	tools.End()
-	history.End()
-	canvas.End()
 }
 
 func (s *instance) Focus() bool {
@@ -103,13 +89,10 @@ func (s *instance) Name() string {
 }
 
 func (s *instance) Show() {
-	s.begin()
-	color.Loop()
-	tools.Show()
-	canvas.Show()
-	canvas.ShowLayers()
-	history.Loop()
-	s.end()
+	history.Loop(s.id)
+	color.Show(s.id)
+	tools.Show(s.id)
+	canvas.Show(s.id)
 }
 
 func open(c creationData) {
