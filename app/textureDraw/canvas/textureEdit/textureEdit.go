@@ -1,14 +1,14 @@
 package textureEdit
 
 import (
+	"VulpesEditor/app/file"
 	"VulpesEditor/app/front/renderer"
 	"VulpesEditor/app/textureDraw/canvas/texture"
 	"VulpesEditor/app/textureDraw/history"
 	"VulpesEditor/app/util"
+	"bytes"
 	"fmt"
 	"image"
-	"image/color"
-	"image/png"
 	"os"
 	"slices"
 
@@ -288,20 +288,57 @@ func (s *TextureEdit) SaveTextureAsFile(fileName, path string) bool {
 		s.texture.Colors = texture.Merge(s.texture, layer.Texture)
 	}
 
-	img := image.NewRGBA(image.Rect(0, 0, int(s.texture.Width), int(s.texture.Height)))
-	for x := int32(0); x < int32(s.texture.Width); x++ {
-		for y := int32(0); y < int32(s.texture.Height); y++ {
-			_, rgba := s.texture.Get([2]int32{x, y})
-			alpha := rgba[3]
-			red := uint8(255 * rgba[0] * alpha)
-			green := uint8(255 * rgba[1] * alpha)
-			blue := uint8(255 * rgba[2] * alpha)
-			img.SetRGBA(int(x), int(y), color.RGBA{red, green, blue, uint8(255 * rgba[3])})
-		}
-	}
-	if err := png.Encode(file, img); err != nil {
+	if err := s.texture.ToPNG(file); err != nil {
 		fmt.Println(err)
 		return false
 	}
 	return true
+}
+
+func (s *TextureEdit) Save(r *file.ArchiveWriter) {
+	for i, layer := range s.layers {
+		buff := bytes.NewBuffer(nil)
+		layer.Texture.ToPNG(buff)
+		r.Write(fmt.Sprintf("layers/layer%d.png", i), buff.Bytes())
+	}
+}
+
+func Open(r *file.ArchiveReader) (out *TextureEdit, err error) {
+	var width uint32
+	var height uint32
+	var layers []*texture.Texture
+	count := 0
+	for {
+		name := fmt.Sprintf("layers/layer%d.png", count)
+		f, err := r.Open(name)
+		if err != nil {
+			break
+		}
+		defer f.Close()
+		tex, err := texture.DecodePNG(f)
+		if err != nil {
+			return nil, err
+		}
+		width = tex.Width
+		height = tex.Height
+		layers = append(layers, tex)
+		count += 1
+	}
+	if count == 0 {
+		return nil, fmt.Errorf("No texture")
+	}
+	out = new(TextureEdit)
+	out.Id = idSys.GetID()
+	out.Width = width
+	out.Height = height
+	out.Aspect = float32(width) / float32(height)
+	for i, layer := range layers {
+		out.addLayer(i, layer)
+	}
+	out.layer = out.layers[0]
+	out.texture = texture.New(width, height)
+	out.GlID = renderer.CreateTexture(int32(width), int32(height), out.layer.Texture.FlatColors())
+	out.preview = new(preview)
+	out.update()
+	return
 }

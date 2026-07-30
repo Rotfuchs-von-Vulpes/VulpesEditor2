@@ -3,6 +3,9 @@ package app
 import (
 	"VulpesEditor/app/front"
 	"VulpesEditor/app/textureDraw"
+	"VulpesEditor/app/util"
+	"os"
+	"path/filepath"
 	"strconv"
 
 	im "github.com/AllenDang/cimgui-go/imgui"
@@ -12,10 +15,32 @@ type Tab interface {
 	Name() string
 	Show()
 	Focus() bool
+	Save()
 }
 
+type project struct {
+	name string
+	path string
+}
+
+var allTextures []project
+
 func Init() {
+	util.Init()
 	textureDraw.Init()
+
+	projectsDir := filepath.Join(util.AppDir, "projects", "textures")
+
+	if files, err := os.ReadDir(projectsDir); err == nil {
+		for _, file := range files {
+			if !file.IsDir() {
+				var p project
+				p.name = file.Name()
+				p.path = filepath.Join(projectsDir, file.Name())
+				allTextures = append(allTextures, p)
+			}
+		}
+	}
 }
 
 func AfterCreateContext() {
@@ -28,6 +53,7 @@ func BeforeDestroyContext() {
 }
 
 var first = true
+var save = false
 
 func Loop() {
 	var allTabs []Tab
@@ -42,12 +68,43 @@ func Loop() {
 		im.WindowFlagsNoDecoration |
 		im.WindowFlagsNoResize |
 		im.WindowFlagsNoBringToFrontOnFocus |
-		im.WindowFlagsNoMove
+		im.WindowFlagsNoMove |
+		im.WindowFlagsMenuBar
 
 	im.SetNextWindowPos(im.MainViewport().WorkPos())
 	im.SetNextWindowSize(im.MainViewport().WorkSize())
 
 	if im.BeginV("Work Area", nil, workerAreaFlags) {
+		if im.BeginMenuBar() {
+			if im.BeginMenu("File") {
+				if im.BeginMenu("New") {
+					if im.MenuItemBool("Texture") {
+						textureDraw.OpenNewTextureWindow()
+					}
+					im.EndMenu()
+				}
+				if im.BeginMenu("Open") {
+					if im.MenuItemBool("Texture") {
+						textureDraw.OpenOpenTextureWindow()
+					}
+					im.EndMenu()
+				}
+				if im.BeginMenu("Open Recent") {
+					for _, project := range allTextures {
+						if im.MenuItemBool(project.name) {
+							textureDraw.OpenTexture(project.path)
+						}
+					}
+					im.EndMenu()
+				}
+				if im.MenuItemBool("Save") {
+					save = true
+				}
+				im.EndMenu()
+			}
+			im.EndMenuBar()
+		}
+
 		dockspaceId := im.IDStr("Dockspace")
 		if im.BeginTabBar("AAA") {
 			if im.BeginTabItem("Home") {
@@ -59,7 +116,7 @@ func Loop() {
 					textureDraw.OpenNewTextureWindow()
 				}
 				if im.ButtonV("Open Texture...", size) {
-					im.OpenPopupStr("Not Implement")
+					textureDraw.OpenOpenTextureWindow()
 				}
 
 				front.NotImplementPopUp()
@@ -85,6 +142,10 @@ func Loop() {
 					im.DockSpace(dockspaceId)
 					t.Show()
 					im.EndTabItem()
+
+					if save {
+						t.Save()
+					}
 				}
 				im.PopID()
 			}
@@ -94,5 +155,7 @@ func Loop() {
 	}
 	im.End()
 
-	textureDraw.ShowNewTextureWindow()
+	textureDraw.Show()
+
+	save = false
 }

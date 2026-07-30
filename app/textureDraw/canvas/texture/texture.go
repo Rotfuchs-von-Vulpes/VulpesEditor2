@@ -3,7 +3,26 @@ package texture
 import (
 	"VulpesEditor/app/util"
 	"fmt"
+	"image"
+	"image/color"
+	"image/draw"
+	"image/png"
+	"io"
 )
+
+func flatToColors(buff []byte) (colors [][4]float32) {
+	count := 0
+	color := [4]float32{}
+	for _, b := range buff {
+		color[count] = float32(b) / 256
+		count += 1
+		if count == 4 {
+			count = 0
+			colors = append(colors, color)
+		}
+	}
+	return
+}
 
 func blankTexture(width, height uint32) (data [][4]float32) {
 	for i := 0; i < int(width); i++ {
@@ -82,7 +101,8 @@ func (s *Texture) BulkSet(pixels []PixelEdit) (ok bool) {
 
 func (s *Texture) BulkSetColor(pixels [][2]int32, color [4]float32) (ok bool) {
 	for _, pos := range pixels {
-		ok = ok || s.Set(pos, color)
+		newOk := s.Set(pos, color)
+		ok = newOk || ok
 	}
 	return
 }
@@ -95,6 +115,40 @@ func (s *Texture) FlatColors() (data []float32) {
 	for _, color := range s.Colors {
 		data = append(data, color[0], color[1], color[2], color[3])
 	}
+	return
+}
+
+func (s Texture) ToPNG(file io.Writer) (err error) {
+	img := image.NewRGBA(image.Rect(0, 0, int(s.Width), int(s.Height)))
+	for x := int32(0); x < int32(s.Width); x++ {
+		for y := int32(0); y < int32(s.Height); y++ {
+			_, rgba := s.Get([2]int32{x, y})
+			alpha := rgba[3]
+			red := uint8(255 * rgba[0] * alpha)
+			green := uint8(255 * rgba[1] * alpha)
+			blue := uint8(255 * rgba[2] * alpha)
+			img.SetRGBA(int(x), int(y), color.RGBA{red, green, blue, uint8(255 * rgba[3])})
+		}
+	}
+	err = png.Encode(file, img)
+	return
+}
+
+func DecodePNG(file io.Reader) (tex *Texture, err error) {
+	img, err := png.Decode(file)
+	if err != nil {
+		return
+	}
+
+	rect := img.Bounds()
+	width := rect.Dx()
+	height := rect.Dy()
+	rgba := image.NewRGBA(rect)
+	draw.Draw(rgba, rect, img, rect.Min, draw.Src)
+
+	tex = New(uint32(width), uint32(height))
+	tex.Colors = flatToColors(rgba.Pix)
+
 	return
 }
 

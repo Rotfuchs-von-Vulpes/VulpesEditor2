@@ -1,6 +1,7 @@
 package paletteFile
 
 import (
+	"VulpesEditor/app/util"
 	"bytes"
 	"encoding/csv"
 	"fmt"
@@ -16,11 +17,7 @@ import (
 var palettesDir string
 
 func Init() {
-	userConfigDir, err := os.UserConfigDir()
-	if err != nil {
-		panic(err)
-	}
-	palettesDir = filepath.Join(userConfigDir, "VulpesEditor", "resources", "palettes")
+	palettesDir = filepath.Join(util.AppDir, "resources", "palettes")
 	if err := os.MkdirAll(palettesDir, os.ModePerm); err != nil {
 		panic(err)
 	}

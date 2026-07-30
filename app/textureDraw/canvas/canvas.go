@@ -3,7 +3,6 @@ package canvas
 import (
 	"VulpesEditor/app/front"
 	"VulpesEditor/app/front/renderer"
-	"VulpesEditor/app/textureDraw/canvas/texture"
 	"VulpesEditor/app/textureDraw/canvas/textureEdit"
 	"VulpesEditor/app/textureDraw/tools"
 	"VulpesEditor/app/util"
@@ -209,18 +208,8 @@ func Show(id int32) {
 	ctx.textureViewer.RenderTexture(ctx.texture.GlID, ctx.zoom, ctx.pos, float32(ctx.texture.Width), float32(ctx.texture.Height))
 }
 
-func createCtx(tex *texture.Texture) (ctx *TextureContext) {
-	ctx = new(TextureContext)
-	ctx.zoom = 0.9
-	ctx.textureViewer = renderer.CreateFramebuffer(500, 500)
-	viwerSize = [2]float32{500, 500}
-	ctx.texture = textureEdit.New(tex)
-
-	return
-}
-
-func OpenTexture(tex *texture.Texture) {
-	createCtx(tex)
+func Size() (uint32, uint32) {
+	return ctx.texture.Width, ctx.texture.Height
 }
 
 var windowIdSys = util.NewIdSystem()
