@@ -1,8 +1,8 @@
 package textureEdit
 
 import (
+	"VulpesEditor/app/history"
 	"VulpesEditor/app/textureDraw/canvas/texture"
-	"VulpesEditor/app/textureDraw/history"
 	"math"
 
 	"github.com/AllenDang/cimgui-go/backend"

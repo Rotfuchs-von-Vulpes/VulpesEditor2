@@ -108,7 +108,7 @@ func Loop() {
 		dockspaceId := im.IDStr("Dockspace")
 		if im.BeginTabBar("AAA") {
 			if im.BeginTabItem("Home") {
-				childSize := im.NewVec2(200, 100+im.FrameHeight()*16)
+				childSize := im.NewVec2(500, 100+im.FrameHeight()*16)
 				im.SetCursorPos(im.WindowSize().Sub(childSize).Div(2))
 				im.BeginChildStrV("Contents", childSize, im.ChildFlagsNone, im.WindowFlagsNone)
 				size := im.NewVec2(-0.00001, 0)

@@ -3,8 +3,8 @@ package textureEdit
 import (
 	"VulpesEditor/app/file"
 	"VulpesEditor/app/front/renderer"
+	"VulpesEditor/app/history"
 	"VulpesEditor/app/textureDraw/canvas/texture"
-	"VulpesEditor/app/textureDraw/history"
 	"VulpesEditor/app/util"
 	"bytes"
 	"fmt"

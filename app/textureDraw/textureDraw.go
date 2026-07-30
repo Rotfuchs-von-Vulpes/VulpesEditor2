@@ -2,9 +2,9 @@ package textureDraw
 
 import (
 	"VulpesEditor/app/file"
+	"VulpesEditor/app/history"
 	"VulpesEditor/app/textureDraw/canvas"
 	"VulpesEditor/app/textureDraw/color"
-	"VulpesEditor/app/textureDraw/history"
 	"VulpesEditor/app/textureDraw/tools"
 	"VulpesEditor/app/util"
 	"fmt"
