@@ -8,6 +8,7 @@ import (
 	"VulpesEditor/app/textureDraw/tools"
 	"VulpesEditor/app/util"
 	"fmt"
+	"io"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -178,6 +179,13 @@ func (s *instance) Save() {
 		return
 	}
 	canvas.Save(w)
+	b := strings.Builder{}
+	b.WriteString(s.name)
+	b.WriteRune('\n')
+	b.WriteString(strconv.FormatInt(int64(s.width), 10))
+	b.WriteRune('\n')
+	b.WriteString(strconv.FormatInt(int64(s.height), 10))
+	w.Write("metaData.txt", []byte(b.String()))
 	w.Save()
 }
 
@@ -187,14 +195,37 @@ func OpenTexture(path string) {
 		fmt.Println(err)
 		return
 	}
+	f, err := r.Open("metaData.txt")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	b := strings.Builder{}
+	io.Copy(&b, f)
+	file := b.String()
+	f.Close()
+	field := strings.Split(file, "\n")
+	if len(field) < 3 {
+		fmt.Println("Incomplete data")
+	}
 	itc := new(instance)
+	itc.name = field[0]
+	width, err := strconv.ParseInt(field[1], 10, 32)
+	if err != nil {
+		fmt.Println("can't parse width")
+	}
+	height, err := strconv.ParseInt(field[2], 10, 32)
+	if err != nil {
+		fmt.Println("can't parse height")
+	}
+	itc.width = uint32(width)
+	itc.height = uint32(height)
 	itc.id = count
 	itc.focus = true
 	if err := canvas.Open(itc.id, r); err != nil {
 		fmt.Println(err)
 		return
 	}
-	itc.width, itc.height = canvas.Size()
 	itc.init()
 	Instances = append(Instances, itc)
 	count += 1
