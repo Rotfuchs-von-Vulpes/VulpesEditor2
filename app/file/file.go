@@ -1,6 +1,7 @@
 package file
 
 import (
+	"VulpesEditor/app/util"
 	"archive/zip"
 	"io/fs"
 	"os"
@@ -10,6 +11,28 @@ import (
 type ArchiveWriter struct {
 	file *os.File
 	zip  *zip.Writer
+}
+
+type Project struct {
+	Name string
+	Path string
+}
+
+func GetAllProjects(kind string) (projects []Project) {
+	projectsDir := filepath.Join(util.AppDir, "projects", kind)
+
+	if files, err := os.ReadDir(projectsDir); err == nil {
+		for _, file := range files {
+			if !file.IsDir() {
+				var p Project
+				p.Name = file.Name()
+				p.Path = filepath.Join(projectsDir, file.Name())
+				projects = append(projects, p)
+			}
+		}
+	}
+
+	return
 }
 
 func NewArchive(path, name string) (w *ArchiveWriter, err error) {
@@ -46,8 +69,8 @@ type ArchiveReader struct {
 	closer *zip.ReadCloser
 }
 
-func Load(name string) (r *ArchiveReader, err error) {
-	f, err := zip.OpenReader(name)
+func Load(path string) (r *ArchiveReader, err error) {
+	f, err := zip.OpenReader(path)
 	if err != nil {
 		return
 	}

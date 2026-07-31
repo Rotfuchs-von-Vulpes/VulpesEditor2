@@ -4,8 +4,6 @@ import (
 	"VulpesEditor/app/front"
 	"VulpesEditor/app/textureDraw"
 	"VulpesEditor/app/util"
-	"os"
-	"path/filepath"
 	"strconv"
 
 	im "github.com/AllenDang/cimgui-go/imgui"
@@ -18,29 +16,9 @@ type Tab interface {
 	Save()
 }
 
-type project struct {
-	name string
-	path string
-}
-
-var allTextures []project
-
 func Init() {
 	util.Init()
 	textureDraw.Init()
-
-	projectsDir := filepath.Join(util.AppDir, "projects", "textures")
-
-	if files, err := os.ReadDir(projectsDir); err == nil {
-		for _, file := range files {
-			if !file.IsDir() {
-				var p project
-				p.name = file.Name()
-				p.path = filepath.Join(projectsDir, file.Name())
-				allTextures = append(allTextures, p)
-			}
-		}
-	}
 }
 
 func AfterCreateContext() {
@@ -90,9 +68,9 @@ func Loop() {
 					im.EndMenu()
 				}
 				if im.BeginMenu("Open Recent") {
-					for _, project := range allTextures {
-						if im.MenuItemBool(project.name) {
-							textureDraw.OpenTexture(project.path)
+					for _, project := range textureDraw.AllTextures {
+						if im.MenuItemBool(project.Name) {
+							textureDraw.OpenTexture(project.Path)
 						}
 					}
 					im.EndMenu()

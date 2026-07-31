@@ -15,8 +15,11 @@ import (
 	im "github.com/AllenDang/cimgui-go/imgui"
 )
 
+var AllTextures []file.Project
+
 func Init() {
 	color.Init()
+	AllTextures = file.GetAllProjects("textures")
 }
 
 func AfterCreateContext() {
@@ -26,15 +29,10 @@ func AfterCreateContext() {
 var standardTexSize = [2]int32{16, 16}
 var textureSize = standardTexSize
 var isNewTextureOpen = false
-var isOpenTextureOpen = false
 var nameInput string
 
 func OpenNewTextureWindow() {
 	isNewTextureOpen = true
-}
-
-func OpenOpenTextureWindow() {
-	isOpenTextureOpen = true
 }
 
 func closeNewTextureWindow() {
@@ -42,16 +40,6 @@ func closeNewTextureWindow() {
 	textureSize = standardTexSize
 	nameInput = ""
 	im.CloseCurrentPopup()
-}
-
-func closeOpenTextureWindow() {
-	isOpenTextureOpen = false
-	im.CloseCurrentPopup()
-}
-
-func Show() {
-	newTextureWindow()
-	openTextureWindow()
 }
 
 func newTextureWindow() {
@@ -71,15 +59,29 @@ func newTextureWindow() {
 				c.name = strings.Clone(nameInput)
 				c.width = uint32(textureSize[0])
 				c.height = uint32(textureSize[1])
-				openWindow(c)
+				openNew(c)
 				closeNewTextureWindow()
 			}
+			im.SameLine()
 			if im.Button("Cancel") {
 				closeNewTextureWindow()
 			}
 			im.EndPopup()
 		}
 	}
+}
+
+var selected int = -1
+var isOpenTextureOpen = false
+
+func OpenOpenTextureWindow() {
+	isOpenTextureOpen = true
+}
+
+func closeOpenTextureWindow() {
+	isOpenTextureOpen = false
+	selected = -1
+	im.CloseCurrentPopup()
 }
 
 func openTextureWindow() {
@@ -89,25 +91,40 @@ func openTextureWindow() {
 		}
 
 		if im.BeginPopupModal("Open Texture") {
-			im.BeginDisabled()
-			if im.Button("Open") {
-				var c creationData
-				if nameInput == "" {
-					nameInput = "unnamed_texture"
+			im.BeginListBox("Select")
+			for i, p := range AllTextures {
+				if im.SelectableBoolV(p.Name, i == selected, im.SelectableFlagsAllowDoubleClick, im.NewVec2(0, 0)) {
+					if im.IsMouseDoubleClicked(0) {
+						OpenTexture(p.Path)
+						closeOpenTextureWindow()
+					}
+					selected = i
 				}
-				c.name = strings.Clone(nameInput)
-				c.width = uint32(textureSize[0])
-				c.height = uint32(textureSize[1])
-				openWindow(c)
+			}
+			im.EndListBox()
+			dis := selected == -1
+			if dis {
+				im.BeginDisabled()
+			}
+			if im.Button("Open") {
+				OpenTexture(AllTextures[selected].Path)
 				closeOpenTextureWindow()
 			}
-			im.EndDisabled()
+			if dis {
+				im.EndDisabled()
+			}
+			im.SameLine()
 			if im.Button("Cancel") {
 				closeOpenTextureWindow()
 			}
 			im.EndPopup()
 		}
 	}
+}
+
+func Show() {
+	newTextureWindow()
+	openTextureWindow()
 }
 
 var count int32 = 0
@@ -164,8 +181,8 @@ func (s *instance) Save() {
 	w.Save()
 }
 
-func OpenTexture(name string) {
-	r, err := file.Load(name)
+func OpenTexture(path string) {
+	r, err := file.Load(path)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -183,7 +200,7 @@ func OpenTexture(name string) {
 	count += 1
 }
 
-func openWindow(c creationData) {
+func openNew(c creationData) {
 	itc := new(instance)
 	itc.name = c.name
 	itc.width = c.width
