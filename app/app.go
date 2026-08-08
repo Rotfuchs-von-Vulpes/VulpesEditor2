@@ -14,6 +14,7 @@ type Tab interface {
 	Show()
 	Focus() bool
 	Save()
+	Close()
 }
 
 func Init() {
@@ -32,6 +33,7 @@ func BeforeDestroyContext() {
 
 var first = true
 var save = false
+var close = false
 
 func Loop() {
 	var allTabs []Tab
@@ -77,6 +79,9 @@ func Loop() {
 				}
 				if im.MenuItemBool("Save") {
 					save = true
+				}
+				if im.MenuItemBool("Close") {
+					close = true
 				}
 				im.EndMenu()
 			}
@@ -124,6 +129,9 @@ func Loop() {
 					if save {
 						t.Save()
 					}
+					if close {
+						t.Close()
+					}
 				}
 				im.PopID()
 			}
@@ -136,4 +144,5 @@ func Loop() {
 	textureDraw.Show()
 
 	save = false
+	close = false
 }

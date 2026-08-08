@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -189,6 +190,15 @@ func (s *instance) Save() {
 	b.WriteString(strconv.FormatInt(int64(s.height), 10))
 	w.Write("metaData.txt", []byte(b.String()))
 	w.Save()
+}
+
+func (s *instance) Close() {
+	for i, p := range Instances {
+		if p.id == s.id {
+			Instances = slices.Delete(Instances, i, i+1)
+			return
+		}
+	}
 }
 
 func OpenTexture(path string) {
