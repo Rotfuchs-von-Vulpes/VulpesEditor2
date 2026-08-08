@@ -180,6 +180,8 @@ func (s *instance) Save() {
 	}
 	canvas.Save(w)
 	b := strings.Builder{}
+	b.WriteString("texture")
+	b.WriteRune('\n')
 	b.WriteString(s.name)
 	b.WriteRune('\n')
 	b.WriteString(strconv.FormatInt(int64(s.width), 10))
@@ -205,18 +207,25 @@ func OpenTexture(path string) {
 	file := b.String()
 	f.Close()
 	field := strings.Split(file, "\n")
-	if len(field) < 3 {
+	if len(field) < 4 {
 		fmt.Println("Incomplete data")
+		return
+	}
+	if field[0] != "texture" {
+		fmt.Println("Wrong project type")
+		return
 	}
 	itc := new(instance)
-	itc.name = field[0]
-	width, err := strconv.ParseInt(field[1], 10, 32)
+	itc.name = field[1]
+	width, err := strconv.ParseInt(field[2], 10, 32)
 	if err != nil {
 		fmt.Println("can't parse width")
+		return
 	}
-	height, err := strconv.ParseInt(field[2], 10, 32)
+	height, err := strconv.ParseInt(field[3], 10, 32)
 	if err != nil {
 		fmt.Println("can't parse height")
+		return
 	}
 	itc.width = uint32(width)
 	itc.height = uint32(height)
