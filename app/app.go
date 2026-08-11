@@ -17,7 +17,6 @@ func Init() {
 
 func AfterCreateContext() {
 	front.Init()
-	textureDraw.AfterCreateContext()
 }
 
 func BeforeDestroyContext() {

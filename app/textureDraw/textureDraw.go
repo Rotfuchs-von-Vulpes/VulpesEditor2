@@ -24,10 +24,6 @@ func Init() {
 	AllTextures = file.GetAllProjects("textures")
 }
 
-func AfterCreateContext() {
-	// canvas.AddTexture(16, 16)
-}
-
 var standardTexSize = [2]int32{16, 16}
 var textureSize = standardTexSize
 var isNewTextureOpen = false
