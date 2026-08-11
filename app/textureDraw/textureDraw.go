@@ -24,6 +24,12 @@ func Init() {
 	AllTextures = file.GetAllProjects("textures")
 }
 
+type creationData struct {
+	name   string
+	width  uint32
+	height uint32
+}
+
 var standardTexSize = [2]int32{16, 16}
 var textureSize = standardTexSize
 var isNewTextureOpen = false
@@ -126,12 +132,6 @@ func Show() {
 }
 
 var count int32 = 0
-
-type creationData struct {
-	name   string
-	width  uint32
-	height uint32
-}
 
 type instance struct {
 	name   string

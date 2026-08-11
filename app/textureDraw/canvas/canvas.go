@@ -208,8 +208,4 @@ func Show(id int32) {
 	ctx.textureViewer.RenderTexture(ctx.texture.GlID, ctx.zoom, ctx.pos, float32(ctx.texture.Width), float32(ctx.texture.Height))
 }
 
-func Size() (uint32, uint32) {
-	return ctx.texture.Width, ctx.texture.Height
-}
-
 var windowIdSys = util.NewIdSystem()
