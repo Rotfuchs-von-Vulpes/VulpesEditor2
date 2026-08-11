@@ -2,6 +2,7 @@ package textureDraw
 
 import (
 	"VulpesEditor/app/file"
+	"VulpesEditor/app/front/tabs"
 	"VulpesEditor/app/history"
 	"VulpesEditor/app/textureDraw/canvas"
 	"VulpesEditor/app/textureDraw/color"
@@ -10,7 +11,6 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
-	"slices"
 	"strconv"
 	"strings"
 
@@ -146,8 +146,6 @@ type instance struct {
 	focus bool
 }
 
-var Instances []*instance
-
 func (s *instance) init() {
 	history.New(s.id)
 	color.New(s.id)
@@ -190,15 +188,6 @@ func (s *instance) Save() {
 	b.WriteString(strconv.FormatInt(int64(s.height), 10))
 	w.Write("metaData.txt", []byte(b.String()))
 	w.Save()
-}
-
-func (s *instance) Close() {
-	for i, p := range Instances {
-		if p.id == s.id {
-			Instances = slices.Delete(Instances, i, i+1)
-			return
-		}
-	}
 }
 
 func OpenTexture(path string) {
@@ -246,8 +235,8 @@ func OpenTexture(path string) {
 		return
 	}
 	itc.init()
-	Instances = append(Instances, itc)
 	count += 1
+	tabs.Push(itc)
 }
 
 func openNew(c creationData) {
@@ -259,6 +248,6 @@ func openNew(c creationData) {
 	itc.focus = true
 	itc.init()
 	canvas.New(itc.id, itc.width, itc.height)
-	Instances = append(Instances, itc)
 	count += 1
+	tabs.Push(itc)
 }

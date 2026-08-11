@@ -2,20 +2,13 @@ package app
 
 import (
 	"VulpesEditor/app/front"
+	"VulpesEditor/app/front/tabs"
 	"VulpesEditor/app/textureDraw"
 	"VulpesEditor/app/util"
 	"strconv"
 
 	im "github.com/AllenDang/cimgui-go/imgui"
 )
-
-type Tab interface {
-	Name() string
-	Show()
-	Focus() bool
-	Save()
-	Close()
-}
 
 func Init() {
 	util.Init()
@@ -36,11 +29,6 @@ var save = false
 var close = false
 
 func Loop() {
-	var allTabs []Tab
-	for _, itc := range textureDraw.Instances {
-		allTabs = append(allTabs, itc)
-	}
-
 	im.ClearSizeCallbackPool()
 
 	workerAreaFlags := im.WindowFlagsNoTitleBar |
@@ -114,7 +102,10 @@ func Loop() {
 				im.EndTabItem()
 			}
 
-			for i, t := range allTabs {
+			for i, t := range tabs.AllTabs {
+				if t == nil {
+					continue
+				}
 				f := im.TabItemFlagsNone
 				if t.Focus() {
 					f |= im.TabItemFlagsSetSelected
@@ -130,7 +121,7 @@ func Loop() {
 						t.Save()
 					}
 					if close {
-						t.Close()
+						tabs.Close(i)
 					}
 				}
 				im.PopID()
