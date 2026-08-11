@@ -7,6 +7,7 @@ import (
 
 	"github.com/AllenDang/cimgui-go/imgui"
 	"github.com/go-gl/gl/v3.3-core/gl"
+	"github.com/go-gl/mathgl/mgl32"
 )
 
 func Str(str string) *uint8 {
@@ -26,6 +27,12 @@ var texVertexShader string
 
 //go:embed shaders/texture.frag
 var texFragmentShader string
+
+//go:embed shaders/model.vert
+var modelVertexShader string
+
+//go:embed shaders/model.frag
+var modelFragmentShader string
 
 type uniforms struct {
 	color int32
@@ -47,12 +54,26 @@ type textureUniforms struct {
 	size    int32
 }
 
+type modelUniforms struct {
+	projection int32
+	view       int32
+	model      int32
+}
+
 type textureRender struct {
 	shaderHandle uint32
 	textureVao   uint32
 	outlineVao   uint32
 	vbo          uint32
 	uniforms     textureUniforms
+}
+
+type modelRender struct {
+	shaderHandle uint32
+	vao          uint32
+	ebo          uint32
+	vbo          uint32
+	uniforms     modelUniforms
 }
 
 type windowScreen struct {
@@ -68,6 +89,7 @@ type FrameBuffer struct {
 
 var w windowScreen
 var r renderer
+var rMol modelRender
 var rTex textureRender
 
 func glError(handle uint32, statusType uint32, getIV func(uint32, uint32, *int32), getInfoLog func(uint32, int32, *int32, *uint8), failureMsg string) {
@@ -120,6 +142,8 @@ func Init() {
 	w.width = 1200
 	w.height = 900
 
+	gl.Enable(gl.DEPTH_TEST)
+	gl.DepthFunc(gl.LESS)
 	gl.Enable(gl.CULL_FACE)
 	gl.CullFace(gl.BACK)
 	gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
@@ -133,7 +157,7 @@ func Init() {
 		gl.CompileShader(vertHandle)
 		glError(vertHandle, gl.COMPILE_STATUS, gl.GetShaderiv, gl.GetShaderInfoLog, "Vertex shader error")
 		gl.CompileShader(fragHandle)
-		glError(vertHandle, gl.COMPILE_STATUS, gl.GetShaderiv, gl.GetShaderInfoLog, "Fragment shader error")
+		glError(fragHandle, gl.COMPILE_STATUS, gl.GetShaderiv, gl.GetShaderInfoLog, "Fragment shader error")
 		gl.AttachShader(r.shaderHandle, vertHandle)
 		gl.AttachShader(r.shaderHandle, fragHandle)
 		gl.LinkProgram(r.shaderHandle)
@@ -171,7 +195,7 @@ func Init() {
 		gl.CompileShader(vertHandle)
 		glError(vertHandle, gl.COMPILE_STATUS, gl.GetShaderiv, gl.GetShaderInfoLog, "Vertex shader error")
 		gl.CompileShader(fragHandle)
-		glError(vertHandle, gl.COMPILE_STATUS, gl.GetShaderiv, gl.GetShaderInfoLog, "Fragment shader error")
+		glError(fragHandle, gl.COMPILE_STATUS, gl.GetShaderiv, gl.GetShaderInfoLog, "Fragment shader error")
 		gl.AttachShader(rTex.shaderHandle, vertHandle)
 		gl.AttachShader(rTex.shaderHandle, fragHandle)
 		gl.LinkProgram(rTex.shaderHandle)
@@ -232,6 +256,42 @@ func Init() {
 
 		gl.BindBuffer(gl.ARRAY_BUFFER, 0)
 		gl.BindVertexArray(0)
+	}
+
+	{
+		rMol.shaderHandle = gl.CreateProgram()
+		vertHandle := gl.CreateShader(gl.VERTEX_SHADER)
+		fragHandle := gl.CreateShader(gl.FRAGMENT_SHADER)
+		glShaderSource(vertHandle, modelVertexShader)
+		glShaderSource(fragHandle, modelFragmentShader)
+		gl.CompileShader(vertHandle)
+		glError(vertHandle, gl.COMPILE_STATUS, gl.GetShaderiv, gl.GetShaderInfoLog, "Vertex shader error")
+		gl.CompileShader(fragHandle)
+		glError(fragHandle, gl.COMPILE_STATUS, gl.GetShaderiv, gl.GetShaderInfoLog, "Fragment shader error")
+		gl.AttachShader(rMol.shaderHandle, vertHandle)
+		gl.AttachShader(rMol.shaderHandle, fragHandle)
+		gl.LinkProgram(rMol.shaderHandle)
+		glError(rMol.shaderHandle, gl.LINK_STATUS, gl.GetProgramiv, gl.GetProgramInfoLog, "Linking program error")
+		gl.DeleteShader(vertHandle)
+		gl.DeleteShader(fragHandle)
+
+		rMol.uniforms.view = gl.GetUniformLocation(rMol.shaderHandle, Str("view"))
+		rMol.uniforms.projection = gl.GetUniformLocation(rMol.shaderHandle, Str("projection"))
+		rMol.uniforms.model = gl.GetUniformLocation(rMol.shaderHandle, Str("model"))
+
+		gl.UseProgram(rMol.shaderHandle)
+
+		gl.GenVertexArrays(1, &rMol.vao)
+		gl.GenBuffers(1, &rMol.vbo)
+		gl.GenBuffers(1, &rMol.ebo)
+
+		gl.BindVertexArray(rMol.vao)
+		gl.BindBuffer(gl.ARRAY_BUFFER, rMol.vbo)
+
+		gl.VertexAttribPointerWithOffset(0, 3, gl.FLOAT, false, 5*4, 0)
+		gl.VertexAttribPointerWithOffset(1, 2, gl.FLOAT, false, 5*4, 3*4)
+		gl.EnableVertexAttribArray(0)
+		gl.EnableVertexAttribArray(1)
 	}
 
 	if gl.CheckFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE {
@@ -339,5 +399,52 @@ func (f *FrameBuffer) RenderTexture(t1 uint32, zoom float32, pos [2]float32, wid
 	gl.Uniform1i(rTex.uniforms.outline, 1)
 	gl.BindVertexArray(rTex.outlineVao)
 	gl.DrawArrays(gl.LINE_LOOP, 0, 4)
+	gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
+}
+
+func (f *FrameBuffer) SetModel(vertices []float32, indices []uint32) {
+	gl.UseProgram(rMol.shaderHandle)
+
+	gl.BindVertexArray(rMol.vao)
+
+	gl.BindBuffer(gl.ARRAY_BUFFER, rMol.vbo)
+	gl.BufferData(gl.ARRAY_BUFFER, 4*len(vertices), gl.Ptr(&vertices[0]), gl.STATIC_DRAW)
+
+	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, rMol.ebo)
+	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, 4*len(indices), gl.Ptr(&indices[0]), gl.STATIC_DRAW)
+}
+
+type Camera struct {
+	pos        [3]float32
+	front      [3]float32
+	up         [3]float32
+	right      [3]float32
+	viewPort   [2]float32
+	proj, view mgl32.Mat4
+}
+
+func (f *FrameBuffer) RenderModel(length int32) {
+	gl.Viewport(0, 0, f.width, f.height)
+	gl.BindFramebuffer(gl.FRAMEBUFFER, f.fbo)
+	// gl.ActiveTexture(gl.TEXTURE0)
+	// gl.BindTexture(gl.TEXTURE_2D, t1)
+	gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, f.colorBuffer, 0)
+	gl.FramebufferTexture(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, f.depth, 0)
+
+	gl.UseProgram(rMol.shaderHandle)
+
+	projection := mgl32.Perspective(mgl32.DegToRad(45.0), float32(f.width)/float32(f.height), 0.1, 10.0)
+	view := mgl32.LookAtV(mgl32.Vec3{-3, -3, -3}, mgl32.Vec3{0, 0, 0}, mgl32.Vec3{0, 1, 0})
+	model := mgl32.Ident4()
+
+	gl.UniformMatrix4fv(rMol.uniforms.projection, 1, false, &projection[0])
+	gl.UniformMatrix4fv(rMol.uniforms.view, 1, false, &view[0])
+	gl.UniformMatrix4fv(rMol.uniforms.model, 1, false, &model[0])
+
+	gl.ClearColor(0.29, 0.29, 0.39, 1.0)
+	gl.Clear(gl.COLOR_BUFFER_BIT)
+	gl.Clear(gl.DEPTH_BUFFER_BIT)
+	gl.BindVertexArray(rMol.vao)
+	gl.DrawElementsWithOffset(gl.TRIANGLES, length, gl.UNSIGNED_INT, 0)
 	gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
 }

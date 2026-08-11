@@ -3,6 +3,7 @@ package app
 import (
 	"VulpesEditor/app/front"
 	"VulpesEditor/app/front/tabs"
+	"VulpesEditor/app/objectModel"
 	"VulpesEditor/app/textureDraw"
 	"VulpesEditor/app/util"
 	"strconv"
@@ -17,6 +18,7 @@ func Init() {
 
 func AfterCreateContext() {
 	front.Init()
+	objectModel.Init()
 }
 
 func BeforeDestroyContext() {
@@ -88,6 +90,9 @@ func Loop() {
 				if im.ButtonV("Open Texture...", size) {
 					textureDraw.OpenOpenTextureWindow()
 				}
+				if im.ButtonV("Test Model", size) {
+					objectModel.OpenNewModelWindow()
+				}
 
 				front.NotImplementPopUp()
 
@@ -132,6 +137,7 @@ func Loop() {
 	im.End()
 
 	textureDraw.Show()
+	objectModel.Show()
 
 	save = false
 	close = false
