@@ -70,9 +70,6 @@ type textureRender struct {
 
 type modelRender struct {
 	shaderHandle uint32
-	vao          uint32
-	ebo          uint32
-	vbo          uint32
 	uniforms     modelUniforms
 }
 
@@ -244,9 +241,10 @@ func Init() {
 
 		gl.GenVertexArrays(1, &rTex.outlineVao)
 		gl.GenBuffers(1, &rTex.vbo)
-		gl.BindVertexArray(rTex.outlineVao)
 
+		gl.BindVertexArray(rTex.outlineVao)
 		gl.BindBuffer(gl.ARRAY_BUFFER, rTex.vbo)
+
 		gl.BufferData(gl.ARRAY_BUFFER, int(FLOAT_SIZE)*len(outlineVertices), gl.Ptr(&outlineVertices[0]), gl.STATIC_DRAW)
 
 		gl.VertexAttribPointerWithOffset(0, 2, gl.FLOAT, false, 4*FLOAT_SIZE, 0)
@@ -278,20 +276,6 @@ func Init() {
 		rMol.uniforms.view = gl.GetUniformLocation(rMol.shaderHandle, Str("view"))
 		rMol.uniforms.projection = gl.GetUniformLocation(rMol.shaderHandle, Str("projection"))
 		rMol.uniforms.model = gl.GetUniformLocation(rMol.shaderHandle, Str("model"))
-
-		gl.UseProgram(rMol.shaderHandle)
-
-		gl.GenVertexArrays(1, &rMol.vao)
-		gl.GenBuffers(1, &rMol.vbo)
-		gl.GenBuffers(1, &rMol.ebo)
-
-		gl.BindVertexArray(rMol.vao)
-		gl.BindBuffer(gl.ARRAY_BUFFER, rMol.vbo)
-
-		gl.VertexAttribPointerWithOffset(0, 3, gl.FLOAT, false, 5*4, 0)
-		gl.VertexAttribPointerWithOffset(1, 2, gl.FLOAT, false, 5*4, 3*4)
-		gl.EnableVertexAttribArray(0)
-		gl.EnableVertexAttribArray(1)
 	}
 
 	if gl.CheckFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE {
@@ -402,28 +386,87 @@ func (f *FrameBuffer) RenderTexture(t1 uint32, zoom float32, pos [2]float32, wid
 	gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
 }
 
-func (f *FrameBuffer) SetModel(vertices []float32, indices []uint32) {
+type Mesh struct {
+	vao, vbo, ebo uint32
+	length        int32
+}
+
+func NewMesh() (m *Mesh) {
+	m = new(Mesh)
+
 	gl.UseProgram(rMol.shaderHandle)
 
-	gl.BindVertexArray(rMol.vao)
+	gl.GenVertexArrays(1, &m.vao)
+	gl.GenBuffers(1, &m.vbo)
+	gl.GenBuffers(1, &m.ebo)
 
-	gl.BindBuffer(gl.ARRAY_BUFFER, rMol.vbo)
+	gl.BindVertexArray(m.vao)
+	gl.BindBuffer(gl.ARRAY_BUFFER, m.vbo)
+
+	gl.VertexAttribPointerWithOffset(0, 3, gl.FLOAT, false, 5*4, 0)
+	gl.VertexAttribPointerWithOffset(1, 2, gl.FLOAT, false, 5*4, 3*4)
+	gl.EnableVertexAttribArray(0)
+	gl.EnableVertexAttribArray(1)
+
+	return
+}
+
+func (s *Mesh) SetVertices(vertices []float32, indices []uint32) {
+	gl.UseProgram(rMol.shaderHandle)
+
+	gl.BindVertexArray(s.vao)
+
+	gl.BindBuffer(gl.ARRAY_BUFFER, s.vbo)
 	gl.BufferData(gl.ARRAY_BUFFER, 4*len(vertices), gl.Ptr(&vertices[0]), gl.STATIC_DRAW)
 
-	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, rMol.ebo)
+	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, s.ebo)
 	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, 4*len(indices), gl.Ptr(&indices[0]), gl.STATIC_DRAW)
+
+	s.length = int32(len(indices))
 }
 
 type Camera struct {
-	pos        [3]float32
-	front      [3]float32
-	up         [3]float32
-	right      [3]float32
-	viewPort   [2]float32
-	proj, view mgl32.Mat4
+	Pos           mgl32.Vec3
+	Front         mgl32.Vec3
+	up            mgl32.Vec3
+	right         mgl32.Vec3
+	viewPort      [2]float32
+	proj, view    mgl32.Mat4
+	width, height float32
 }
 
-func (f *FrameBuffer) RenderModel(length int32) {
+func NewCamera(w, h int32) (c *Camera) {
+	c = new(Camera)
+	c.resize(w, h)
+	c.setup()
+	return
+}
+
+func (s *Camera) resize(w, h int32) {
+	s.width = float32(w)
+	s.height = float32(h)
+	s.proj = mgl32.Perspective(mgl32.DegToRad(45.0), s.width/s.height, 0.1, 10.0)
+}
+
+func (s *Camera) setup() {
+	s.view = mgl32.LookAtV(mgl32.Vec3{-3, -3, -3}, mgl32.Vec3{0, 0, 0}, mgl32.Vec3{0, 1, 0})
+}
+
+func (s *Camera) Move(pos [3]float32) {
+	s.Pos = pos
+	s.view = mgl32.LookAtV(s.Pos, s.Front, s.up)
+}
+
+func (s *Camera) Turn(versor mgl32.Vec3) {
+	s.Front = versor.Normalize()
+	s.right = s.Front.Cross(mgl32.Vec3{0, 1, 0}).Normalize()
+	s.up = s.right.Cross(s.Front).Normalize()
+	s.view = mgl32.LookAtV(s.Pos, s.Front, s.up)
+}
+
+func (f *FrameBuffer) RenderModel(camera *Camera, mesh *Mesh) {
+	camera.resize(f.width, f.height)
+
 	gl.Viewport(0, 0, f.width, f.height)
 	gl.BindFramebuffer(gl.FRAMEBUFFER, f.fbo)
 	// gl.ActiveTexture(gl.TEXTURE0)
@@ -433,18 +476,17 @@ func (f *FrameBuffer) RenderModel(length int32) {
 
 	gl.UseProgram(rMol.shaderHandle)
 
-	projection := mgl32.Perspective(mgl32.DegToRad(45.0), float32(f.width)/float32(f.height), 0.1, 10.0)
-	view := mgl32.LookAtV(mgl32.Vec3{-3, -3, -3}, mgl32.Vec3{0, 0, 0}, mgl32.Vec3{0, 1, 0})
 	model := mgl32.Ident4()
 
-	gl.UniformMatrix4fv(rMol.uniforms.projection, 1, false, &projection[0])
-	gl.UniformMatrix4fv(rMol.uniforms.view, 1, false, &view[0])
+	gl.UniformMatrix4fv(rMol.uniforms.projection, 1, false, &camera.proj[0])
+	gl.UniformMatrix4fv(rMol.uniforms.view, 1, false, &camera.view[0])
 	gl.UniformMatrix4fv(rMol.uniforms.model, 1, false, &model[0])
 
 	gl.ClearColor(0.29, 0.29, 0.39, 1.0)
 	gl.Clear(gl.COLOR_BUFFER_BIT)
 	gl.Clear(gl.DEPTH_BUFFER_BIT)
-	gl.BindVertexArray(rMol.vao)
-	gl.DrawElementsWithOffset(gl.TRIANGLES, length, gl.UNSIGNED_INT, 0)
+	gl.BindVertexArray(mesh.vao)
+	gl.BindBuffer(gl.ARRAY_BUFFER, mesh.vbo)
+	gl.DrawElementsWithOffset(gl.TRIANGLES, mesh.length, gl.UNSIGNED_INT, 0)
 	gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
 }

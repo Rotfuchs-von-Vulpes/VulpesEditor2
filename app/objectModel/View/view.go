@@ -3,25 +3,37 @@ package view
 import (
 	"VulpesEditor/app/front/renderer"
 	"VulpesEditor/app/objectModel/model"
+	"math"
 
 	im "github.com/AllenDang/cimgui-go/imgui"
+	"github.com/go-gl/mathgl/mgl32"
 )
 
 type ModelContext struct {
 	zoom        float32
 	model       *model.Model
 	modelViewer *renderer.FrameBuffer
-	length      int32
+	camera      *renderer.Camera
+	mesh        *renderer.Mesh
 }
 
 var viwerSize [2]float32
 var aspect float32
 
+var times float64
+
 func Show(id int32) {
 	ctxManager.Check(id)
 
-	if im.Begin("Model") {
+	cameraPos := mgl32.Vec3{3 * float32(math.Cos(times)), 2, 3 * float32(math.Sin(times))}
+	// cameraPos := mgl32.Vec3{3, 2, 3}
 
+	ctx.camera.Move(cameraPos)
+	ctx.camera.Turn(cameraPos.Mul(-1))
+
+	times += 0.01
+
+	if im.Begin("Model") {
 		wSize := im.ContentRegionAvail()
 		width := int32(wSize.X)
 		height := int32(wSize.Y)
@@ -41,7 +53,7 @@ func Show(id int32) {
 		)
 	}
 
-	ctx.modelViewer.RenderModel(ctx.length)
+	ctx.modelViewer.RenderModel(ctx.camera, ctx.mesh)
 
 	im.End()
 }
