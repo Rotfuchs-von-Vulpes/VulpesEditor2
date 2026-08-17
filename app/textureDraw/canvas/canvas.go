@@ -22,16 +22,16 @@ type TextureContext struct {
 }
 
 var (
-	viwerSize     [2]float32
-	aspect        float32
-	mousePos      [2]float32
-	lastMousePos  [2]float32
-	mousePressPos [2]float32
-	mouseCanDrag  bool
-	painting      bool
-	firstButton   bool
-	pixelPos      [2]int32
-	lastPixelPos  [2]int32
+	viwerSize       [2]float32
+	aspect          float32
+	mousePos        [2]float32
+	mousePressedPos [2]float32
+	pressedPos      [2]float32
+	mouseCanDrag    bool
+	painting        bool
+	firstButton     bool
+	pixelPos        [2]int32
+	lastPixelPos    [2]int32
 )
 
 func resetPreview() {
@@ -82,8 +82,8 @@ func move(pos im.Vec2) {
 	}
 
 	if mouseCanDrag {
-		ctx.pos[0] = (lastMousePos[0]-mousePos[0])/aspect + mousePressPos[0]
-		ctx.pos[1] = lastMousePos[1] - mousePos[1] + mousePressPos[1]
+		ctx.pos[0] = (mousePressedPos[0]-mousePos[0])/aspect + pressedPos[0]
+		ctx.pos[1] = mousePressedPos[1] - mousePos[1] + pressedPos[1]
 	}
 }
 
@@ -91,8 +91,8 @@ var secondButton bool
 
 func buttonPress(buttons [5]bool) {
 	if buttons[2] {
-		lastMousePos = mousePos
-		mousePressPos = ctx.pos
+		mousePressedPos = mousePos
+		pressedPos = ctx.pos
 		mouseCanDrag = true
 		toFocus = true
 	}
