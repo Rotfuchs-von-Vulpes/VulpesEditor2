@@ -47,11 +47,22 @@ func scroll(yoffset float32) {
 }
 
 func move(pos im.Vec2) {
-	mousePos = [2]float32{viwerSize[0] - pos.X, pos.Y}
+	mousePos = [2]float32{pos.X, pos.Y}
 
 	if mouseCanDrag {
-		ctx.pos[0] = accumulation[0] + (mousePressedPos[0]-mousePos[0])/(200*aspect)
-		ctx.pos[1] = accumulation[1] + (mousePressedPos[1]-mousePos[1])/200
+		ctx.pos[0] = accumulation[0] + (mousePos[0]-mousePressedPos[0])/(200*aspect)
+		ctx.pos[1] = accumulation[1] + (mousePos[1]-mousePressedPos[1])/200
+
+		if ctx.pos[1] > math.Pi/2-.01 {
+			ctx.pos[1] = math.Pi/2 - .01
+		} else if ctx.pos[1] < -math.Pi/2+.01 {
+			ctx.pos[1] = -math.Pi/2 + .01
+		}
+
+		_, f1 := math.Modf(float64(ctx.pos[0]) / (2 * math.Pi))
+		_, f2 := math.Modf(float64(ctx.pos[1]) / (2 * math.Pi))
+		ctx.pos[0] = float32(2 * math.Pi * f1)
+		ctx.pos[1] = float32(2 * math.Pi * f2)
 	}
 }
 
@@ -72,10 +83,6 @@ func buttonPress(buttons [5]bool) {
 func buttonRelease(buttons [5]bool) {
 	if buttons[2] {
 		mouseCanDrag = false
-		_, f1 := math.Modf(float64(ctx.pos[0]) / (2 * math.Pi))
-		_, f2 := math.Modf(float64(ctx.pos[1]) / (2 * math.Pi))
-		ctx.pos[0] = float32(2 * math.Pi * f1)
-		ctx.pos[1] = float32(2 * math.Pi * f2)
 		accumulation = ctx.pos
 	}
 	if buttons[0] || buttons[1] {
@@ -86,7 +93,11 @@ func buttonRelease(buttons [5]bool) {
 func Show(id int32) {
 	ctxManager.Check(id)
 
-	cameraPos := mgl32.Vec3{ctx.zoom * float32(math.Cos(float64(ctx.pos[0]))), ctx.zoom * float32(math.Sin(float64(ctx.pos[1]))), ctx.zoom * float32(math.Sin(float64(ctx.pos[0])))}
+	x := ctx.zoom * float32(math.Cos(float64(ctx.pos[0]))*math.Cos(float64(ctx.pos[1])))
+	y := ctx.zoom * float32(math.Sin(float64(ctx.pos[1])))
+	z := ctx.zoom * float32(math.Sin(float64(ctx.pos[0]))*math.Cos(float64(ctx.pos[1])))
+
+	cameraPos := mgl32.Vec3{x, y, z}
 	cameraFront := ctx.camera.Pos.Mul(-1)
 
 	ctx.camera.Move(cameraPos)
