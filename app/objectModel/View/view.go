@@ -10,29 +10,92 @@ import (
 )
 
 type ModelContext struct {
-	zoom        float32
 	model       *model.Model
 	modelViewer *renderer.FrameBuffer
 	camera      *renderer.Camera
 	mesh        *renderer.Mesh
+
+	pos  [2]float32
+	zoom float32
 }
 
-var viwerSize [2]float32
-var aspect float32
+var (
+	viwerSize [2]float32
+	aspect    float32
 
-var times float64
+	mousePressedPos [2]float32
+	mousePos        [2]float32
+	pressedPos      [2]float32
+	accumulation    [2]float32
+	mouseCanDrag    bool
+
+	firstButton bool
+	toFocus     bool
+)
+
+func reset() {
+	ctx.zoom = 1
+	ctx.pos = [2]float32{0, 0}
+}
+
+func scroll(yoffset float32) {
+	if yoffset < 0 {
+		ctx.zoom *= 1.1
+	} else if yoffset > 0 {
+		ctx.zoom *= 0.9
+	}
+}
+
+func move(pos im.Vec2) {
+	mousePos = [2]float32{viwerSize[0] - pos.X, pos.Y}
+
+	if mouseCanDrag {
+		ctx.pos[0] = accumulation[0] + (mousePressedPos[0]-mousePos[0])/(200*aspect)
+		ctx.pos[1] = accumulation[1] + (mousePressedPos[1]-mousePos[1])/200
+	}
+}
+
+var secondButton bool
+
+func buttonPress(buttons [5]bool) {
+	if buttons[2] {
+		mousePressedPos = mousePos
+		mouseCanDrag = true
+		toFocus = true
+	}
+	if buttons[0] || buttons[1] {
+		firstButton = buttons[0]
+		toFocus = true
+	}
+}
+
+func buttonRelease(buttons [5]bool) {
+	if buttons[2] {
+		mouseCanDrag = false
+		_, f1 := math.Modf(float64(ctx.pos[0]) / (2 * math.Pi))
+		_, f2 := math.Modf(float64(ctx.pos[1]) / (2 * math.Pi))
+		ctx.pos[0] = float32(2 * math.Pi * f1)
+		ctx.pos[1] = float32(2 * math.Pi * f2)
+		accumulation = ctx.pos
+	}
+	if buttons[0] || buttons[1] {
+
+	}
+}
 
 func Show(id int32) {
 	ctxManager.Check(id)
 
-	cameraPos := mgl32.Vec3{3 * float32(math.Cos(times)), 2, 3 * float32(math.Sin(times))}
-	// cameraPos := mgl32.Vec3{3, 2, 3}
+	cameraPos := mgl32.Vec3{ctx.zoom * float32(math.Cos(float64(ctx.pos[0]))), ctx.zoom * float32(math.Sin(float64(ctx.pos[1]))), ctx.zoom * float32(math.Sin(float64(ctx.pos[0])))}
+	cameraFront := ctx.camera.Pos.Mul(-1)
 
 	ctx.camera.Move(cameraPos)
-	ctx.camera.Turn(cameraPos.Mul(-1))
+	ctx.camera.Turn(cameraFront)
 
-	times += 0.01
-
+	if toFocus {
+		im.SetNextWindowFocus()
+		toFocus = false
+	}
 	if im.Begin("Model") {
 		wSize := im.ContentRegionAvail()
 		width := int32(wSize.X)
@@ -51,6 +114,23 @@ func Show(id int32) {
 			im.NewVec2(0, 1),
 			im.NewVec2(1, 0),
 		)
+
+		if im.IsItemHovered() {
+			io := im.CurrentContext().IO()
+			if io.MouseWheel() != 0 {
+				scroll(io.MouseWheel())
+			}
+			mouse_pos_abs := io.MousePos()
+			screen_pos_abs := im.ItemRectMin()
+			var mouse_pos_rel im.Vec2
+			mouse_pos_rel.X = mouse_pos_abs.X - screen_pos_abs.X
+			mouse_pos_rel.Y = mouse_pos_abs.Y - screen_pos_abs.Y
+			move(mouse_pos_rel)
+			buttonPress(io.MouseClicked())
+			buttonRelease(io.MouseReleased())
+		} else {
+			buttonRelease([5]bool{true, true, true, false, false})
+		}
 	}
 
 	ctx.modelViewer.RenderModel(ctx.camera, ctx.mesh)
