@@ -4,7 +4,8 @@ import (
 	"VulpesEditor/app/file"
 	"VulpesEditor/app/front/tabs"
 	"VulpesEditor/app/history"
-	view "VulpesEditor/app/objectModel/View"
+	"VulpesEditor/app/objectModel/tools"
+	"VulpesEditor/app/objectModel/view"
 	"VulpesEditor/app/textureDraw/canvas"
 	"VulpesEditor/app/util"
 	"fmt"
@@ -133,6 +134,7 @@ type instance struct {
 func (s *instance) init() {
 	history.New(s.id)
 	view.New(s.id)
+	tools.New(s.id, view.Model())
 }
 
 func (s *instance) Focus() bool {
@@ -150,6 +152,7 @@ func (s *instance) Name() string {
 func (s *instance) Show() {
 	history.Loop(s.id)
 	view.Show(s.id)
+	tools.Show(s.id)
 }
 
 func (s *instance) Save() {

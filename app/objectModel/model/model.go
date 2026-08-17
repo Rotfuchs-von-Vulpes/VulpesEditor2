@@ -17,19 +17,27 @@ func length[T any](b []T) uint32 {
 }
 
 type buffer struct {
-	points   [][5]float32
+	count    uint32
 	vertices []float32
 	indices  []uint32
 }
 
-func (s *buffer) addFace(face [4][5]float32) {
-	count := length(s.points)
-	s.points = append(s.points, face[0])
-	s.points = append(s.points, face[1])
-	s.points = append(s.points, face[2])
-	s.points = append(s.points, face[3])
-	s.indices = append(s.indices, count, count+1, count+2)
-	s.indices = append(s.indices, count+2, count+3, count)
+func (s *buffer) addFace(face [4][5]float32, size, pos [3]float32) {
+	points := [][5]float32{}
+	points = append(points, face[0])
+	points = append(points, face[1])
+	points = append(points, face[2])
+	points = append(points, face[3])
+	s.indices = append(s.indices, s.count, s.count+1, s.count+2)
+	s.indices = append(s.indices, s.count+2, s.count+3, s.count)
+	for _, point := range points {
+		s.vertices = append(s.vertices, point[0]*size[0]/2+pos[0])
+		s.vertices = append(s.vertices, point[1]*size[1]/2+pos[1])
+		s.vertices = append(s.vertices, point[2]*size[2]/2+pos[2])
+		s.vertices = append(s.vertices, point[3])
+		s.vertices = append(s.vertices, point[4])
+	}
+	s.count += 4
 }
 
 func (s cubeUnit) toBuffer(b *buffer) {
@@ -70,27 +78,22 @@ func (s cubeUnit) toBuffer(b *buffer) {
 		{-1, 1, -1, 0, 0},
 		{-1, -1, -1, 0, 1},
 	}
-	b.addFace(upFace)
-	b.addFace(frontFace)
-	b.addFace(rightFace)
-	b.addFace(backFace)
-	b.addFace(leftFace)
-	b.addFace(downFace)
-	for _, point := range b.points {
-		b.vertices = append(b.vertices, point[0]*s.size[0]/2+s.pos[0])
-		b.vertices = append(b.vertices, point[1]*s.size[1]/2+s.pos[1])
-		b.vertices = append(b.vertices, point[2]*s.size[2]/2+s.pos[2])
-		b.vertices = append(b.vertices, point[3])
-		b.vertices = append(b.vertices, point[4])
-	}
+	b.addFace(upFace, s.size, s.pos)
+	b.addFace(frontFace, s.size, s.pos)
+	b.addFace(rightFace, s.size, s.pos)
+	b.addFace(backFace, s.size, s.pos)
+	b.addFace(leftFace, s.size, s.pos)
+	b.addFace(downFace, s.size, s.pos)
 }
 
 type Model struct {
-	units []*cubeUnit
+	units   []*cubeUnit
+	changed bool
 }
 
 func (s *Model) AddUnit(unit *cubeUnit) {
 	s.units = append(s.units, unit)
+	s.changed = true
 }
 
 func (s Model) ToBuffer() (vertices []float32, indexBuffer []uint32) {
@@ -98,7 +101,14 @@ func (s Model) ToBuffer() (vertices []float32, indexBuffer []uint32) {
 	for _, unit := range s.units {
 		unit.toBuffer(b)
 	}
+
 	return b.vertices, b.indices
+}
+
+func (s *Model) Changed() (r bool) {
+	r = s.changed
+	s.changed = false
+	return
 }
 
 func NewModel() (s *Model) {

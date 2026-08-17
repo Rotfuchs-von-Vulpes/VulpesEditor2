@@ -93,6 +93,11 @@ func buttonRelease(buttons [5]bool) {
 func Show(id int32) {
 	ctxManager.Check(id)
 
+	if ctx.model.Changed() {
+		f, e := ctx.model.ToBuffer()
+		ctx.mesh.SetVertices(f, e)
+	}
+
 	x := ctx.zoom * float32(math.Cos(float64(ctx.pos[0]))*math.Cos(float64(ctx.pos[1])))
 	y := ctx.zoom * float32(math.Sin(float64(ctx.pos[1])))
 	z := ctx.zoom * float32(math.Sin(float64(ctx.pos[0]))*math.Cos(float64(ctx.pos[1])))
@@ -147,4 +152,8 @@ func Show(id int32) {
 	ctx.modelViewer.RenderModel(ctx.camera, ctx.mesh)
 
 	im.End()
+}
+
+func Model() *model.Model {
+	return ctx.model
 }

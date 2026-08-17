@@ -36,10 +36,6 @@ func Save(w *file.ArchiveWriter) {
 }
 
 func Open(id int32, r *file.ArchiveReader) (err error) {
-	// tex, err := textureEdit.Open(r)
-	// if err != nil {
-	// 	return err
-	// }
 	OpenModel(id)
 	return
 }
