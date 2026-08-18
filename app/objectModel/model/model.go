@@ -1,12 +1,17 @@
 package model
 
-type cubeUnit struct {
-	pos  [3]float32
-	size [3]float32
+type CubeUnit struct {
+	Parent *Model
+	pos    [3]float32
+	size   [3]float32
 }
 
-func NewUnit(pos, size [3]float32) (u *cubeUnit) {
-	u = new(cubeUnit)
+func (s *CubeUnit) Data() ([3]float32, [3]float32) {
+	return s.pos, s.size
+}
+
+func NewUnit(pos, size [3]float32) (u *CubeUnit) {
+	u = new(CubeUnit)
 	u.pos = pos
 	u.size = size
 	return
@@ -40,7 +45,15 @@ func (s *buffer) addFace(face [4][5]float32, size, pos [3]float32) {
 	s.count += 4
 }
 
-func (s cubeUnit) toBuffer(b *buffer) {
+func (s *CubeUnit) Edit(pos, size [3]float32) {
+	s.pos = pos
+	s.size = size
+	if s.Parent != nil {
+		s.Parent.changed = true
+	}
+}
+
+func (s CubeUnit) toBuffer(b *buffer) {
 	// pos X, pos Y, pos Z, UV x, UV y
 	upFace := [4][5]float32{
 		{-1, 1, -1, 0, 0},
@@ -87,18 +100,19 @@ func (s cubeUnit) toBuffer(b *buffer) {
 }
 
 type Model struct {
-	units   []*cubeUnit
+	Units   []*CubeUnit
 	changed bool
 }
 
-func (s *Model) AddUnit(unit *cubeUnit) {
-	s.units = append(s.units, unit)
+func (s *Model) AddUnit(unit *CubeUnit) {
+	unit.Parent = s
+	s.Units = append(s.Units, unit)
 	s.changed = true
 }
 
 func (s Model) ToBuffer() (vertices []float32, indexBuffer []uint32) {
 	b := new(buffer)
-	for _, unit := range s.units {
+	for _, unit := range s.Units {
 		unit.toBuffer(b)
 	}
 
