@@ -445,11 +445,15 @@ func NewCamera(w, h int32) (c *Camera) {
 func (s *Camera) resize(w, h int32) {
 	s.width = float32(w)
 	s.height = float32(h)
-	s.proj = mgl32.Perspective(mgl32.DegToRad(45.0), s.width/s.height, 0.1, 10.0)
+	s.proj = mgl32.Perspective(mgl32.DegToRad(45.0), s.width/s.height, 0.01, 10000.0)
 }
 
 func (s *Camera) setup() {
-	s.view = mgl32.LookAtV(mgl32.Vec3{-3, -3, -3}, mgl32.Vec3{0, 0, 0}, mgl32.Vec3{0, 1, 0})
+	s.Pos = [3]float32{0, 0, 0}
+	s.Front = [3]float32{0, 0, 1}
+	s.up = [3]float32{0, 1, 0}
+	s.right = [3]float32{1, 0, 0}
+	s.view = mgl32.LookAtV(s.Pos, s.Front, s.right)
 }
 
 func (s *Camera) Move(pos [3]float32) {

@@ -15,27 +15,52 @@ type ModelContext struct {
 	camera      *renderer.Camera
 	mesh        *renderer.Mesh
 
-	pos  [2]float32
-	zoom float32
+	pos          [2]float32
+	accumulation [2]float32
+	zoom         float32
 }
 
 var (
 	viwerSize [2]float32
-	aspect    float32
+	aspect    float32 = 1
 
 	mousePressedPos [2]float32
 	mousePos        [2]float32
 	pressedPos      [2]float32
-	accumulation    [2]float32
 	mouseCanDrag    bool
 
 	firstButton bool
 	toFocus     bool
 )
 
-func reset() {
-	ctx.zoom = 1
-	ctx.pos = [2]float32{0, 0}
+func moveCamera() {
+	ctx.pos[0] = ctx.accumulation[0] + (mousePos[0]-mousePressedPos[0])/(200*aspect)
+	ctx.pos[1] = ctx.accumulation[1] + (mousePos[1]-mousePressedPos[1])/200
+
+	if ctx.pos[1] > math.Pi/2-.01 {
+		ctx.pos[1] = math.Pi/2 - .01
+	} else if ctx.pos[1] < -math.Pi/2+.01 {
+		ctx.pos[1] = -math.Pi/2 + .01
+	}
+
+	_, f1 := math.Modf(float64(ctx.pos[0]) / (2 * math.Pi))
+	_, f2 := math.Modf(float64(ctx.pos[1]) / (2 * math.Pi))
+	ctx.pos[0] = float32(2 * math.Pi * f1)
+	ctx.pos[1] = float32(2 * math.Pi * f2)
+
+	calcCamera()
+}
+
+func calcCamera() {
+	x := ctx.zoom * float32(math.Cos(float64(ctx.pos[0]))*math.Cos(float64(ctx.pos[1])))
+	y := ctx.zoom * float32(math.Sin(float64(ctx.pos[1])))
+	z := ctx.zoom * float32(math.Sin(float64(ctx.pos[0]))*math.Cos(float64(ctx.pos[1])))
+
+	cameraPos := mgl32.Vec3{x, y, z}
+	cameraFront := cameraPos.Mul(-1)
+
+	ctx.camera.Move(cameraPos)
+	ctx.camera.Turn(cameraFront)
 }
 
 func scroll(yoffset float32) {
@@ -44,25 +69,15 @@ func scroll(yoffset float32) {
 	} else if yoffset > 0 {
 		ctx.zoom *= 0.9
 	}
+
+	calcCamera()
 }
 
 func move(pos im.Vec2) {
 	mousePos = [2]float32{pos.X, pos.Y}
 
 	if mouseCanDrag {
-		ctx.pos[0] = accumulation[0] + (mousePos[0]-mousePressedPos[0])/(200*aspect)
-		ctx.pos[1] = accumulation[1] + (mousePos[1]-mousePressedPos[1])/200
-
-		if ctx.pos[1] > math.Pi/2-.01 {
-			ctx.pos[1] = math.Pi/2 - .01
-		} else if ctx.pos[1] < -math.Pi/2+.01 {
-			ctx.pos[1] = -math.Pi/2 + .01
-		}
-
-		_, f1 := math.Modf(float64(ctx.pos[0]) / (2 * math.Pi))
-		_, f2 := math.Modf(float64(ctx.pos[1]) / (2 * math.Pi))
-		ctx.pos[0] = float32(2 * math.Pi * f1)
-		ctx.pos[1] = float32(2 * math.Pi * f2)
+		moveCamera()
 	}
 }
 
@@ -83,7 +98,7 @@ func buttonPress(buttons [5]bool) {
 func buttonRelease(buttons [5]bool) {
 	if buttons[2] {
 		mouseCanDrag = false
-		accumulation = ctx.pos
+		ctx.accumulation = ctx.pos
 	}
 	if buttons[0] || buttons[1] {
 
@@ -97,16 +112,6 @@ func Show(id int32) {
 		f, e := ctx.model.ToBuffer()
 		ctx.mesh.SetVertices(f, e)
 	}
-
-	x := ctx.zoom * float32(math.Cos(float64(ctx.pos[0]))*math.Cos(float64(ctx.pos[1])))
-	y := ctx.zoom * float32(math.Sin(float64(ctx.pos[1])))
-	z := ctx.zoom * float32(math.Sin(float64(ctx.pos[0]))*math.Cos(float64(ctx.pos[1])))
-
-	cameraPos := mgl32.Vec3{x, y, z}
-	cameraFront := ctx.camera.Pos.Mul(-1)
-
-	ctx.camera.Move(cameraPos)
-	ctx.camera.Turn(cameraFront)
 
 	if toFocus {
 		im.SetNextWindowFocus()
@@ -122,6 +127,7 @@ func Show(id int32) {
 			viwerSize[0] = wSize.X
 			viwerSize[1] = wSize.Y
 			aspect = wSize.Y / wSize.X
+			calcCamera()
 		}
 
 		im.ImageV(
