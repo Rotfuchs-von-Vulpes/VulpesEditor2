@@ -39,10 +39,16 @@ func Show(id int32) {
 	ctxManager.Check(id)
 
 	if im.Begin("Add Unit") {
-		c1 := im.InputFloat3("Position", &pos)
-		c2 := im.InputFloat3("Size", &size)
+		var c1 bool
+		if im.Button("Reflect") {
+			pos[0] = -pos[0]
+			c1 = true
+		}
 
-		if c2 {
+		c2 := im.InputFloat3("Position", &pos)
+		c3 := im.InputFloat3("Size", &size)
+
+		if c3 {
 			if size[0] < 0 {
 				size[0] = 0
 			}
@@ -54,7 +60,7 @@ func Show(id int32) {
 			}
 		}
 
-		if c1 || c2 {
+		if c1 || c2 || c3 {
 			editingUnit.Edit(pos, size)
 		}
 
@@ -83,6 +89,13 @@ func Show(id int32) {
 			im.PushIDInt(int32(idx))
 			if im.Button("Edit") {
 				setToEdit(unit)
+			}
+			im.SameLine()
+			if im.Button("Clone") {
+				pos, size := unit.Data()
+				u := model.NewUnit(pos, size)
+				ctx.model.AddUnit(u)
+				setToEdit(u)
 			}
 			im.PopID()
 		}
