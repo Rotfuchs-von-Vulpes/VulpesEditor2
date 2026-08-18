@@ -131,7 +131,7 @@ func Show() {
 	openTextureWindow()
 }
 
-var count int32 = 0
+var IdSys *util.IdSystem
 
 type instance struct {
 	name   string
@@ -224,14 +224,13 @@ func OpenTexture(path string) {
 	}
 	itc.width = uint32(width)
 	itc.height = uint32(height)
-	itc.id = count
+	itc.id = IdSys.GetID()
 	itc.focus = true
 	if err := canvas.Open(itc.id, r); err != nil {
 		fmt.Println(err)
 		return
 	}
 	itc.init()
-	count += 1
 	tabs.Push(itc)
 }
 
@@ -240,10 +239,9 @@ func openNew(c creationData) {
 	itc.name = c.name
 	itc.width = c.width
 	itc.height = c.height
-	itc.id = count
+	itc.id = IdSys.GetID()
 	itc.focus = true
 	itc.init()
 	canvas.New(itc.id, itc.width, itc.height)
-	count += 1
 	tabs.Push(itc)
 }

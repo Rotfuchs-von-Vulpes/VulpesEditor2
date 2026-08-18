@@ -122,7 +122,7 @@ func Show() {
 	openModelWindow()
 }
 
-var count int32 = 0
+var IdSys *util.IdSystem
 
 type instance struct {
 	name string
@@ -196,24 +196,21 @@ func OpenModel(path string) {
 	}
 	itc := new(instance)
 	itc.name = field[1]
-	itc.id = count
+	itc.id = IdSys.GetID()
 	itc.focus = true
 	if err := canvas.Open(itc.id, r); err != nil {
 		fmt.Println(err)
 		return
 	}
 	itc.init()
-	count += 1
 	tabs.Push(itc)
 }
 
 func openNew(c creationData) {
 	itc := new(instance)
 	itc.name = c.name
-	itc.id = count
+	itc.id = IdSys.GetID()
 	itc.focus = true
 	itc.init()
-	// canvas.New(itc.id, itc.width, itc.height)
-	count += 1
 	tabs.Push(itc)
 }

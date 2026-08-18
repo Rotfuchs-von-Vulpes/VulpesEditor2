@@ -12,6 +12,11 @@ import (
 )
 
 func Init() {
+	idSys := util.NewIdSystem()
+
+	textureDraw.IdSys = idSys
+	objectModel.IdSys = idSys
+
 	util.Init()
 	textureDraw.Init()
 }
