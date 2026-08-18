@@ -377,7 +377,7 @@ func (f *FrameBuffer) RenderTexture(t1 uint32, zoom float32, pos [2]float32, wid
 	gl.Uniform2f(rTex.uniforms.size, width, height)
 
 	gl.ClearColor(0.29, 0.29, 0.39, 1.0)
-	gl.Clear(gl.COLOR_BUFFER_BIT)
+	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 	gl.BindVertexArray(rTex.textureVao)
 	gl.DrawArrays(gl.TRIANGLES, 0, 6)
 	gl.Uniform1i(rTex.uniforms.outline, 1)
