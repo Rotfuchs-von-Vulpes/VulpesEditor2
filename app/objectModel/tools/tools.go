@@ -14,12 +14,28 @@ type ToolContext struct {
 
 var pos [3]float32
 var size = [3]float32{1, 1, 1}
+var posInput [3]float32
+var sizeInput = [3]float32{16, 16, 16}
 var originalPos [3]float32
 var originalSize [3]float32
 var editingUnit *model.CubeUnit = model.NewUnit(pos, size)
 
+func toAbsolute(v1 [3]float32) (v2 [3]float32) {
+	v2[0] = v1[0] / 16
+	v2[1] = v1[1] / 16
+	v2[2] = v1[2] / 16
+	return
+}
+
+func toRelative(v1 [3]float32) (v2 [3]float32) {
+	v2[0] = v1[0] * 16
+	v2[1] = v1[1] * 16
+	v2[2] = v1[2] * 16
+	return
+}
+
 func reset() {
-	pos = [3]float32{}
+	posInput = [3]float32{}
 	editingUnit = model.NewUnit(pos, size)
 }
 
@@ -28,6 +44,8 @@ func setToEdit(unit *model.CubeUnit) {
 	pos, size = unit.Data()
 	originalPos = pos
 	originalSize = size
+	posInput = toRelative(pos)
+	sizeInput = toRelative(size)
 }
 
 func Write() {
@@ -45,22 +63,24 @@ func Show(id int32) {
 			c1 = true
 		}
 
-		c2 := im.InputFloat3("Position", &pos)
-		c3 := im.InputFloat3("Size", &size)
+		c2 := im.InputFloat3("Position", &posInput)
+		c3 := im.InputFloat3("Size", &sizeInput)
 
 		if c3 {
-			if size[0] < 0 {
-				size[0] = 0
+			if sizeInput[0] < 0 {
+				sizeInput[0] = 0
 			}
-			if size[1] < 0 {
-				size[1] = 0
+			if sizeInput[1] < 0 {
+				sizeInput[1] = 0
 			}
-			if size[2] < 0 {
-				size[2] = 0
+			if sizeInput[2] < 0 {
+				sizeInput[2] = 0
 			}
 		}
 
 		if c1 || c2 || c3 {
+			pos = toAbsolute(posInput)
+			size = toAbsolute(sizeInput)
 			editingUnit.Edit(pos, size)
 		}
 
