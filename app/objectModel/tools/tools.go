@@ -74,6 +74,11 @@ func Show(id int32) {
 				reset()
 			}
 			im.SameLine()
+			if im.Button("Delete") {
+				ctx.model.Remove(editingUnit)
+				reset()
+			}
+			im.SameLine()
 			if im.Button("Cancel") {
 				editingUnit.Edit(originalPos, originalSize)
 				reset()

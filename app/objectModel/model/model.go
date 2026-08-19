@@ -1,6 +1,13 @@
 package model
 
+import (
+	"VulpesEditor/app/util"
+	"fmt"
+	"slices"
+)
+
 type CubeUnit struct {
+	id     int32
 	Parent *Model
 	pos    [3]float32
 	size   [3]float32
@@ -102,12 +109,47 @@ func (s CubeUnit) toBuffer(b *buffer) {
 type Model struct {
 	Units   []*CubeUnit
 	changed bool
+	idSys   *util.IdSystem
 }
 
-func (s *Model) AddUnit(unit *CubeUnit) {
+func NewModel() (s *Model) {
+	s = new(Model)
+	s.idSys = util.NewIdSystem()
+	s.AddUnit(NewUnit([3]float32{0, 0, 0}, [3]float32{1, 1, 1}))
+	return
+}
+
+func (s *Model) AddUnit(unit *CubeUnit) (err error) {
+	if unit.Parent != nil {
+		err = fmt.Errorf("This unit already have parent")
+		return
+	}
 	unit.Parent = s
+	unit.id = s.idSys.GetID()
 	s.Units = append(s.Units, unit)
 	s.changed = true
+	return
+}
+
+func (s *Model) Remove(unit *CubeUnit) (err error) {
+	if s != unit.Parent {
+		err = fmt.Errorf("This unit does not belongs here")
+		return
+	}
+	idx := -1
+	for i, u := range s.Units {
+		if u.id == unit.id {
+			idx = i
+			break
+		}
+	}
+	if idx >= 0 {
+		s.Units = slices.Delete(s.Units, idx, idx+1)
+		unit.Parent = nil
+		unit.id = 0
+		s.changed = true
+	}
+	return
 }
 
 func (s Model) ToBuffer() (vertices []float32, indexBuffer []uint32) {
@@ -122,11 +164,5 @@ func (s Model) ToBuffer() (vertices []float32, indexBuffer []uint32) {
 func (s *Model) Changed() (r bool) {
 	r = s.changed
 	s.changed = false
-	return
-}
-
-func NewModel() (s *Model) {
-	s = new(Model)
-	s.AddUnit(NewUnit([3]float32{0, 0, 0}, [3]float32{1, 1, 1}))
 	return
 }
