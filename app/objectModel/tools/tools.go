@@ -59,7 +59,7 @@ func Show(id int32) {
 	if im.Begin("Add Unit") {
 		var c1 bool
 		if im.Button("Reflect") {
-			pos[0] = -pos[0]
+			posInput[0] = -posInput[0]
 			c1 = true
 		}
 
