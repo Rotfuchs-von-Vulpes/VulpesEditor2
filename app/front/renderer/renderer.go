@@ -382,6 +382,7 @@ func (f *FrameBuffer) RenderTexture(t1 uint32, zoom float32, pos [2]float32, wid
 	gl.DrawArrays(gl.TRIANGLES, 0, 6)
 	gl.Uniform1i(rTex.uniforms.outline, 1)
 	gl.BindVertexArray(rTex.outlineVao)
+	gl.Clear(gl.DEPTH_BUFFER_BIT)
 	gl.DrawArrays(gl.LINE_LOOP, 0, 4)
 	gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
 }
