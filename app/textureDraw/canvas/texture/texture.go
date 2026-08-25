@@ -92,17 +92,19 @@ func (s *Texture) Set(pos [2]int32, color [4]float32) (ok bool) {
 }
 
 func (s *Texture) BulkSet(pixels []PixelEdit) (ok bool) {
+	ok = true
 	for _, pixel := range pixels {
 		newOk := s.Set(pixel.Pos, pixel.Color)
-		ok = newOk || ok
+		ok = newOk && ok
 	}
 	return
 }
 
 func (s *Texture) BulkSetColor(pixels [][2]int32, color [4]float32) (ok bool) {
+	ok = true
 	for _, pos := range pixels {
 		newOk := s.Set(pos, color)
-		ok = newOk || ok
+		ok = newOk && ok
 	}
 	return
 }
