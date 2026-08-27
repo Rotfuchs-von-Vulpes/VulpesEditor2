@@ -34,19 +34,19 @@ func primitive(c *model.CubeUnit) (unity *MultiQuad) {
 	y := int32(size[1] * 16)
 	z := int32(size[2] * 16)
 
-	unity.quads[0] = quad{[2]int32{0, 0}, x, z}
-	unity.quads[1] = quad{[2]int32{x, 0}, x, z}
-	unity.quads[2] = quad{[2]int32{0, z}, x, y}
-	unity.quads[3] = quad{[2]int32{x, z}, x, y}
-	unity.quads[4] = quad{[2]int32{2 * x, 0}, y, z}
-	unity.quads[5] = quad{[2]int32{2*x + y, 0}, y, z}
+	unity.quads[0] = quad{[2]int32{0, y}, x, z}
+	unity.quads[1] = quad{[2]int32{x, y}, x, z}
+	unity.quads[2] = quad{[2]int32{0, 0}, x, y}
+	unity.quads[3] = quad{[2]int32{x, 0}, x, y}
+	unity.quads[4] = quad{[2]int32{2 * x, 0}, z, y}
+	unity.quads[5] = quad{[2]int32{2*x + z, 0}, z, y}
 
 	unity.id = c.Id
 	unity.pos = [2]int32{0, 0}
-	unity.width = 2 * (x + y)
-	unity.height = z + y
+	unity.width = 2 * (x + z)
+	unity.height = y + z
 	unity.cutWidth = 2 * x
-	unity.cutHeight = z
+	unity.cutHeight = y
 
 	return
 }
@@ -82,18 +82,18 @@ func draw(surfaces []*MultiQuad, size uint32) {
 		ctx.texture.Resize(size, size)
 	}
 	colors := [12][4]float32{
-		{0.25, 0.25, 0.75, 1},
-		{0.5, 0.5, 1, 1},
-		{0.75, 0.75, 0.25, 1},
-		{1, 1, 0.5, 1},
-		{0.75, 0.75, 0.75, 1},
+		{0.75, 0.75, 0.75, 1}, // white
 		{1, 1, 1, 1},
-		{0.25, 0.25, 0.25, 1},
-		{0.5, 0.5, 0.5, 1},
-		{0.25, 0.75, 0.25, 1},
-		{0.5, 1, 0.5, 1},
-		{0.75, 0.25, 0.25, 1},
+		{0.75, 0.75, 0.25, 1}, // yellow
+		{1, 1, 0.5, 1},
+		{0.75, 0.25, 0.25, 1}, // red
 		{1, 0.5, 0.5, 1},
+		{0.7, 0.3, 0.2, 1}, // orange
+		{1, 0.5, 0.25, 1},
+		{0.25, 0.25, 0.75, 1}, // blue
+		{0.5, 0.5, 1, 1},
+		{0.25, 0.75, 0.25, 1}, // green
+		{0.5, 1, 0.5, 1},
 	}
 	for _, s := range surfaces {
 		for i := range 6 {
