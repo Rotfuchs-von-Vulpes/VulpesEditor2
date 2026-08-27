@@ -35,6 +35,7 @@ func toRelative(v1 [3]float32) (v2 [3]float32) {
 }
 
 func reset() {
+	// texture.GenerateTexture()
 	posInput = [3]float32{}
 	editingUnit = model.NewUnit(pos, size)
 }

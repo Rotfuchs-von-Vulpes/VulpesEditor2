@@ -4,6 +4,8 @@ import (
 	"VulpesEditor/app/file"
 	"VulpesEditor/app/front/tabs"
 	"VulpesEditor/app/history"
+	"VulpesEditor/app/objectModel/model"
+	"VulpesEditor/app/objectModel/texture"
 	"VulpesEditor/app/objectModel/tools"
 	"VulpesEditor/app/objectModel/view"
 	"VulpesEditor/app/textureDraw/canvas"
@@ -127,6 +129,8 @@ var IdSys *util.IdSystem
 type instance struct {
 	name string
 
+	model *model.Model
+
 	id    int32
 	focus bool
 }
@@ -134,7 +138,10 @@ type instance struct {
 func (s *instance) init() {
 	history.New(s.id)
 	view.New(s.id)
-	tools.New(s.id, view.Model())
+	s.model = view.Model()
+	tools.New(s.id, s.model)
+	texture.New(s.id, s.model)
+	s.name = "Model #" + strconv.FormatInt(int64(s.id), 10)
 }
 
 func (s *instance) Focus() bool {
@@ -146,13 +153,15 @@ func (s *instance) Focus() bool {
 }
 
 func (s *instance) Name() string {
-	return "Model #" + strconv.FormatInt(int64(s.id), 10)
+	return s.name
 }
 
 func (s *instance) Show() {
 	history.Loop(s.id)
-	view.Show(s.id)
 	tools.Show(s.id)
+	texture.Show(s.id)
+	view.Show(s.id)
+	s.model.Reset()
 }
 
 func (s *instance) Save() {
