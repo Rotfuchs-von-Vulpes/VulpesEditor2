@@ -137,10 +137,10 @@ type instance struct {
 
 func (s *instance) init() {
 	history.New(s.id)
-	view.New(s.id)
-	s.model = view.Model()
+	s.model = model.NewModel()
 	tools.New(s.id, s.model)
 	texture.New(s.id, s.model)
+	view.New(s.id, s.model)
 	s.name = "Model #" + strconv.FormatInt(int64(s.id), 10)
 }
 

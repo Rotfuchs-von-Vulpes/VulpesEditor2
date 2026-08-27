@@ -72,7 +72,7 @@ func setUv(unit *model.CubeUnit, surface MultiQuad, size float32) {
 	}
 }
 
-func Draw(surfaces []*MultiQuad, size uint32) {
+func draw(surfaces []*MultiQuad, size uint32) {
 	if ctx.texture == nil {
 		ctx.texture = texture.New(size, size)
 	} else {
@@ -100,7 +100,6 @@ func Draw(surfaces []*MultiQuad, size uint32) {
 			q := s.quads[i]
 			init := getPositions(q.pos, s.pos)
 			end := getPositions([2]int32{q.pos[0] + q.width, q.pos[1] + q.height}, s.pos)
-			// var pixels [][2]int32
 			var pixels []texture.PixelEdit
 			for x := init[0]; x < end[0]; x++ {
 				for y := init[1]; y < end[1]; y++ {
@@ -117,6 +116,7 @@ func Draw(surfaces []*MultiQuad, size uint32) {
 			ctx.texture.BulkSet(pixels)
 		}
 	}
+	ctx.changed = true
 }
 
 func generateTexture() {
@@ -124,7 +124,7 @@ func generateTexture() {
 	for _, u := range ctx.model.Units {
 		all = append(all, primitive(u))
 	}
-	size := packSurfaces(all)
+	ctx.size = packSurfaces(all)
 	for _, s := range all {
 		var u *model.CubeUnit
 		for _, unit := range ctx.model.Units {
@@ -137,14 +137,34 @@ func generateTexture() {
 			fmt.Printf("Unit %d not found.", s.id)
 			continue
 		}
-		setUv(u, *s, float32(size))
+		setUv(u, *s, float32(ctx.size))
 	}
-	Draw(all, uint32(size))
+	draw(all, uint32(ctx.size))
+}
+
+func GetData() (width, height int32, data []float32) {
+	return ctx.size, ctx.size, ctx.texture.FlatColors()
 }
 
 type TextureContext struct {
-	model   *model.Model
-	texture *texture.Texture
+	model     *model.Model
+	texture   *texture.Texture
+	callbacks []func()
+	changed   bool
+	size      int32
+}
+
+func OnChange(callback func()) {
+	ctx.callbacks = append(ctx.callbacks, callback)
+}
+
+func call() {
+	if ctx.changed {
+		ctx.changed = false
+		for _, f := range ctx.callbacks {
+			f()
+		}
+	}
 }
 
 func Show(id int32) {
@@ -152,6 +172,7 @@ func Show(id int32) {
 	if ctx.model.Changed() {
 		generateTexture()
 	}
+	call()
 	if im.Begin("Texture Manager") {
 		if im.Button("Open Edit") {
 			b := bytes.Buffer{}

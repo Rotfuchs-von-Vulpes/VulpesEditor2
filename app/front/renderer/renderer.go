@@ -58,6 +58,7 @@ type modelUniforms struct {
 	projection int32
 	view       int32
 	model      int32
+	texUnit    int32
 }
 
 type textureRender struct {
@@ -276,6 +277,8 @@ func Init() {
 		rMol.uniforms.view = gl.GetUniformLocation(rMol.shaderHandle, Str("view"))
 		rMol.uniforms.projection = gl.GetUniformLocation(rMol.shaderHandle, Str("projection"))
 		rMol.uniforms.model = gl.GetUniformLocation(rMol.shaderHandle, Str("model"))
+		rMol.uniforms.texUnit = gl.GetUniformLocation(rMol.shaderHandle, Str("tex"))
+		gl.Uniform1i(rTex.uniforms.texUnit, 0)
 	}
 
 	if gl.CheckFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE {
@@ -354,15 +357,21 @@ func Nuke() {
 	gl.DeleteVertexArrays(1, &r.vao)
 	gl.DeleteBuffers(1, &r.vbo)
 	gl.DeleteProgram(r.shaderHandle)
+
+	gl.UseProgram(rTex.shaderHandle)
+	gl.DeleteVertexArrays(1, &rTex.textureVao)
+	gl.DeleteVertexArrays(1, &rTex.outlineVao)
+	gl.DeleteBuffers(1, &rTex.vbo)
+	gl.DeleteProgram(rTex.shaderHandle)
 }
 
 func (f *FrameBuffer) RenderTexture(t1 uint32, zoom float32, pos [2]float32, width, height float32) {
 	gl.Viewport(0, 0, f.width, f.height)
 	gl.BindFramebuffer(gl.FRAMEBUFFER, f.fbo)
-	gl.ActiveTexture(gl.TEXTURE0)
-	gl.BindTexture(gl.TEXTURE_2D, t1)
 	gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, f.colorBuffer, 0)
 	gl.FramebufferTexture(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, f.depth, 0)
+	gl.ActiveTexture(gl.TEXTURE0)
+	gl.BindTexture(gl.TEXTURE_2D, t1)
 
 	size := f.Size()
 	texAspect := width / height
@@ -389,6 +398,7 @@ func (f *FrameBuffer) RenderTexture(t1 uint32, zoom float32, pos [2]float32, wid
 
 type Mesh struct {
 	vao, vbo, ebo uint32
+	texture       uint32
 	length        int32
 }
 
@@ -409,6 +419,8 @@ func NewMesh() (m *Mesh) {
 	gl.EnableVertexAttribArray(0)
 	gl.EnableVertexAttribArray(1)
 
+	gl.GenTextures(1, &m.texture)
+
 	return
 }
 
@@ -424,6 +436,10 @@ func (s *Mesh) SetVertices(vertices []float32, indices []uint32) {
 	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, 4*len(indices), gl.Ptr(&indices[0]), gl.STATIC_DRAW)
 
 	s.length = int32(len(indices))
+}
+
+func (s *Mesh) SetTexture(width, height int32, data []float32) {
+	WriteTexture(s.texture, width, height, data)
 }
 
 type Camera struct {
@@ -446,7 +462,7 @@ func NewCamera(w, h int32) (c *Camera) {
 func (s *Camera) resize(w, h int32) {
 	s.width = float32(w)
 	s.height = float32(h)
-	s.proj = mgl32.Perspective(mgl32.DegToRad(45.0), s.width/s.height, 0.01, 10000.0)
+	s.proj = mgl32.Perspective(mgl32.DegToRad(45.0), s.width/s.height, 0.01, 1000.0)
 }
 
 func (s *Camera) setup() {
@@ -474,10 +490,10 @@ func (f *FrameBuffer) RenderModel(camera *Camera, mesh *Mesh) {
 
 	gl.Viewport(0, 0, f.width, f.height)
 	gl.BindFramebuffer(gl.FRAMEBUFFER, f.fbo)
-	// gl.ActiveTexture(gl.TEXTURE0)
-	// gl.BindTexture(gl.TEXTURE_2D, t1)
 	gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, f.colorBuffer, 0)
 	gl.FramebufferTexture(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, f.depth, 0)
+	gl.ActiveTexture(gl.TEXTURE0)
+	gl.BindTexture(gl.TEXTURE_2D, mesh.texture)
 
 	gl.UseProgram(rMol.shaderHandle)
 
