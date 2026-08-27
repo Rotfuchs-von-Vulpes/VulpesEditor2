@@ -186,6 +186,21 @@ func (s *instance) Save() {
 	w.Save()
 }
 
+func OpenImage(imgBuffer io.Reader, name string) {
+	itc := new(instance)
+	itc.name = name
+	itc.id = IdSys.GetID()
+	itc.focus = true
+	var err error
+	itc.width, itc.height, err = canvas.OpenImage(itc.id, imgBuffer)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	itc.init()
+	tabs.Push(itc)
+}
+
 func OpenTexture(path string) {
 	r, err := file.Load(path)
 	if err != nil {

@@ -6,6 +6,7 @@ import (
 	"VulpesEditor/app/front/renderer"
 	"VulpesEditor/app/textureDraw/canvas/texture"
 	"VulpesEditor/app/textureDraw/canvas/textureEdit"
+	"io"
 )
 
 func (s *TextureContext) Use() {
@@ -30,6 +31,17 @@ func OpenTexture(id int32, tex *textureEdit.TextureEdit) {
 
 func Save(w *file.ArchiveWriter) {
 	ctx.texture.Save(w)
+}
+
+func OpenImage(id int32, r io.Reader) (width, height uint32, err error) {
+	tex, err := textureEdit.OpenImage(r)
+	if err != nil {
+		return
+	}
+	OpenTexture(id, tex)
+	width = tex.Width
+	height = tex.Height
+	return
 }
 
 func Open(id int32, r *file.ArchiveReader) (err error) {

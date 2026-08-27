@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"fmt"
 	"image"
+	"io"
 	"os"
 	"slices"
 
@@ -301,6 +302,33 @@ func (s *TextureEdit) Save(r *file.ArchiveWriter) {
 		layer.Texture.ToPNG(buff)
 		r.Write(fmt.Sprintf("layers/layer%d.png", i), buff.Bytes())
 	}
+}
+
+func OpenImage(b io.Reader) (out *TextureEdit, err error) {
+	var width uint32
+	var height uint32
+	var layers []*texture.Texture
+	tex, err := texture.DecodePNG(b)
+	if err != nil {
+		return nil, err
+	}
+	width = tex.Width
+	height = tex.Height
+	layers = append(layers, tex)
+	out = new(TextureEdit)
+	out.Id = idSys.GetID()
+	out.Width = width
+	out.Height = height
+	out.Aspect = float32(width) / float32(height)
+	for i, layer := range layers {
+		out.addLayer(i, layer)
+	}
+	out.layer = out.layers[0]
+	out.texture = texture.New(width, height)
+	out.GlID = renderer.CreateTexture(int32(width), int32(height), out.layer.Texture.FlatColors())
+	out.preview = new(preview)
+	out.update()
+	return
 }
 
 func Open(r *file.ArchiveReader) (out *TextureEdit, err error) {
