@@ -21,7 +21,6 @@ type TextureChange struct {
 
 func (s *TextureChange) Undo() {
 	s.parent.unchange(s.changes)
-	// s.parent.parent.update()
 }
 
 func (s *TextureChange) Redo() {
