@@ -89,17 +89,18 @@ func getPositions(v1, offset [2]int32) (v2 [2]int32) {
 	return
 }
 
-func toFloat(v1, offset [2]int32, size float32) (v2 [2]float32) {
-	v2[0] = float32(v1[0]+offset[0]) / size
-	v2[1] = float32(v1[1]+offset[1]) / size
+func toFloat(v1, offset [2]int32, size, d float32) (v2 [2]float32) {
+	v2[0] = float32(v1[0]+offset[0])/size + d
+	v2[1] = float32(v1[1]+offset[1])/size + d
 	return
 }
 
 func setUv(unit *model.CubeUnit, surface MultiQuad, size float32) {
+	var d float32 = 0.0001
 	for i := range 6 {
 		q := surface.quads[i]
-		init := toFloat(q.pos, surface.pos, size)
-		end := toFloat([2]int32{q.pos[0] + q.width, q.pos[1] + q.height}, surface.pos, size)
+		init := toFloat(q.pos, surface.pos, size, d)
+		end := toFloat([2]int32{q.pos[0] + q.width, q.pos[1] + q.height}, surface.pos, size, -d)
 		unit.SetUV(i, init, end)
 	}
 }
