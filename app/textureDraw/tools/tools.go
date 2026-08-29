@@ -30,7 +30,7 @@ type toolsData struct {
 	texture      *texture.Texture
 }
 
-func Resize(width, height uint32) {
+func Resize(width, height int32) {
 	ctx.texture.Resize(width, height)
 }
 

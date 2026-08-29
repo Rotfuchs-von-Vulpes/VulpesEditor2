@@ -4,16 +4,16 @@ import (
 	"VulpesEditor/app/objectModel/model"
 	"VulpesEditor/app/textureDraw"
 	"VulpesEditor/app/textureDraw/canvas/texture"
-	"bytes"
 	"fmt"
 
 	im "github.com/AllenDang/cimgui-go/imgui"
 )
 
 type quad struct {
-	pos    [2]int32
-	width  int32
-	height int32
+	pos     [2]int32
+	width   int32
+	height  int32
+	texture *texture.Texture
 }
 
 type MultiQuad struct {
@@ -34,12 +34,12 @@ func primitive(c *model.CubeUnit) (unity *MultiQuad) {
 	y := int32(size[1] * 16)
 	z := int32(size[2] * 16)
 
-	unity.quads[0] = quad{[2]int32{0, y}, x, z}
-	unity.quads[1] = quad{[2]int32{x, y}, x, z}
-	unity.quads[2] = quad{[2]int32{0, 0}, x, y}
-	unity.quads[3] = quad{[2]int32{x, 0}, x, y}
-	unity.quads[4] = quad{[2]int32{2 * x, 0}, z, y}
-	unity.quads[5] = quad{[2]int32{2*x + z, 0}, z, y}
+	unity.quads[0] = quad{[2]int32{0, y}, x, z, texture.New(x, z)}
+	unity.quads[1] = quad{[2]int32{x, y}, x, z, texture.New(x, z)}
+	unity.quads[2] = quad{[2]int32{0, 0}, x, y, texture.New(x, y)}
+	unity.quads[3] = quad{[2]int32{x, 0}, x, y, texture.New(x, y)}
+	unity.quads[4] = quad{[2]int32{2 * x, 0}, z, y, texture.New(z, y)}
+	unity.quads[5] = quad{[2]int32{2*x + z, 0}, z, y, texture.New(z, y)}
 
 	unity.id = c.Id
 	unity.pos = [2]int32{0, 0}
@@ -47,6 +47,38 @@ func primitive(c *model.CubeUnit) (unity *MultiQuad) {
 	unity.height = y + z
 	unity.cutWidth = 2 * x
 	unity.cutHeight = y
+
+	colors := [12][4]float32{
+		{0.75, 0.75, 0.75, 1}, // white
+		{1, 1, 1, 1},
+		{0.75, 0.75, 0.25, 1}, // yellow
+		{1, 1, 0.5, 1},
+		{0.75, 0.25, 0.25, 1}, // red
+		{1, 0.5, 0.5, 1},
+		{0.7, 0.3, 0.2, 1}, // orange
+		{1, 0.5, 0.25, 1},
+		{0.25, 0.25, 0.75, 1}, // blue
+		{0.5, 0.5, 1, 1},
+		{0.25, 0.75, 0.25, 1}, // green
+		{0.5, 1, 0.5, 1},
+	}
+	for i := range 6 {
+		q := &unity.quads[i]
+		var pixels []texture.PixelEdit
+		for x := range q.width {
+			for y := range q.height {
+				var p texture.PixelEdit
+				p.Pos = [2]int32{x, y}
+				if x == 0 || x == q.width-1 || y == 0 || y == q.height-1 {
+					p.Color = colors[2*i+1]
+				} else {
+					p.Color = colors[2*i]
+				}
+				pixels = append(pixels, p)
+			}
+		}
+		q.texture.BulkSet(pixels)
+	}
 
 	return
 }
@@ -72,45 +104,27 @@ func setUv(unit *model.CubeUnit, surface MultiQuad, size float32) {
 	}
 }
 
-func draw(surfaces []*MultiQuad, size uint32) {
+func draw() {
 	if ctx.texture == nil {
-		ctx.texture = texture.New(size, size)
+		ctx.texture = texture.New(ctx.size, ctx.size)
 	} else {
 		ctx.texture.Clear()
 	}
-	if ctx.texture.Width != size || ctx.texture.Height != size {
-		ctx.texture.Resize(size, size)
+	if ctx.texture.Width != ctx.size || ctx.texture.Height != ctx.size {
+		ctx.texture.Resize(ctx.size, ctx.size)
 	}
-	colors := [12][4]float32{
-		{0.75, 0.75, 0.75, 1}, // white
-		{1, 1, 1, 1},
-		{0.75, 0.75, 0.25, 1}, // yellow
-		{1, 1, 0.5, 1},
-		{0.75, 0.25, 0.25, 1}, // red
-		{1, 0.5, 0.5, 1},
-		{0.7, 0.3, 0.2, 1}, // orange
-		{1, 0.5, 0.25, 1},
-		{0.25, 0.25, 0.75, 1}, // blue
-		{0.5, 0.5, 1, 1},
-		{0.25, 0.75, 0.25, 1}, // green
-		{0.5, 1, 0.5, 1},
-	}
-	for _, s := range surfaces {
+	for _, s := range ctx.surfaces {
 		for i := range 6 {
 			q := s.quads[i]
-			init := getPositions(q.pos, s.pos)
-			end := getPositions([2]int32{q.pos[0] + q.width, q.pos[1] + q.height}, s.pos)
 			var pixels []texture.PixelEdit
-			for x := init[0]; x < end[0]; x++ {
-				for y := init[1]; y < end[1]; y++ {
+			for x := range q.width {
+				for y := range q.height {
 					var p texture.PixelEdit
-					p.Pos = [2]int32{x, y}
-					if x == init[0] || x == end[0]-1 || y == init[1] || y == end[1]-1 {
-						p.Color = colors[2*i+1]
-					} else {
-						p.Color = colors[2*i]
+					p.Pos = getPositions([2]int32{q.pos[0] + x, q.pos[1] + y}, s.pos)
+					if ok, color := q.texture.Get([2]int32{x, y}); ok {
+						p.Color = color
+						pixels = append(pixels, p)
 					}
-					pixels = append(pixels, p)
 				}
 			}
 			ctx.texture.BulkSet(pixels)
@@ -120,12 +134,23 @@ func draw(surfaces []*MultiQuad, size uint32) {
 }
 
 func generateTexture() {
-	all := []*MultiQuad{}
 	for _, u := range ctx.model.Units {
-		all = append(all, primitive(u))
+		found := false
+		for i, s := range ctx.surfaces {
+			if u.Id == s.id {
+				if u.Changed {
+					ctx.surfaces[i] = primitive(u)
+				}
+				found = true
+				break
+			}
+		}
+		if !found {
+			ctx.surfaces = append(ctx.surfaces, primitive(u))
+		}
 	}
-	ctx.size = packSurfaces(all)
-	for _, s := range all {
+	ctx.size = packSurfaces(ctx.surfaces)
+	for _, s := range ctx.surfaces {
 		var u *model.CubeUnit
 		for _, unit := range ctx.model.Units {
 			if unit.Id == s.id {
@@ -139,7 +164,7 @@ func generateTexture() {
 		}
 		setUv(u, *s, float32(ctx.size))
 	}
-	draw(all, uint32(ctx.size))
+	draw()
 }
 
 func GetData() (width, height int32, data []float32) {
@@ -147,14 +172,18 @@ func GetData() (width, height int32, data []float32) {
 }
 
 type TextureContext struct {
-	model     *model.Model
-	texture   *texture.Texture
-	callbacks []func()
-	changed   bool
-	size      int32
+	model    *model.Model
+	texture  *texture.Texture
+	surfaces []*MultiQuad
+	size     int32
+
+	callbacks  []func()
+	changed    bool
+	subProject *textureDraw.SubProject
 }
 
-func OnChange(callback func()) {
+func OnChange(id int32, callback func()) {
+	ctxManager.Check(id)
 	ctx.callbacks = append(ctx.callbacks, callback)
 }
 
@@ -164,20 +193,47 @@ func call() {
 		for _, f := range ctx.callbacks {
 			f()
 		}
+		if ctx.subProject != nil {
+			ctx.subProject.Add(ctx.texture)
+		}
 	}
 }
 
 func Show(id int32) {
 	ctxManager.Check(id)
-	if ctx.model.Changed() {
+	if ctx.model.Changed {
 		generateTexture()
 	}
 	call()
 	if im.Begin("Texture Manager") {
 		if im.Button("Open Edit") {
-			b := bytes.Buffer{}
-			ctx.texture.ToPNG(&b)
-			textureDraw.OpenImage(&b, "Model Test")
+			if ctx.subProject == nil {
+				ctx.subProject = textureDraw.OpenSubProject(ctx.texture, "Texture of Model Test")
+				ctx.subProject.OnChange(func(colors [][4]float32) {
+					ctx.texture.Colors = colors
+					ctx.changed = true
+
+					for _, s := range ctx.surfaces {
+						for _, q := range s.quads {
+							var pixels []texture.PixelEdit
+							for x := range q.width {
+								for y := range q.height {
+									pos := getPositions([2]int32{q.pos[0] + x, q.pos[1] + y}, s.pos)
+									if ok, color := ctx.texture.Get(pos); ok {
+										var p texture.PixelEdit
+										p.Pos = [2]int32{x, y}
+										p.Color = color
+										pixels = append(pixels, p)
+									}
+								}
+							}
+							q.texture.BulkSet(pixels)
+						}
+					}
+				})
+			} else {
+				ctx.subProject.Focus()
+			}
 		}
 	}
 	im.End()

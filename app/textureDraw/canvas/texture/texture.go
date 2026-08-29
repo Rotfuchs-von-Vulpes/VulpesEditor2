@@ -8,6 +8,7 @@ import (
 	"image/draw"
 	"image/png"
 	"io"
+	"slices"
 )
 
 func flatToColors(buff []byte) (colors [][4]float32) {
@@ -24,7 +25,7 @@ func flatToColors(buff []byte) (colors [][4]float32) {
 	return
 }
 
-func blankTexture(width, height uint32) (data [][4]float32) {
+func blankTexture(width, height int32) (data [][4]float32) {
 	for i := 0; i < int(width); i++ {
 		for j := 0; j < int(height); j++ {
 			data = append(data, [4]float32{0, 0, 0, 0})
@@ -34,8 +35,8 @@ func blankTexture(width, height uint32) (data [][4]float32) {
 }
 
 type Texture struct {
-	Width  uint32
-	Height uint32
+	Width  int32
+	Height int32
 	Colors [][4]float32
 }
 
@@ -51,7 +52,7 @@ func SetEditColor(pixels [][2]int32, color [4]float32) (out []PixelEdit) {
 	return
 }
 
-func New(width, height uint32) (out *Texture) {
+func New(width, height int32) (out *Texture) {
 	colors := blankTexture(width, height)
 	out = new(Texture)
 	out.Width = width
@@ -60,7 +61,13 @@ func New(width, height uint32) (out *Texture) {
 	return
 }
 
-func (s *Texture) Resize(width, height uint32) {
+func (s *Texture) Clone() (c *Texture) {
+	c = New(s.Width, s.Height)
+	c.Colors = slices.Clone(s.Colors)
+	return
+}
+
+func (s *Texture) Resize(width, height int32) {
 	if width == s.Width && height == s.Height {
 		return
 	}
@@ -69,9 +76,27 @@ func (s *Texture) Resize(width, height uint32) {
 	s.Colors = blankTexture(width, height)
 }
 
+func (s *Texture) ResizeWithColors(width, height int32) {
+	if width == s.Width && height == s.Height {
+		return
+	}
+	var tex2 = New(width, height)
+	for x := range s.Width {
+		for y := range s.Height {
+			pos := [2]int32{x, y}
+			if ok, color := s.Get(pos); ok {
+				tex2.Set(pos, color)
+			}
+		}
+	}
+	s.Width = width
+	s.Height = height
+	s.Colors = tex2.Colors
+}
+
 func (s *Texture) Get(pos [2]int32) (ok bool, color [4]float32) {
-	index := int(pos[1]*int32(s.Width) + pos[0])
-	if pos[0] < 0 || pos[0] >= int32(s.Width) || pos[1] < 0 || pos[1] >= int32(s.Height) {
+	index := int(pos[1]*s.Width + pos[0])
+	if pos[0] < 0 || pos[0] >= s.Width || pos[1] < 0 || pos[1] >= s.Height {
 		ok = false
 	} else {
 		ok = true
@@ -81,8 +106,8 @@ func (s *Texture) Get(pos [2]int32) (ok bool, color [4]float32) {
 }
 
 func (s *Texture) Set(pos [2]int32, color [4]float32) (ok bool) {
-	index := int(pos[1]*int32(s.Width) + pos[0])
-	if pos[0] < 0 || pos[0] >= int32(s.Width) || pos[1] < 0 || pos[1] >= int32(s.Height) {
+	index := int(pos[1]*s.Width + pos[0])
+	if pos[0] < 0 || pos[0] >= s.Width || pos[1] < 0 || pos[1] >= s.Height {
 		ok = false
 	} else {
 		ok = true
@@ -122,8 +147,8 @@ func (s *Texture) FlatColors() (data []float32) {
 
 func (s Texture) ToPNG(file io.Writer) (err error) {
 	img := image.NewRGBA(image.Rect(0, 0, int(s.Width), int(s.Height)))
-	for x := int32(0); x < int32(s.Width); x++ {
-		for y := int32(0); y < int32(s.Height); y++ {
+	for x := range s.Width {
+		for y := range s.Height {
 			_, rgba := s.Get([2]int32{x, y})
 			alpha := rgba[3]
 			red := uint8(255 * rgba[0] * alpha)
@@ -148,7 +173,7 @@ func DecodePNG(file io.Reader) (tex *Texture, err error) {
 	rgba := image.NewRGBA(rect)
 	draw.Draw(rgba, rect, img, rect.Min, draw.Src)
 
-	tex = New(uint32(width), uint32(height))
+	tex = New(int32(width), int32(height))
 	tex.Colors = flatToColors(rgba.Pix)
 
 	return
@@ -161,7 +186,7 @@ func Merge(end, front *Texture) (colors [][4]float32) {
 	tempTex := New(end.Width, end.Height)
 	for x := range end.Width {
 		for y := range end.Height {
-			pos := [2]int32{int32(x), int32(y)}
+			pos := [2]int32{x, y}
 			_, c1 := end.Get(pos)
 			_, c2 := front.Get(pos)
 			if c2[3] >= 1 {

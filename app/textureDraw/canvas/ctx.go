@@ -16,7 +16,7 @@ func (s *TextureContext) Use() {
 var ctx *TextureContext
 var ctxManager = context.New()
 
-func New(id int32, w, h uint32) {
+func New(id int32, w, h int32) {
 	OpenTexture(id, textureEdit.New(texture.New(w, h)))
 }
 
@@ -33,7 +33,7 @@ func Save(w *file.ArchiveWriter) {
 	ctx.texture.Save(w)
 }
 
-func OpenImage(id int32, r io.Reader) (width, height uint32, err error) {
+func OpenImage(id int32, r io.Reader) (width, height int32, err error) {
 	tex, err := textureEdit.OpenImage(r)
 	if err != nil {
 		return

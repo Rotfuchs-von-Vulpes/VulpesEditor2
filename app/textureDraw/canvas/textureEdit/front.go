@@ -12,7 +12,7 @@ func (s *TextureEdit) ShowLayers() {
 	im.Begin("Layers")
 
 	if im.Button("Add") {
-		s.AppendLayer()
+		s.AppendClearLayer()
 	}
 	im.SameLine()
 	if im.Button("Remove") {

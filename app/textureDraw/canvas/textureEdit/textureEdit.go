@@ -33,8 +33,8 @@ type Image struct {
 
 type TextureEdit struct {
 	Id      int32
-	Width   uint32
-	Height  uint32
+	Width   int32
+	Height  int32
 	Aspect  float32
 	GlID    uint32
 	layers  []*layerEdit
@@ -57,7 +57,17 @@ func (s *TextureEdit) addLayer(idx int, tex *texture.Texture) {
 	s.layers = slices.Insert(s.layers, idx, layer)
 }
 
-func (s *TextureEdit) AppendLayer() {
+func (s *TextureEdit) AppendLayer(tex *texture.Texture) {
+	c := new(layersChange)
+	c.parent = s
+	c.before = slices.Clone(s.layers)
+	s.addLayer(len(s.layers), tex)
+	s.layer = s.layers[len(s.layers)-1]
+	c.after = slices.Clone(s.layers)
+	history.Append(c)
+}
+
+func (s *TextureEdit) AppendClearLayer() {
 	c := new(layersChange)
 	c.parent = s
 	c.before = slices.Clone(s.layers)
@@ -79,6 +89,15 @@ func New(tex *texture.Texture) (out *TextureEdit) {
 	out.GlID = renderer.CreateTexture(int32(tex.Width), int32(tex.Height), tex.FlatColors())
 	out.preview = new(preview)
 	return
+}
+
+func (s *TextureEdit) Resize(w, h int32) {
+	for _, l := range s.layers {
+		l.resize(w, h)
+	}
+	s.texture.Resize(w, h)
+	s.Width = w
+	s.Height = h
 }
 
 var isEditing = false
@@ -269,6 +288,14 @@ func (s *TextureEdit) ResetPreview() {
 	s.UpdateTexture()
 }
 
+func (s *TextureEdit) CompileTexture() (final *texture.Texture) {
+	final = texture.New(s.Width, s.Height)
+	for _, layer := range s.layers {
+		final.Colors = texture.Merge(s.texture, layer.Texture)
+	}
+	return
+}
+
 func (s *TextureEdit) SaveTextureAsFile(fileName, path string) bool {
 	if path == "" {
 		path = "./UserData/textures"
@@ -305,8 +332,8 @@ func (s *TextureEdit) Save(r *file.ArchiveWriter) {
 }
 
 func OpenImage(b io.Reader) (out *TextureEdit, err error) {
-	var width uint32
-	var height uint32
+	var width int32
+	var height int32
 	var layers []*texture.Texture
 	tex, err := texture.DecodePNG(b)
 	if err != nil {
@@ -332,8 +359,8 @@ func OpenImage(b io.Reader) (out *TextureEdit, err error) {
 }
 
 func Open(r *file.ArchiveReader) (out *TextureEdit, err error) {
-	var width uint32
-	var height uint32
+	var width int32
+	var height int32
 	var layers []*texture.Texture
 	count := 0
 	for {

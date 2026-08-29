@@ -7,11 +7,12 @@ import (
 )
 
 type CubeUnit struct {
-	Id     int32
-	Parent *Model
-	pos    [3]float32
-	size   [3]float32
-	uvs    [6][2][2]float32
+	Id      int32
+	Parent  *Model
+	pos     [3]float32
+	size    [3]float32
+	uvs     [6][2][2]float32
+	Changed bool
 }
 
 func (s *CubeUnit) SetUV(faceCount int, init, end [2]float32) {
@@ -20,7 +21,7 @@ func (s *CubeUnit) SetUV(faceCount int, init, end [2]float32) {
 	}
 	s.uvs[faceCount][0] = init
 	s.uvs[faceCount][1] = end
-	s.Parent.changed = true
+	s.Parent.Changed = true
 }
 
 func (s *CubeUnit) Data() ([3]float32, [3]float32) {
@@ -30,8 +31,9 @@ func (s *CubeUnit) Data() ([3]float32, [3]float32) {
 func (s *CubeUnit) Edit(pos, size [3]float32) {
 	s.pos = pos
 	s.size = size
+	s.Changed = true
 	if s.Parent != nil {
-		s.Parent.changed = true
+		s.Parent.Changed = true
 	}
 }
 
@@ -128,7 +130,7 @@ func (s *buffer) addFace(face [4][5]float32, size, pos [3]float32) {
 
 type Model struct {
 	Units   []*CubeUnit
-	changed bool
+	Changed bool
 	idSys   *util.IdSystem
 }
 
@@ -147,7 +149,7 @@ func (s *Model) AddUnit(unit *CubeUnit) (err error) {
 	unit.Parent = s
 	unit.Id = s.idSys.GetID()
 	s.Units = append(s.Units, unit)
-	s.changed = true
+	s.Changed = true
 	return
 }
 
@@ -167,7 +169,7 @@ func (s *Model) Remove(unit *CubeUnit) (err error) {
 		s.Units = slices.Delete(s.Units, idx, idx+1)
 		unit.Parent = nil
 		unit.Id = 0
-		s.changed = true
+		s.Changed = true
 	}
 	return
 }
@@ -181,11 +183,9 @@ func (s Model) ToBuffer() (vertices []float32, indexBuffer []uint32) {
 	return b.vertices, b.indices
 }
 
-func (s *Model) Changed() (r bool) {
-	r = s.changed
-	return
-}
-
 func (s *Model) Reset() {
-	s.changed = false
+	for _, u := range s.Units {
+		u.Changed = false
+	}
+	s.Changed = false
 }

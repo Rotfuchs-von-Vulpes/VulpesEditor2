@@ -5,6 +5,8 @@ import (
 	"VulpesEditor/app/front/tabs"
 	"VulpesEditor/app/history"
 	"VulpesEditor/app/textureDraw/canvas"
+	"VulpesEditor/app/textureDraw/canvas/texture"
+	"VulpesEditor/app/textureDraw/canvas/textureEdit"
 	"VulpesEditor/app/textureDraw/color"
 	"VulpesEditor/app/textureDraw/tools"
 	"VulpesEditor/app/util"
@@ -26,8 +28,8 @@ func Init() {
 
 type creationData struct {
 	name   string
-	width  uint32
-	height uint32
+	width  int32
+	height int32
 }
 
 var standardTexSize = [2]int32{16, 16}
@@ -61,8 +63,8 @@ func newTextureWindow() {
 					nameInput = "unnamed_texture"
 				}
 				c.name = strings.Clone(nameInput)
-				c.width = uint32(textureSize[0])
-				c.height = uint32(textureSize[1])
+				c.width = textureSize[0]
+				c.height = textureSize[1]
 				openNew(c)
 				closeNewTextureWindow()
 			}
@@ -135,11 +137,13 @@ var IdSys *util.IdSystem
 
 type instance struct {
 	name   string
-	width  uint32
-	height uint32
+	width  int32
+	height int32
 
 	id    int32
 	focus bool
+
+	sub *SubProject
 }
 
 func (s *instance) init() {
@@ -184,6 +188,49 @@ func (s *instance) Save() {
 	b.WriteString(strconv.FormatInt(int64(s.height), 10))
 	w.Write("metaData.txt", []byte(b.String()))
 	w.Save()
+
+	if s.sub != nil {
+		s.notify()
+	}
+}
+
+type SubProject struct {
+	parent    *instance
+	changed   bool
+	callbacks []func(colors [][4]float32)
+}
+
+func (s *SubProject) OnChange(callback func(colors [][4]float32)) {
+	s.callbacks = append(s.callbacks, callback)
+}
+
+func (s *SubProject) Focus() {
+	s.parent.focus = true
+}
+
+func (s *SubProject) Add(tex *texture.Texture) {
+	canvas.SetLayer(s.parent.id, tex)
+}
+
+func (s *instance) notify() {
+	for _, f := range s.sub.callbacks {
+		f(canvas.GetTexture(s.id).Clone().Colors)
+	}
+}
+
+func OpenSubProject(tex *texture.Texture, name string) *SubProject {
+	itc := new(instance)
+	itc.name = name
+	itc.id = IdSys.GetID()
+	itc.focus = true
+	itc.width = tex.Width
+	itc.height = tex.Height
+	canvas.OpenTexture(itc.id, textureEdit.New(tex.Clone()))
+	itc.init()
+	tabs.Push(itc)
+	itc.sub = new(SubProject)
+	itc.sub.parent = itc
+	return itc.sub
 }
 
 func OpenImage(imgBuffer io.Reader, name string) {
@@ -237,8 +284,8 @@ func OpenTexture(path string) {
 		fmt.Println("can't parse height")
 		return
 	}
-	itc.width = uint32(width)
-	itc.height = uint32(height)
+	itc.width = int32(width)
+	itc.height = int32(height)
 	itc.id = IdSys.GetID()
 	itc.focus = true
 	if err := canvas.Open(itc.id, r); err != nil {

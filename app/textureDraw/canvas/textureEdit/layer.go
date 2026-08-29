@@ -21,6 +21,7 @@ type TextureChange struct {
 
 func (s *TextureChange) Undo() {
 	s.parent.unchange(s.changes)
+	// s.parent.parent.update()
 }
 
 func (s *TextureChange) Redo() {
@@ -30,11 +31,17 @@ func (s *TextureChange) Redo() {
 type layerEdit struct {
 	parent  *TextureEdit
 	Id      int32
-	width   uint32
-	height  uint32
+	width   int32
+	height  int32
 	Texture *texture.Texture
 	Show    bool
 	Image   *Image
+}
+
+func (s *layerEdit) resize(w, h int32) {
+	s.Texture.ResizeWithColors(w, h)
+	s.width = w
+	s.height = h
 }
 
 func (s *layerEdit) updatePreview() {

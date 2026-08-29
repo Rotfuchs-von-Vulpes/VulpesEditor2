@@ -108,7 +108,7 @@ func buttonRelease(buttons [5]bool) {
 func Show(id int32) {
 	ctxManager.Check(id)
 
-	if ctx.model.Changed() {
+	if ctx.model.Changed {
 		f, e := ctx.model.ToBuffer()
 		ctx.mesh.SetVertices(f, e)
 	}

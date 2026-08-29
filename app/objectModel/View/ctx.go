@@ -33,7 +33,7 @@ func OpenModel(id int32, model *model.Model) {
 	viwerSize = [2]float32{500, 500}
 	ctxManager.Add(id, ctx)
 
-	texture.OnChange(func() {
+	texture.OnChange(id, func() {
 		ctx.mesh.SetTexture(texture.GetData())
 	})
 
