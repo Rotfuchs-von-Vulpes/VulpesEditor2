@@ -4,7 +4,7 @@ import (
 	"VulpesEditor/app/objectModel/model"
 	"VulpesEditor/app/textureDraw"
 	"VulpesEditor/app/textureDraw/canvas/texture"
-	"fmt"
+	"slices"
 
 	im "github.com/AllenDang/cimgui-go/imgui"
 )
@@ -150,7 +150,8 @@ func generateTexture() {
 		}
 	}
 	ctx.size = packSurfaces(ctx.surfaces)
-	for _, s := range ctx.surfaces {
+	toRemove := []int{}
+	for i, s := range ctx.surfaces {
 		var u *model.CubeUnit
 		for _, unit := range ctx.model.Units {
 			if unit.Id == s.id {
@@ -159,10 +160,13 @@ func generateTexture() {
 			}
 		}
 		if u == nil {
-			fmt.Printf("Unit %d not found.", s.id)
+			toRemove = append(toRemove, i)
 			continue
 		}
 		setUv(u, *s, float32(ctx.size))
+	}
+	for _, i := range toRemove {
+		ctx.surfaces = slices.Delete(ctx.surfaces, i, i+1)
 	}
 	draw()
 }
