@@ -1,9 +1,11 @@
 package texture
 
 import (
+	"VulpesEditor/app/file"
 	"VulpesEditor/app/objectModel/model"
 	"VulpesEditor/app/textureDraw"
 	"VulpesEditor/app/textureDraw/canvas/texture"
+	"bytes"
 	"slices"
 
 	im "github.com/AllenDang/cimgui-go/imgui"
@@ -242,4 +244,25 @@ func Show(id int32) {
 		}
 	}
 	im.End()
+}
+
+func Save(id int32, w *file.ArchiveWriter) {
+	ctxManager.Check(id)
+	buff := bytes.NewBuffer(nil)
+	ctx.texture.ToPNG(buff)
+	w.Write("texture.png", buff.Bytes())
+}
+
+func Open(id int32, r *file.ArchiveReader) error {
+	ctxManager.Check(id)
+	f, err := r.Open("texture.png")
+	if err != nil {
+		return err
+	}
+	ctx.texture, err = texture.DecodePNG(f)
+	if err != nil {
+		return err
+	}
+	f.Close()
+	return nil
 }

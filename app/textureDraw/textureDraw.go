@@ -136,7 +136,9 @@ func Show() {
 var IdSys *util.IdSystem
 
 type instance struct {
-	name   string
+	name  string
+	title string
+
 	width  int32
 	height int32
 
@@ -147,6 +149,7 @@ type instance struct {
 }
 
 func (s *instance) init() {
+	s.title = "Texture #" + strconv.FormatInt(int64(s.id), 10)
 	history.New(s.id)
 	color.New(s.id)
 	tools.New(s.id, s.width, s.height)
@@ -161,7 +164,7 @@ func (s *instance) Focus() bool {
 }
 
 func (s *instance) Name() string {
-	return "Texture #" + strconv.FormatInt(int64(s.id), 10)
+	return s.title
 }
 
 func (s *instance) Show() {

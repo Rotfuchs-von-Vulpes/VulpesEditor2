@@ -8,7 +8,6 @@ import (
 	"VulpesEditor/app/objectModel/texture"
 	"VulpesEditor/app/objectModel/tools"
 	"VulpesEditor/app/objectModel/view"
-	"VulpesEditor/app/textureDraw/canvas"
 	"VulpesEditor/app/util"
 	"fmt"
 	"io"
@@ -127,7 +126,8 @@ func Show() {
 var IdSys *util.IdSystem
 
 type instance struct {
-	name string
+	name  string
+	title string
 
 	model *model.Model
 
@@ -135,13 +135,13 @@ type instance struct {
 	focus bool
 }
 
-func (s *instance) init() {
+func (s *instance) init(m *model.Model) {
 	history.New(s.id)
-	s.model = model.NewModel()
+	s.model = m
 	tools.New(s.id, s.model)
 	texture.New(s.id, s.model)
 	view.New(s.id, s.model)
-	s.name = "Model #" + strconv.FormatInt(int64(s.id), 10)
+	s.title = "Model #" + strconv.FormatInt(int64(s.id), 10)
 }
 
 func (s *instance) Focus() bool {
@@ -153,7 +153,7 @@ func (s *instance) Focus() bool {
 }
 
 func (s *instance) Name() string {
-	return s.name
+	return s.title
 }
 
 func (s *instance) Show() {
@@ -165,16 +165,17 @@ func (s *instance) Show() {
 }
 
 func (s *instance) Save() {
-	w, err := file.NewArchive(filepath.Join(util.AppDir, "projects", "models"), s.name)
+	w, err := file.NewArchive(filepath.Join(util.AppDir, "projects", "models"), s.title)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	// canvas.Save(w)
+	s.model.Save(w)
+	texture.Save(s.id, w)
 	b := strings.Builder{}
 	b.WriteString("model")
 	b.WriteRune('\n')
-	b.WriteString(s.name)
+	b.WriteString(s.title)
 	w.Write("metaData.txt", []byte(b.String()))
 	w.Save()
 }
@@ -207,11 +208,16 @@ func OpenModel(path string) {
 	itc.name = field[1]
 	itc.id = IdSys.GetID()
 	itc.focus = true
-	if err := canvas.Open(itc.id, r); err != nil {
+	m, err := model.OpenModel(r)
+	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	itc.init()
+	itc.init(m)
+	if err := texture.Open(itc.id, r); err != nil {
+		fmt.Println(err)
+		return
+	}
 	tabs.Push(itc)
 }
 
@@ -220,6 +226,8 @@ func openNew(c creationData) {
 	itc.name = c.name
 	itc.id = IdSys.GetID()
 	itc.focus = true
-	itc.init()
+	m := model.NewModel()
+	m.AddUnit(model.NewUnit([3]float32{0, 0, 0}, [3]float32{1, 1, 1}))
+	itc.init(m)
 	tabs.Push(itc)
 }

@@ -1,7 +1,10 @@
 package model
 
 import (
+	"VulpesEditor/app/file"
 	"VulpesEditor/app/util"
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"slices"
 )
@@ -21,7 +24,16 @@ func (s *CubeUnit) SetUV(faceCount int, init, end [2]float32) {
 	}
 	s.uvs[faceCount][0] = init
 	s.uvs[faceCount][1] = end
-	s.Parent.Changed = true
+	if s.Parent != nil {
+		s.Parent.Changed = true
+	}
+}
+
+func (s *CubeUnit) SetUVs(uvs [6][2][2]float32) {
+	s.uvs = uvs
+	if s.Parent != nil {
+		s.Parent.Changed = true
+	}
 }
 
 func (s *CubeUnit) Data() ([3]float32, [3]float32) {
@@ -137,7 +149,6 @@ type Model struct {
 func NewModel() (s *Model) {
 	s = new(Model)
 	s.idSys = util.NewIdSystem()
-	s.AddUnit(NewUnit([3]float32{0, 0, 0}, [3]float32{1, 1, 1}))
 	return
 }
 
@@ -151,6 +162,15 @@ func (s *Model) AddUnit(unit *CubeUnit) (err error) {
 	s.Units = append(s.Units, unit)
 	s.Changed = true
 	return
+}
+
+func (s *Model) appendUnit(unit *CubeUnit) {
+	if unit.Parent != nil {
+		unit.Parent.Remove(unit)
+	}
+	unit.Parent = s
+	s.Units = append(s.Units, unit)
+	s.Changed = true
 }
 
 func (s *Model) Remove(unit *CubeUnit) (err error) {
@@ -188,4 +208,53 @@ func (s *Model) Reset() {
 		u.Changed = false
 	}
 	s.Changed = false
+}
+
+type cube struct {
+	Id       int32            `json:"id"`
+	Position [3]float32       `json:"position"`
+	Size     [3]float32       `json:"size"`
+	Uv       [6][2][2]float32 `json:"uv"`
+}
+
+func (s *Model) Save(w *file.ArchiveWriter) {
+	cubes := []cube{}
+	for _, u := range s.Units {
+		c := cube{}
+		c.Id = u.Id
+		c.Position = u.pos
+		c.Size = u.size
+		c.Uv = u.uvs
+		cubes = append(cubes, c)
+	}
+	buff := bytes.NewBuffer(nil)
+	encoder := json.NewEncoder(buff)
+	encoder.SetIndent("", "  ")
+	err := encoder.Encode(cubes)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	w.Write("model.json", buff.Bytes())
+}
+
+func OpenModel(r *file.ArchiveReader) (m *Model, err error) {
+	f, err := r.Open("model.json")
+	if err != nil {
+		return nil, err
+	}
+	var cubes []cube
+	err = json.NewDecoder(f).Decode(&cubes)
+	if err != nil {
+		return nil, err
+	}
+	f.Close()
+	m = NewModel()
+	for _, c := range cubes {
+		u := NewUnit(c.Position, c.Size)
+		u.Id = c.Id
+		u.SetUVs(c.Uv)
+		m.appendUnit(u)
+	}
+	return
 }

@@ -323,11 +323,11 @@ func (s *TextureEdit) SaveTextureAsFile(fileName, path string) bool {
 	return true
 }
 
-func (s *TextureEdit) Save(r *file.ArchiveWriter) {
+func (s *TextureEdit) Save(w *file.ArchiveWriter) {
 	for i, layer := range s.layers {
 		buff := bytes.NewBuffer(nil)
 		layer.Texture.ToPNG(buff)
-		r.Write(fmt.Sprintf("layers/layer%d.png", i), buff.Bytes())
+		w.Write(fmt.Sprintf("layers/layer%d.png", i), buff.Bytes())
 	}
 }
 

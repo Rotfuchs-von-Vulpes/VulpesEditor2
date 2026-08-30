@@ -95,8 +95,11 @@ func Loop() {
 				if im.ButtonV("Open Texture...", size) {
 					textureDraw.OpenOpenTextureWindow()
 				}
-				if im.ButtonV("Test Model", size) {
+				if im.ButtonV("New Model...", size) {
 					objectModel.OpenNewModelWindow()
+				}
+				if im.ButtonV("Open Model...", size) {
+					objectModel.OpenOpenModelWindow()
 				}
 
 				front.NotImplementPopUp()
@@ -122,7 +125,9 @@ func Loop() {
 				tabID := t.Name() + "###" + strconv.FormatInt(int64(i), 10)
 				im.PushIDStr(tabID)
 				if im.BeginTabItemV(t.Name(), nil, f) {
+					im.PushIDStr(t.Name())
 					im.DockSpace(dockspaceId)
+					im.PopID()
 					t.Show()
 					im.EndTabItem()
 
