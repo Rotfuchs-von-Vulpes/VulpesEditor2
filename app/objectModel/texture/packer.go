@@ -86,37 +86,21 @@ func (p *Packer) toBottomLeft(s *packet) bool {
 }
 
 func (p *Packer) pack(s *packet) bool {
-	if !p.toBottomLeft(s) {
-		return false
-	}
-
-	var directionX int32 = 0
-	var directionY int32 = -1
-	lastX := s.x
-	lastY := s.y
-	count := 0
-
-	swap := func() {
-		if directionX == 0 {
-			directionX = -1
-			directionY = 0
-		} else {
-			directionX = 0
-			directionY = -1
-		}
-	}
-
+	var x int32 = 0
+	var y int32 = 0
+	maxX := p.w - s.r1.w
+	maxY := p.h - s.r2.h
 	for {
-		if p.move(s, lastX+directionX, lastY+directionY) {
-			lastX = s.x
-			lastY = s.y
-			count = 0
+		if p.move(s, x, y) {
+			break
 		} else {
-			p.move(s, lastX, lastY)
-			swap()
-			count += 1
-			if count >= 2 {
-				break
+			x += 1
+			if x > maxX {
+				x = 0
+				y += 1
+				if y > maxY {
+					return false
+				}
 			}
 		}
 	}

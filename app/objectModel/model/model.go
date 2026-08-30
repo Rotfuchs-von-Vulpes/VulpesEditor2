@@ -16,6 +16,7 @@ type CubeUnit struct {
 	size    [3]float32
 	uvs     [6][2][2]float32
 	Changed bool
+	QuadPos [2]float32
 }
 
 func (s *CubeUnit) SetUV(faceCount int, init, end [2]float32) {
@@ -27,10 +28,14 @@ func (s *CubeUnit) SetUV(faceCount int, init, end [2]float32) {
 	if s.Parent != nil {
 		s.Parent.Changed = true
 	}
+	if faceCount == 2 {
+		s.QuadPos = init
+	}
 }
 
 func (s *CubeUnit) SetUVs(uvs [6][2][2]float32) {
 	s.uvs = uvs
+	s.QuadPos = uvs[2][0]
 	if s.Parent != nil {
 		s.Parent.Changed = true
 	}

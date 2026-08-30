@@ -165,7 +165,7 @@ func (s *instance) Show() {
 }
 
 func (s *instance) Save() {
-	w, err := file.NewArchive(filepath.Join(util.AppDir, "projects", "models"), s.title)
+	w, err := file.NewArchive(filepath.Join(util.AppDir, "projects", "models"), s.name)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -175,7 +175,7 @@ func (s *instance) Save() {
 	b := strings.Builder{}
 	b.WriteString("model")
 	b.WriteRune('\n')
-	b.WriteString(s.title)
+	b.WriteString(s.name)
 	w.Write("metaData.txt", []byte(b.String()))
 	w.Save()
 }

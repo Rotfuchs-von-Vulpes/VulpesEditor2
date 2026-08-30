@@ -28,6 +28,57 @@ type MultiQuad struct {
 	quads     [6]quad
 }
 
+func toInt(v1 [2]float32, size int32) (v2 [2]int32) {
+	v2[0] = int32(v1[0] * float32(size))
+	v2[1] = int32(v1[1] * float32(size))
+	return
+}
+
+func writeTexture(s *MultiQuad, tex *texture.Texture) {
+	for _, q := range s.quads {
+		var pixels []texture.PixelEdit
+		for x := range q.width {
+			for y := range q.height {
+				pos := getPositions([2]int32{q.pos[0] + x, q.pos[1] + y}, s.pos)
+				if ok, color := tex.Get(pos); ok {
+					var p texture.PixelEdit
+					p.Pos = [2]int32{x, y}
+					p.Color = color
+					pixels = append(pixels, p)
+				}
+			}
+		}
+		q.texture.BulkSet(pixels)
+	}
+}
+
+func open(c *model.CubeUnit) (unity *MultiQuad) {
+	unity = new(MultiQuad)
+	_, size := c.Data()
+
+	x := int32(size[0] * 16)
+	y := int32(size[1] * 16)
+	z := int32(size[2] * 16)
+
+	unity.quads[0] = quad{[2]int32{0, y}, x, z, texture.New(x, z)}
+	unity.quads[1] = quad{[2]int32{x, y}, x, z, texture.New(x, z)}
+	unity.quads[2] = quad{[2]int32{0, 0}, x, y, texture.New(x, y)}
+	unity.quads[3] = quad{[2]int32{x, 0}, x, y, texture.New(x, y)}
+	unity.quads[4] = quad{[2]int32{2 * x, 0}, z, y, texture.New(z, y)}
+	unity.quads[5] = quad{[2]int32{2*x + z, 0}, z, y, texture.New(z, y)}
+
+	unity.id = c.Id
+	unity.pos = toInt(c.QuadPos, ctx.size)
+	unity.width = 2 * (x + z)
+	unity.height = y + z
+	unity.cutWidth = 2 * x
+	unity.cutHeight = y
+
+	writeTexture(unity, ctx.texture)
+
+	return
+}
+
 func primitive(c *model.CubeUnit) (unity *MultiQuad) {
 	unity = new(MultiQuad)
 	_, size := c.Data()
@@ -136,6 +187,12 @@ func draw() {
 	ctx.changed = true
 }
 
+func loadTexture() {
+	for _, u := range ctx.model.Units {
+		ctx.surfaces = append(ctx.surfaces, open(u))
+	}
+}
+
 func generateTexture() {
 	for _, u := range ctx.model.Units {
 		found := false
@@ -221,21 +278,7 @@ func Show(id int32) {
 					ctx.changed = true
 
 					for _, s := range ctx.surfaces {
-						for _, q := range s.quads {
-							var pixels []texture.PixelEdit
-							for x := range q.width {
-								for y := range q.height {
-									pos := getPositions([2]int32{q.pos[0] + x, q.pos[1] + y}, s.pos)
-									if ok, color := ctx.texture.Get(pos); ok {
-										var p texture.PixelEdit
-										p.Pos = [2]int32{x, y}
-										p.Color = color
-										pixels = append(pixels, p)
-									}
-								}
-							}
-							q.texture.BulkSet(pixels)
-						}
+						writeTexture(s, ctx.texture)
 					}
 				})
 			} else {
@@ -263,6 +306,9 @@ func Open(id int32, r *file.ArchiveReader) error {
 	if err != nil {
 		return err
 	}
+	ctx.size = ctx.texture.Width
+	loadTexture()
+	ctx.changed = true
 	f.Close()
 	return nil
 }
