@@ -299,6 +299,18 @@ func OpenTexture(path string) {
 	tabs.Push(itc)
 }
 
+func NewTest() {
+	itc := new(instance)
+	itc.name = "Test"
+	itc.width = 16
+	itc.height = 16
+	itc.id = IdSys.GetID()
+	itc.focus = true
+	itc.init()
+	canvas.New(itc.id, itc.width, itc.height)
+	tabs.Push(itc)
+}
+
 func openNew(c creationData) {
 	itc := new(instance)
 	itc.name = c.name

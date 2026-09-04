@@ -6,6 +6,7 @@ import (
 	"VulpesEditor/app/objectModel"
 	"VulpesEditor/app/textureDraw"
 	"VulpesEditor/app/util"
+	"flag"
 	"strconv"
 
 	im "github.com/AllenDang/cimgui-go/imgui"
@@ -24,6 +25,37 @@ func Init() {
 func AfterCreateContext() {
 	front.Init()
 	objectModel.Init()
+
+	testing := flag.String("o", "", "-o (texture|model)")
+	name := flag.String("n", "", "-n [ProjectName]")
+
+	flag.Parse()
+
+	if *name == "" {
+		switch *testing {
+		case "texture":
+			textureDraw.NewTest()
+		case "model":
+			objectModel.NewTest()
+		}
+	} else {
+		switch *testing {
+		case "texture":
+			for _, p := range textureDraw.AllTextures {
+				if p.Name == *name {
+					textureDraw.OpenTexture(p.Path)
+					break
+				}
+			}
+		case "model":
+			for _, p := range objectModel.AllModels {
+				if p.Name == *name {
+					objectModel.OpenModel(p.Path)
+					break
+				}
+			}
+		}
+	}
 }
 
 func BeforeDestroyContext() {

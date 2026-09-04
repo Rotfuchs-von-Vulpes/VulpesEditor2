@@ -221,6 +221,17 @@ func OpenModel(path string) {
 	tabs.Push(itc)
 }
 
+func NewTest() {
+	itc := new(instance)
+	itc.name = "Test"
+	itc.id = IdSys.GetID()
+	itc.focus = true
+	m := model.NewModel()
+	m.AddUnit(model.NewUnit([3]float32{0, 0, 0}, [3]float32{1, 1, 1}))
+	itc.init(m)
+	tabs.Push(itc)
+}
+
 func openNew(c creationData) {
 	itc := new(instance)
 	itc.name = c.name
