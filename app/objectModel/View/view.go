@@ -99,6 +99,9 @@ func buttonRelease(buttons [5]bool) {
 	if buttons[2] {
 		mouseCanDrag = false
 		ctx.accumulation = ctx.pos
+
+		mousePos = [2]float32{0, 0}
+		mousePressedPos = [2]float32{0, 0}
 	}
 	if buttons[0] || buttons[1] {
 
