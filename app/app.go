@@ -26,8 +26,6 @@ func AfterCreateContext() {
 
 	flag.Parse()
 
-	*name += ".zip"
-
 	if *name == "" {
 		switch *testing {
 		case "texture":
@@ -36,6 +34,8 @@ func AfterCreateContext() {
 			objectModel.NewTest()
 		}
 	} else {
+		*name += ".zip"
+
 		switch *testing {
 		case "texture":
 			for _, p := range textureDraw.AllTextures {
