@@ -8,13 +8,13 @@ import (
 )
 
 type ToolContext struct {
-	model *model.Model
+	model     *model.Model
+	sizeInput [3]float32
 }
 
 var pos [3]float32
 var size = [3]float32{1, 1, 1}
 var posInput [3]float32
-var sizeInput = [3]float32{16, 16, 16}
 var originalPos [3]float32
 var originalSize [3]float32
 var editingUnit *model.CubeUnit = model.NewUnit(pos, size)
@@ -45,7 +45,7 @@ func setToEdit(unit *model.CubeUnit) {
 	originalPos = pos
 	originalSize = size
 	posInput = toRelative(pos)
-	sizeInput = toRelative(size)
+	ctx.sizeInput = toRelative(size)
 }
 
 func Write() {
@@ -64,23 +64,23 @@ func Show(id string) {
 		}
 
 		c2 := im.InputFloat3("Position", &posInput)
-		c3 := im.InputFloat3("Size", &sizeInput)
+		c3 := im.InputFloat3("Size", &ctx.sizeInput)
 
 		if c3 {
-			if sizeInput[0] < 0 {
-				sizeInput[0] = 0
+			if ctx.sizeInput[0] < 0 {
+				ctx.sizeInput[0] = 0
 			}
-			if sizeInput[1] < 0 {
-				sizeInput[1] = 0
+			if ctx.sizeInput[1] < 0 {
+				ctx.sizeInput[1] = 0
 			}
-			if sizeInput[2] < 0 {
-				sizeInput[2] = 0
+			if ctx.sizeInput[2] < 0 {
+				ctx.sizeInput[2] = 0
 			}
 		}
 
 		if c1 || c2 || c3 {
 			pos = toAbsolute(posInput)
-			size = toAbsolute(sizeInput)
+			size = toAbsolute(ctx.sizeInput)
 			editingUnit.Edit(pos, size)
 		}
 
