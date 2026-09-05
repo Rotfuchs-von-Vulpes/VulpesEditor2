@@ -19,7 +19,7 @@ type quad struct {
 }
 
 type MultiQuad struct {
-	id        int32
+	id        string
 	pos       [2]int32
 	width     int32
 	height    int32
@@ -236,6 +236,8 @@ func GetData() (width, height int32, data []float32) {
 }
 
 type TextureContext struct {
+	name string
+
 	model    *model.Model
 	texture  *texture.Texture
 	surfaces []*MultiQuad
@@ -246,7 +248,7 @@ type TextureContext struct {
 	subProject *textureDraw.SubProject
 }
 
-func OnChange(id int32, callback func()) {
+func OnChange(id string, callback func()) {
 	ctxManager.Check(id)
 	ctx.callbacks = append(ctx.callbacks, callback)
 }
@@ -263,7 +265,7 @@ func call() {
 	}
 }
 
-func Show(id int32) {
+func Show(id string) {
 	ctxManager.Check(id)
 	if ctx.model.Changed {
 		generateTexture()
@@ -272,7 +274,7 @@ func Show(id int32) {
 	if im.Begin("Texture Manager") {
 		if im.Button("Open Edit") {
 			if ctx.subProject == nil {
-				ctx.subProject = textureDraw.OpenSubProject(ctx.texture, "Texture of Model Test")
+				ctx.subProject = textureDraw.OpenSubProject(ctx.texture, ctx.name)
 				ctx.subProject.OnChange(func(colors [][4]float32) {
 					ctx.texture.Colors = colors
 					ctx.changed = true
@@ -289,14 +291,14 @@ func Show(id int32) {
 	im.End()
 }
 
-func Save(id int32, w *file.ArchiveWriter) {
+func Save(id string, w *file.ArchiveWriter) {
 	ctxManager.Check(id)
 	buff := bytes.NewBuffer(nil)
 	ctx.texture.ToPNG(buff)
 	w.Write("texture.png", buff.Bytes())
 }
 
-func Open(id int32, r *file.ArchiveReader) error {
+func Open(id string, r *file.ArchiveReader) error {
 	ctxManager.Check(id)
 	f, err := r.Open("texture.png")
 	if err != nil {

@@ -23,7 +23,7 @@ func Init() {
 	palette.Init()
 }
 
-func Show(id int32) {
+func Show(id string) {
 	ctxManager.Check(id)
 	change := picker.Loop(&ctx.color1, &ctx.color2)
 	palette.Reset(change)

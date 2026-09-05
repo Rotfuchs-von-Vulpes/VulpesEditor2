@@ -12,8 +12,9 @@ func (s *TextureContext) Use() {
 var ctx *TextureContext
 var ctxManager = context.New()
 
-func New(id int32, m *model.Model) {
+func New(id, name string, m *model.Model) {
 	ctx = new(TextureContext)
+	ctx.name = name
 	ctx.model = m
 	// GenerateTexture()
 	ctxManager.Add(id, ctx)

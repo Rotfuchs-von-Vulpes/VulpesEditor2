@@ -8,7 +8,6 @@ import (
 )
 
 type ToolContext struct {
-	id    int32
 	model *model.Model
 }
 
@@ -54,7 +53,7 @@ func Write() {
 	reset()
 }
 
-func Show(id int32) {
+func Show(id string) {
 	ctxManager.Check(id)
 
 	if im.Begin("Add Unit") {

@@ -41,7 +41,7 @@ func redo() {
 	}
 }
 
-func Loop(id int32) {
+func Loop(id string) {
 	ctxManager.Check(id)
 
 	io := im.CurrentContext().IO()

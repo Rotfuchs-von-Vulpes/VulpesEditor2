@@ -1,7 +1,6 @@
 package texture
 
 import (
-	"VulpesEditor/app/util"
 	"fmt"
 	"image"
 	"image/color"
@@ -211,5 +210,3 @@ func Merge(end, front *Texture) (colors [][4]float32) {
 	}
 	return tempTex.Colors
 }
-
-var idSys = util.NewIdSystem()

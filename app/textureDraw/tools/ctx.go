@@ -13,7 +13,7 @@ func (s *toolsData) Use() {
 var ctx *toolsData
 var ctxManager = context.New()
 
-func New(id, w, h int32) {
+func New(id string, w, h int32) {
 	c := new(toolsData)
 	c.selectedTool = pencil.Pencil{}
 	c.texture = texture.New(w, h)

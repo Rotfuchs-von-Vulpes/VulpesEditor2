@@ -6,9 +6,7 @@ import (
 	"VulpesEditor/app/textureDraw/canvas/texture"
 	"VulpesEditor/app/textureDraw/canvas/textureEdit"
 	"VulpesEditor/app/textureDraw/tools"
-	"VulpesEditor/app/util"
 	"math"
-	"strconv"
 
 	im "github.com/AllenDang/cimgui-go/imgui"
 )
@@ -124,7 +122,7 @@ var textureFileName string
 var textureFilePath string
 var toFocus bool
 
-func Show(id int32) {
+func Show(id string) {
 	ctxManager.Check(id)
 
 	var toPop string
@@ -153,7 +151,7 @@ func Show(id int32) {
 		toPop = ""
 	}
 	if im.BeginPopupModal("Export PNG") {
-		im.InputTextWithHint("File Name", "texure_"+strconv.FormatInt(int64(ctx.texture.Id), 10)+".png", &textureFileName, im.InputTextFlagsNone, nil)
+		im.InputTextWithHint("File Name", "texure_"+ctx.texture.Id+".png", &textureFileName, im.InputTextFlagsNone, nil)
 		im.InputTextWithHint("File Path", "", &textureFilePath, im.InputTextFlagsNone, nil)
 		if im.Button("Save") {
 			if ok := ctx.texture.SaveTextureAsFile(textureFileName, textureFilePath); ok {
@@ -209,12 +207,12 @@ func Show(id int32) {
 	ctx.textureViewer.RenderTexture(ctx.texture.GlID, ctx.zoom, ctx.pos, float32(ctx.texture.Width), float32(ctx.texture.Height))
 }
 
-func SetLayer(id int32, tex *texture.Texture) {
+func SetLayer(id string, tex *texture.Texture) {
 	ctxManager.Check(id)
 	ctx.texture = textureEdit.New(tex)
 }
 
-func AddLayer(id int32, tex *texture.Texture) {
+func AddLayer(id string, tex *texture.Texture) {
 	ctxManager.Check(id)
 	if ctx.texture.Width != tex.Width || ctx.texture.Height != tex.Height {
 		ctx.texture.Resize(tex.Width, tex.Height)
@@ -222,9 +220,7 @@ func AddLayer(id int32, tex *texture.Texture) {
 	ctx.texture.AppendLayer(tex)
 }
 
-func GetTexture(id int32) *texture.Texture {
+func GetTexture(id string) *texture.Texture {
 	ctxManager.Check(id)
 	return ctx.texture.CompileTexture()
 }
-
-var windowIdSys = util.NewIdSystem()

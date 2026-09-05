@@ -17,7 +17,7 @@ func (s *colorData) Use() {
 var ctx *colorData
 var ctxManager = context.New()
 
-func New(id int32) {
+func New(id string) {
 	c := new(colorData)
 	c.color1 = [4]float32{1, 1, 1, 1}
 	c.color2 = [4]float32{0, 0, 0, 1}

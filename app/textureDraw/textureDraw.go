@@ -15,6 +15,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"uuid"
 
 	im "github.com/AllenDang/cimgui-go/imgui"
 )
@@ -133,8 +134,6 @@ func Show() {
 	openTextureWindow()
 }
 
-var IdSys *util.IdSystem
-
 type instance struct {
 	name  string
 	title string
@@ -142,14 +141,14 @@ type instance struct {
 	width  int32
 	height int32
 
-	id    int32
+	id    string
 	focus bool
 
 	sub *SubProject
 }
 
 func (s *instance) init() {
-	s.title = "Texture #" + strconv.FormatInt(int64(s.id), 10)
+	s.title = s.name + " Texture"
 	history.New(s.id)
 	color.New(s.id)
 	tools.New(s.id, s.width, s.height)
@@ -224,7 +223,7 @@ func (s *instance) notify() {
 func OpenSubProject(tex *texture.Texture, name string) *SubProject {
 	itc := new(instance)
 	itc.name = name
-	itc.id = IdSys.GetID()
+	itc.id = uuid.New().String()
 	itc.focus = true
 	itc.width = tex.Width
 	itc.height = tex.Height
@@ -239,7 +238,7 @@ func OpenSubProject(tex *texture.Texture, name string) *SubProject {
 func OpenImage(imgBuffer io.Reader, name string) {
 	itc := new(instance)
 	itc.name = name
-	itc.id = IdSys.GetID()
+	itc.id = uuid.New().String()
 	itc.focus = true
 	var err error
 	itc.width, itc.height, err = canvas.OpenImage(itc.id, imgBuffer)
@@ -289,7 +288,7 @@ func OpenTexture(path string) {
 	}
 	itc.width = int32(width)
 	itc.height = int32(height)
-	itc.id = IdSys.GetID()
+	itc.id = uuid.New().String()
 	itc.focus = true
 	if err := canvas.Open(itc.id, r); err != nil {
 		fmt.Println(err)
@@ -304,7 +303,7 @@ func NewTest() {
 	itc.name = "Test"
 	itc.width = 16
 	itc.height = 16
-	itc.id = IdSys.GetID()
+	itc.id = uuid.New().String()
 	itc.focus = true
 	itc.init()
 	canvas.New(itc.id, itc.width, itc.height)
@@ -316,7 +315,7 @@ func openNew(c creationData) {
 	itc.name = c.name
 	itc.width = c.width
 	itc.height = c.height
-	itc.id = IdSys.GetID()
+	itc.id = uuid.New().String()
 	itc.focus = true
 	itc.init()
 	canvas.New(itc.id, itc.width, itc.height)

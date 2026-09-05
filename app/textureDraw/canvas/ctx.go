@@ -16,11 +16,11 @@ func (s *TextureContext) Use() {
 var ctx *TextureContext
 var ctxManager = context.New()
 
-func New(id int32, w, h int32) {
+func New(id string, w, h int32) {
 	OpenTexture(id, textureEdit.New(texture.New(w, h)))
 }
 
-func OpenTexture(id int32, tex *textureEdit.TextureEdit) {
+func OpenTexture(id string, tex *textureEdit.TextureEdit) {
 	ctx = new(TextureContext)
 	ctx.zoom = 0.9
 	ctx.textureViewer = renderer.CreateFramebuffer(500, 500)
@@ -33,7 +33,7 @@ func Save(w *file.ArchiveWriter) {
 	ctx.texture.Save(w)
 }
 
-func OpenImage(id int32, r io.Reader) (width, height int32, err error) {
+func OpenImage(id string, r io.Reader) (width, height int32, err error) {
 	tex, err := textureEdit.OpenImage(r)
 	if err != nil {
 		return
@@ -44,7 +44,7 @@ func OpenImage(id int32, r io.Reader) (width, height int32, err error) {
 	return
 }
 
-func Open(id int32, r *file.ArchiveReader) (err error) {
+func Open(id string, r *file.ArchiveReader) (err error) {
 	tex, err := textureEdit.Open(r)
 	if err != nil {
 		return err

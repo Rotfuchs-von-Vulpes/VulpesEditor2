@@ -11,9 +11,9 @@ func (s *paletteData) Use() {
 var ctx *paletteData
 var ctxManager = context.New()
 
-func New(id int32) {
+func New(id string) {
 	c := new(paletteData)
-	c.palettes = make(map[int32]bool)
+	c.palettes = make(map[string]bool)
 	for i, p := range palettes {
 		if i == 0 {
 			c.palettes[p.id] = true

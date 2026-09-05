@@ -5,11 +5,11 @@ type Context interface {
 }
 
 type Manager struct {
-	data   map[int32]Context
-	lastId int32
+	data   map[string]Context
+	lastId string
 }
 
-func (s *Manager) Add(id int32, value Context) {
+func (s *Manager) Add(id string, value Context) {
 	_, ok := s.data[id]
 	if ok {
 		panic("Alreade in use")
@@ -17,7 +17,7 @@ func (s *Manager) Add(id int32, value Context) {
 	s.data[id] = value
 }
 
-func (s *Manager) Check(id int32) {
+func (s *Manager) Check(id string) {
 	ctx, ok := s.data[id]
 	if ok {
 		if s.lastId != id {
@@ -31,7 +31,7 @@ func (s *Manager) Check(id int32) {
 
 func New() (ctxM *Manager) {
 	ctxM = new(Manager)
-	ctxM.data = map[int32]Context{}
-	ctxM.lastId = -1
+	ctxM.data = map[string]Context{}
+	ctxM.lastId = ""
 	return
 }

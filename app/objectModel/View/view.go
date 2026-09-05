@@ -108,7 +108,7 @@ func buttonRelease(buttons [5]bool) {
 	}
 }
 
-func Show(id int32) {
+func Show(id string) {
 	ctxManager.Check(id)
 
 	if ctx.model.Changed {

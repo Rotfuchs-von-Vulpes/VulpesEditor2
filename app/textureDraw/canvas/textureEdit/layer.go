@@ -29,7 +29,7 @@ func (s *TextureChange) Redo() {
 
 type layerEdit struct {
 	parent  *TextureEdit
-	Id      int32
+	Id      string
 	width   int32
 	height  int32
 	Texture *texture.Texture

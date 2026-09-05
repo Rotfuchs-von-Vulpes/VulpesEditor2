@@ -69,7 +69,7 @@ func Change() []texture.PixelEdit {
 	return nil
 }
 
-func Show(id int32) {
+func Show(id string) {
 	ctxManager.Check(id)
 
 	im.Begin("Tools")

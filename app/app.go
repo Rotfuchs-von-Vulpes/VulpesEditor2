@@ -13,11 +13,6 @@ import (
 )
 
 func Init() {
-	idSys := util.NewIdSystem()
-
-	textureDraw.IdSys = idSys
-	objectModel.IdSys = idSys
-
 	util.Init()
 	textureDraw.Init()
 }
@@ -30,6 +25,8 @@ func AfterCreateContext() {
 	name := flag.String("n", "", "-n [ProjectName]")
 
 	flag.Parse()
+
+	*name += ".zip"
 
 	if *name == "" {
 		switch *testing {

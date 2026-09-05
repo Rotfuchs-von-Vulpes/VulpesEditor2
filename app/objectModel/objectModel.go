@@ -12,8 +12,8 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
-	"strconv"
 	"strings"
+	"uuid"
 
 	im "github.com/AllenDang/cimgui-go/imgui"
 )
@@ -123,15 +123,13 @@ func Show() {
 	openModelWindow()
 }
 
-var IdSys *util.IdSystem
-
 type instance struct {
 	name  string
 	title string
 
 	model *model.Model
 
-	id    int32
+	id    string
 	focus bool
 }
 
@@ -139,9 +137,9 @@ func (s *instance) init(m *model.Model) {
 	history.New(s.id)
 	s.model = m
 	tools.New(s.id, s.model)
-	texture.New(s.id, s.model)
+	texture.New(s.id, s.name, s.model)
 	view.New(s.id, s.model)
-	s.title = "Model #" + strconv.FormatInt(int64(s.id), 10)
+	s.title = s.name + " Model"
 }
 
 func (s *instance) Focus() bool {
@@ -206,7 +204,7 @@ func OpenModel(path string) {
 	}
 	itc := new(instance)
 	itc.name = field[1]
-	itc.id = IdSys.GetID()
+	itc.id = uuid.New().String()
 	itc.focus = true
 	m, err := model.OpenModel(r)
 	if err != nil {
@@ -224,7 +222,7 @@ func OpenModel(path string) {
 func NewTest() {
 	itc := new(instance)
 	itc.name = "Test"
-	itc.id = IdSys.GetID()
+	itc.id = uuid.New().String()
 	itc.focus = true
 	m := model.NewModel()
 	m.AddUnit(model.NewUnit([3]float32{0, 0, 0}, [3]float32{1, 1, 1}))
@@ -235,7 +233,7 @@ func NewTest() {
 func openNew(c creationData) {
 	itc := new(instance)
 	itc.name = c.name
-	itc.id = IdSys.GetID()
+	itc.id = uuid.New().String()
 	itc.focus = true
 	m := model.NewModel()
 	m.AddUnit(model.NewUnit([3]float32{0, 0, 0}, [3]float32{1, 1, 1}))

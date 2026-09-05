@@ -12,7 +12,7 @@ func (s *ToolContext) Use() {
 var ctx *ToolContext
 var ctxManager = context.New()
 
-func New(id int32, m *model.Model) {
+func New(id string, m *model.Model) {
 	ctx = new(ToolContext)
 	ctx.model = m
 	ctxManager.Add(id, ctx)

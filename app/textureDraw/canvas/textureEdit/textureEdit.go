@@ -5,18 +5,16 @@ import (
 	"VulpesEditor/app/front/renderer"
 	"VulpesEditor/app/history"
 	"VulpesEditor/app/textureDraw/canvas/texture"
-	"VulpesEditor/app/util"
 	"bytes"
 	"fmt"
 	"image"
 	"io"
 	"os"
 	"slices"
+	"uuid"
 
 	"github.com/AllenDang/cimgui-go/backend"
 )
-
-var idSys = util.NewIdSystem()
 
 type preview struct {
 	pixels []texture.PixelEdit
@@ -32,7 +30,7 @@ type Image struct {
 }
 
 type TextureEdit struct {
-	Id      int32
+	Id      string
 	Width   int32
 	Height  int32
 	Aspect  float32
@@ -45,7 +43,7 @@ type TextureEdit struct {
 
 func (s *TextureEdit) addLayer(idx int, tex *texture.Texture) {
 	layer := new(layerEdit)
-	layer.Id = idSys.GetID()
+	layer.Id = uuid.New().String()
 	layer.parent = s
 	layer.width = s.Width
 	layer.height = s.Height
@@ -79,7 +77,7 @@ func (s *TextureEdit) AppendClearLayer() {
 
 func New(tex *texture.Texture) (out *TextureEdit) {
 	out = new(TextureEdit)
-	out.Id = idSys.GetID()
+	out.Id = uuid.New().String()
 	out.Width = tex.Width
 	out.Height = tex.Height
 	out.Aspect = float32(tex.Width) / float32(tex.Height)
@@ -343,7 +341,7 @@ func OpenImage(b io.Reader) (out *TextureEdit, err error) {
 	height = tex.Height
 	layers = append(layers, tex)
 	out = new(TextureEdit)
-	out.Id = idSys.GetID()
+	out.Id = uuid.New().String()
 	out.Width = width
 	out.Height = height
 	out.Aspect = float32(width) / float32(height)
@@ -383,7 +381,7 @@ func Open(r *file.ArchiveReader) (out *TextureEdit, err error) {
 		return nil, fmt.Errorf("No texture")
 	}
 	out = new(TextureEdit)
-	out.Id = idSys.GetID()
+	out.Id = uuid.New().String()
 	out.Width = width
 	out.Height = height
 	out.Aspect = float32(width) / float32(height)

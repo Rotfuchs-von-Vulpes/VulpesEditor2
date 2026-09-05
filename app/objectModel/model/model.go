@@ -2,15 +2,15 @@ package model
 
 import (
 	"VulpesEditor/app/file"
-	"VulpesEditor/app/util"
 	"bytes"
 	"encoding/json"
 	"fmt"
 	"slices"
+	"uuid"
 )
 
 type CubeUnit struct {
-	Id      int32
+	Id      string
 	Parent  *Model
 	pos     [3]float32
 	size    [3]float32
@@ -148,12 +148,10 @@ func (s *buffer) addFace(face [4][5]float32, size, pos [3]float32) {
 type Model struct {
 	Units   []*CubeUnit
 	Changed bool
-	idSys   *util.IdSystem
 }
 
 func NewModel() (s *Model) {
 	s = new(Model)
-	s.idSys = util.NewIdSystem()
 	return
 }
 
@@ -163,7 +161,7 @@ func (s *Model) AddUnit(unit *CubeUnit) (err error) {
 		return
 	}
 	unit.Parent = s
-	unit.Id = s.idSys.GetID()
+	unit.Id = uuid.New().String()
 	s.Units = append(s.Units, unit)
 	s.Changed = true
 	return
@@ -193,7 +191,7 @@ func (s *Model) Remove(unit *CubeUnit) (err error) {
 	if idx >= 0 {
 		s.Units = slices.Delete(s.Units, idx, idx+1)
 		unit.Parent = nil
-		unit.Id = 0
+		unit.Id = ""
 		s.Changed = true
 	}
 	return
@@ -216,7 +214,7 @@ func (s *Model) Reset() {
 }
 
 type cube struct {
-	Id       int32            `json:"id"`
+	Id       string           `json:"id"`
 	Position [3]float32       `json:"position"`
 	Size     [3]float32       `json:"size"`
 	Uv       [6][2][2]float32 `json:"uv"`

@@ -11,7 +11,7 @@ func (s *historyData) Use() {
 var ctx *historyData
 var ctxManager = context.New()
 
-func New(id int32) {
+func New(id string) {
 	c := new(historyData)
 	c.history = make([]change, 0)
 	ctxManager.Add(id, c)

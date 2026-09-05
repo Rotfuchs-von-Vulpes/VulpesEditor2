@@ -3,21 +3,21 @@ package palette
 import (
 	"VulpesEditor/app/front"
 	"VulpesEditor/app/textureDraw/color/palette/paletteFile"
-	"VulpesEditor/app/util"
 	"strconv"
 	"strings"
+	"uuid"
 
 	im "github.com/AllenDang/cimgui-go/imgui"
 )
 
 type color struct {
-	id    int32
+	id    string
 	value [4]float32
 	mark  im.Vec4
 }
 
 type palette struct {
-	id      int32
+	id      string
 	name    string
 	creator string
 	colors  []color
@@ -29,14 +29,12 @@ type entry struct {
 }
 
 type paletteData struct {
-	palettes map[int32]bool
-	color1id int32
-	color2id int32
+	palettes map[string]bool
+	color1id string
+	color2id string
 }
 
 var palettes []*palette
-
-var idSys = util.NewIdSystem()
 
 func highContrast(rgba [4]float32) im.Vec4 {
 	hsv := [4]float32{}
@@ -58,12 +56,12 @@ func newVec4(vec [4]float32) im.Vec4 {
 
 func addPalette(data paletteFile.PaletteData) (p *palette) {
 	p = new(palette)
-	p.id = idSys.GetID()
+	p.id = uuid.New().String()
 	p.name = data.Name
 	p.creator = data.Creator
 	for _, c := range data.Colors {
 		rgba := [4]float32{c[0], c[1], c[2], 1}
-		p.colors = append(p.colors, color{idSys.GetID(), rgba, highContrast(rgba)})
+		p.colors = append(p.colors, color{uuid.New().String(), rgba, highContrast(rgba)})
 	}
 	palettes = append(palettes, p)
 	return
@@ -89,10 +87,10 @@ func addLospecByLink(link string) bool {
 
 func Reset(change [3]bool) {
 	if change[0] {
-		ctx.color1id = -1
+		ctx.color1id = ""
 	}
 	if change[1] {
-		ctx.color2id = -1
+		ctx.color2id = ""
 	}
 	if change[2] {
 		temp := ctx.color1id
@@ -136,7 +134,7 @@ func Init() {
 
 var lospecInput string
 
-func Loop(id int32, color1, color2 *[4]float32) {
+func Loop(id string, color1, color2 *[4]float32) {
 	ctxManager.Check(id)
 
 	var toPop string
@@ -201,7 +199,7 @@ func Loop(id int32, color1, color2 *[4]float32) {
 				im.PushStyleColorVec4(im.ColFrameBg, color.mark)
 			}
 			availableSpace := im.ContentRegionAvail().X
-			im.PushIDInt(id)
+			im.PushIDStr(id)
 			im.ColorButton("color #"+strconv.FormatInt(int64(i), 10), newVec4(color.value))
 			im.PopID()
 			if ctx.color1id == id || ctx.color2id == id {

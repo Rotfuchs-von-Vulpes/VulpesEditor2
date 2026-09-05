@@ -16,11 +16,11 @@ func (s *ModelContext) Use() {
 var ctx *ModelContext
 var ctxManager = context.New()
 
-func New(id int32, model *model.Model) {
+func New(id string, model *model.Model) {
 	OpenModel(id, model)
 }
 
-func OpenModel(id int32, model *model.Model) {
+func OpenModel(id string, model *model.Model) {
 	ctx = new(ModelContext)
 	ctx.accumulation = [2]float32{math.Pi / 4, math.Pi / 8}
 	ctx.zoom = 3
@@ -44,7 +44,7 @@ func Save(w *file.ArchiveWriter) {
 	// ctx.texture.Save(w)
 }
 
-func Open(id int32, model *model.Model, r *file.ArchiveReader) (err error) {
+func Open(id string, model *model.Model, r *file.ArchiveReader) (err error) {
 	OpenModel(id, model)
 	return
 }
