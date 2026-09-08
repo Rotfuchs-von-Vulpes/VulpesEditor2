@@ -136,7 +136,7 @@ type instance struct {
 func (s *instance) init(m *model.Model) {
 	history.New(s.id)
 	s.model = m
-	tools.New(s.id, s.model)
+	tools.New(s.id, s.name, s.model)
 	texture.New(s.id, s.name, s.model)
 	view.New(s.id, s.model)
 	s.title = s.name + " Model"

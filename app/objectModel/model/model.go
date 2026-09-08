@@ -9,14 +9,98 @@ import (
 	"uuid"
 )
 
+type NodeTree interface {
+	GetId() string
+	Parent() NodeTree
+	Children() []NodeTree
+	Append(node NodeTree) bool
+	CanReceive(node NodeTree) bool
+}
+
 type CubeUnit struct {
-	Id      string
-	Parent  *Model
-	pos     [3]float32
-	size    [3]float32
-	uvs     [6][2][2]float32
-	Changed bool
-	QuadPos [2]float32
+	Id       string
+	Name     string
+	Source   *Model
+	parent   *CubeUnit
+	children []*CubeUnit
+	pos      [3]float32
+	size     [3]float32
+	uvs      [6][2][2]float32
+	Changed  bool
+	QuadPos  [2]float32
+}
+
+func (s *CubeUnit) GetId() string {
+	return s.Id
+}
+
+func (s *CubeUnit) Parent() NodeTree {
+	if s.parent != nil {
+		return s.parent
+	} else {
+		return s.Source
+	}
+}
+
+func (s *CubeUnit) Children() (r []NodeTree) {
+	for _, u := range s.children {
+		r = append(r, u)
+	}
+	return
+}
+
+func (s *CubeUnit) Remove(unit *CubeUnit) {
+	if unit.parent == s.parent {
+		unit.parent = nil
+	}
+	s.children = slices.DeleteFunc(s.children, func(u *CubeUnit) bool {
+		return u.Id == unit.Id
+	})
+}
+
+func (s *CubeUnit) CanReceive(node NodeTree) bool {
+	switch v := node.(type) {
+	case (*Model):
+		return false
+	case (*CubeUnit):
+		if v.parent == s {
+			return false
+		}
+
+		p := s
+		for {
+			p = p.parent
+			if p == nil {
+				break
+			}
+			if p.Id == v.Id {
+				return false
+			}
+		}
+
+		return true
+	}
+	return false
+}
+
+func (s *CubeUnit) Append(node NodeTree) bool {
+	switch v := node.(type) {
+	case (*Model):
+		return false
+	case (*CubeUnit):
+		if s.CanReceive(v) {
+			if s.Source != nil {
+				s.Source.appendUnit(v)
+			}
+			if v.parent != nil {
+				v.parent.Remove(v)
+			}
+			v.parent = s
+			s.children = append(s.children, v)
+			return true
+		}
+	}
+	return false
 }
 
 func (s *CubeUnit) SetUV(faceCount int, init, end [2]float32) {
@@ -25,8 +109,8 @@ func (s *CubeUnit) SetUV(faceCount int, init, end [2]float32) {
 	}
 	s.uvs[faceCount][0] = init
 	s.uvs[faceCount][1] = end
-	if s.Parent != nil {
-		s.Parent.Changed = true
+	if s.Source != nil {
+		s.Source.Changed = true
 	}
 	if faceCount == 2 {
 		s.QuadPos = init
@@ -36,8 +120,8 @@ func (s *CubeUnit) SetUV(faceCount int, init, end [2]float32) {
 func (s *CubeUnit) SetUVs(uvs [6][2][2]float32) {
 	s.uvs = uvs
 	s.QuadPos = uvs[2][0]
-	if s.Parent != nil {
-		s.Parent.Changed = true
+	if s.Source != nil {
+		s.Source.Changed = true
 	}
 }
 
@@ -49,8 +133,8 @@ func (s *CubeUnit) Edit(pos, size [3]float32) {
 	s.pos = pos
 	s.size = size
 	s.Changed = true
-	if s.Parent != nil {
-		s.Parent.Changed = true
+	if s.Source != nil {
+		s.Source.Changed = true
 	}
 }
 
@@ -108,6 +192,7 @@ func (s CubeUnit) toBuffer(b *buffer) {
 
 func NewUnit(pos, size [3]float32) (u *CubeUnit) {
 	u = new(CubeUnit)
+	u.Id = uuid.New().String()
 	u.pos = pos
 	u.size = size
 	for i := range u.uvs {
@@ -146,52 +231,60 @@ func (s *buffer) addFace(face [4][5]float32, size, pos [3]float32) {
 }
 
 type Model struct {
+	id      string
 	Units   []*CubeUnit
 	Changed bool
 }
 
 func NewModel() (s *Model) {
 	s = new(Model)
+	s.id = uuid.New().String()
 	return
 }
 
 func (s *Model) AddUnit(unit *CubeUnit) (err error) {
-	if unit.Parent != nil {
+	if unit.Source != nil {
 		err = fmt.Errorf("This unit already have parent")
 		return
 	}
-	unit.Parent = s
-	unit.Id = uuid.New().String()
+	unit.Source = s
+	// unit.Id = uuid.New().String()
 	s.Units = append(s.Units, unit)
 	s.Changed = true
 	return
 }
 
-func (s *Model) appendUnit(unit *CubeUnit) {
-	if unit.Parent != nil {
-		unit.Parent.Remove(unit)
+func (s *Model) appendUnit(unit *CubeUnit) bool {
+	if unit.Source == nil {
+		unit.Source = s
+		s.Units = append(s.Units, unit)
+		s.Changed = true
 	}
-	unit.Parent = s
-	s.Units = append(s.Units, unit)
-	s.Changed = true
+	if unit.Source != s {
+		unit.Source.Remove(unit)
+		unit.Source = s
+		s.Units = append(s.Units, unit)
+		s.Changed = true
+	}
+	if unit.parent != nil {
+		unit.parent.Remove(unit)
+	}
+	unit.parent = nil
+	return true
 }
 
 func (s *Model) Remove(unit *CubeUnit) (err error) {
-	if s != unit.Parent {
+	if s != unit.Source {
 		err = fmt.Errorf("This unit does not belongs here")
 		return
 	}
-	idx := -1
-	for i, u := range s.Units {
-		if u.Id == unit.Id {
-			idx = i
-			break
-		}
-	}
+	idx := slices.Index(s.Units, unit)
 	if idx >= 0 {
 		s.Units = slices.Delete(s.Units, idx, idx+1)
-		unit.Parent = nil
-		unit.Id = ""
+		if unit.parent != nil {
+			unit.parent.Remove(unit)
+		}
+		unit.Source = nil
 		s.Changed = true
 	}
 	return
@@ -241,6 +334,46 @@ func (s *Model) Save(w *file.ArchiveWriter) {
 	w.Write("model.json", buff.Bytes())
 }
 
+func (s *Model) GetId() string {
+	return s.id
+}
+
+func (s *Model) Parent() NodeTree {
+	return nil
+}
+
+func (s *Model) Children() (r []NodeTree) {
+	for _, u := range s.Units {
+		if model, ok := u.Parent().(*Model); ok && model == s {
+			r = append(r, u)
+		}
+	}
+	return
+}
+
+func (s *Model) Append(node NodeTree) bool {
+	switch v := node.(type) {
+	case (*Model):
+		return false
+	case (*CubeUnit):
+		return s.appendUnit(v)
+	}
+	return false
+}
+
+func (s *Model) CanReceive(node NodeTree) bool {
+	switch v := node.(type) {
+	case (*Model):
+		return false
+	case (*CubeUnit):
+		if v.parent == nil && v.Source == s {
+			return false
+		}
+		return true
+	}
+	return false
+}
+
 func OpenModel(r *file.ArchiveReader) (m *Model, err error) {
 	f, err := r.Open("model.json")
 	if err != nil {
@@ -253,9 +386,10 @@ func OpenModel(r *file.ArchiveReader) (m *Model, err error) {
 	}
 	f.Close()
 	m = NewModel()
-	for _, c := range cubes {
+	for i, c := range cubes {
 		u := NewUnit(c.Position, c.Size)
 		u.Id = c.Id
+		u.Name = fmt.Sprintf("Unit #%d", i)
 		u.SetUVs(c.Uv)
 		m.appendUnit(u)
 	}

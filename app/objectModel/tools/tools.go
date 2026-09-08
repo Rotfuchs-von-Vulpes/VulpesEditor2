@@ -2,12 +2,12 @@ package tools
 
 import (
 	"VulpesEditor/app/objectModel/model"
-	"fmt"
 
 	im "github.com/AllenDang/cimgui-go/imgui"
 )
 
 type ToolContext struct {
+	name      string
 	model     *model.Model
 	sizeInput [3]float32
 }
@@ -53,6 +53,129 @@ func Write() {
 	reset()
 }
 
+func BeginDragSource() {
+
+}
+
+var draging *model.CubeUnit
+
+func DragSource(cube *model.CubeUnit) {
+	if draging == nil {
+		draging = cube
+	}
+}
+
+func DragTarget(target model.NodeTree) {
+	if draging != nil {
+		unitSource := draging
+		if unitSource.GetId() != target.GetId() {
+			target.Append(unitSource)
+		}
+		draging = nil
+	}
+}
+
+type Payload struct {
+	kind string
+	data any
+}
+
+var selected string
+var hovered bool
+
+func ShowUnits(node model.NodeTree) {
+	if node == nil {
+		return
+	}
+
+	im.PushIDStr(node.GetId())
+
+	if unit, ok := node.(*model.CubeUnit); ok {
+		im.SetNextItemOpenV(true, im.CondOnce)
+		if im.TreeNodeStr(unit.Name) {
+
+			if draging != nil {
+				cant := !unit.CanReceive(draging)
+				if cant {
+					im.BeginDisabled()
+				}
+				im.Button("Drop")
+				if cant {
+					im.EndDisabled()
+				}
+			} else {
+				im.Button("Drag")
+			}
+			if im.IsItemHovered() {
+				hovered = true
+				selected = node.GetId()
+
+				if im.IsMouseDown(im.MouseButtonLeft) && ok {
+					DragSource(unit)
+				}
+
+				if im.IsMouseReleased(im.MouseButtonLeft) {
+					DragTarget(node)
+				}
+			}
+
+			im.SameLine()
+			if im.Button("Edit") {
+				setToEdit(unit)
+			}
+			im.SameLine()
+			if im.Button("Clone") {
+				pos, size := unit.Data()
+				u := model.NewUnit(pos, size)
+				ctx.model.AddUnit(u)
+				setToEdit(u)
+			}
+
+			for _, u := range unit.Children() {
+				ShowUnits(u)
+			}
+
+			im.TreePop()
+		}
+	}
+	if m, ok := node.(*model.Model); ok {
+		im.SetNextItemOpenV(true, im.CondOnce)
+		if im.TreeNodeStr(ctx.name) {
+
+			if draging != nil {
+				cant := !m.CanReceive(draging)
+				if cant {
+					im.BeginDisabled()
+				}
+				im.Button("Drop")
+				if cant {
+					im.EndDisabled()
+				}
+			} else {
+				im.BeginDisabled()
+				im.Button("Drag")
+				im.EndDisabled()
+			}
+			if im.IsItemHovered() {
+				hovered = true
+				selected = node.GetId()
+
+				if im.IsMouseReleased(im.MouseButtonLeft) {
+					DragTarget(node)
+				}
+			}
+
+			for _, u := range m.Children() {
+				ShowUnits(u)
+			}
+
+			im.TreePop()
+		}
+	}
+
+	im.PopID()
+}
+
 func Show(id string) {
 	ctxManager.Check(id)
 
@@ -84,7 +207,7 @@ func Show(id string) {
 			editingUnit.Edit(pos, size)
 		}
 
-		if editingUnit.Parent == nil {
+		if editingUnit.Source == nil {
 			if im.Button("Add") {
 				ctx.model.AddUnit(editingUnit)
 				reset()
@@ -108,22 +231,25 @@ func Show(id string) {
 	}
 
 	if im.Begin("Units") {
-		for idx, unit := range ctx.model.Units {
-			im.Text(fmt.Sprintf("Unit #%d", idx))
-			im.SameLine()
-			im.PushIDInt(int32(idx))
-			if im.Button("Edit") {
-				setToEdit(unit)
+		hovered = false
+
+		if draging != nil {
+			if im.BeginTooltip() {
+				im.Text("Moving " + draging.Name)
+				im.EndTooltip()
 			}
-			im.SameLine()
-			if im.Button("Clone") {
-				pos, size := unit.Data()
-				u := model.NewUnit(pos, size)
-				ctx.model.AddUnit(u)
-				setToEdit(u)
-			}
-			im.PopID()
 		}
+
+		ShowUnits(ctx.model)
+
+		if im.IsMouseReleased(im.MouseButtonLeft) {
+			draging = nil
+		}
+
+		if !hovered {
+			selected = ""
+		}
+
 		im.End()
 	}
 }
