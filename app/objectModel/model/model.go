@@ -94,7 +94,7 @@ func (s *CubeUnit) Append(node NodeTree) bool {
 	case (*CubeUnit):
 		if s.CanReceive(v) {
 			if s.Source != nil {
-				s.Source.appendUnit(v)
+				s.Source.AppendUnit(v)
 			}
 			if v.parent != nil {
 				v.parent.Remove(v)
@@ -134,7 +134,7 @@ func (s *CubeUnit) Data() ([3]float32, [3]float32, [3]float32) {
 }
 
 func (s *CubeUnit) Edit(pos, size, rot [3]float32) {
-	if s.pos != pos {
+	if s.size != size {
 		s.Resized = true
 	}
 	s.pos = pos
@@ -286,6 +286,7 @@ type Model struct {
 	Id      string
 	Units   []*CubeUnit
 	Changed bool
+	count   uint32
 }
 
 func NewModel() (s *Model) {
@@ -294,34 +295,22 @@ func NewModel() (s *Model) {
 	return
 }
 
-func (s *Model) AddUnit(unit *CubeUnit) (err error) {
+func (s *Model) AppendUnit(unit *CubeUnit) bool {
 	if unit.Source != nil {
-		err = fmt.Errorf("This unit already have parent")
-		return
+		if unit.Source == s {
+			return false
+		} else {
+			unit.Source.Remove(unit)
+		}
 	}
 	unit.Source = s
-	// unit.Id = uuid.New().String()
 	s.Units = append(s.Units, unit)
 	s.Changed = true
-	return
-}
-
-func (s *Model) appendUnit(unit *CubeUnit) bool {
-	if unit.Source == nil {
-		unit.Source = s
-		s.Units = append(s.Units, unit)
-		s.Changed = true
-	}
-	if unit.Source != s {
-		unit.Source.Remove(unit)
-		unit.Source = s
-		s.Units = append(s.Units, unit)
-		s.Changed = true
-	}
-	if unit.parent != nil {
-		unit.parent.Remove(unit)
-	}
 	unit.parent = nil
+	if unit.Name == "" {
+		unit.Name = fmt.Sprintf("Unit #%d", s.count)
+		s.count++
+	}
 	return true
 }
 
@@ -381,7 +370,7 @@ func (s *Model) Append(node NodeTree) bool {
 	case (*Model):
 		return false
 	case (*CubeUnit):
-		return s.appendUnit(v)
+		return s.AppendUnit(v)
 	}
 	return false
 }
@@ -480,12 +469,11 @@ func (m *Model) readModel(r *file.ArchiveReader) (err error) {
 	if err != nil {
 		return
 	}
-	for i, c := range cubes {
+	for _, c := range cubes {
 		u := NewUnit(c.Position, c.Size, c.Rotation)
 		u.Id = c.Id
-		u.Name = fmt.Sprintf("Unit #%d", i)
 		u.SetUVs(c.Uv)
-		m.appendUnit(u)
+		m.AppendUnit(u)
 	}
 	return
 }

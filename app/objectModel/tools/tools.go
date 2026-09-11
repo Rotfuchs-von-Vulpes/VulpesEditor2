@@ -83,11 +83,6 @@ func DragTarget(target model.NodeTree) {
 	}
 }
 
-type Payload struct {
-	kind string
-	data any
-}
-
 var selected string
 var hovered bool
 
@@ -135,7 +130,7 @@ func ShowUnits(node model.NodeTree) {
 			if im.Button("Clone") {
 				pos, size, rot := unit.Data()
 				u := model.NewUnit(pos, size, rot)
-				ctx.model.AddUnit(u)
+				ctx.model.AppendUnit(u)
 				setToEdit(u)
 			}
 
@@ -219,7 +214,7 @@ func Show(id string) {
 
 		if editingUnit.Source == nil {
 			if im.Button("Add") {
-				ctx.model.AddUnit(editingUnit)
+				ctx.model.AppendUnit(editingUnit)
 				reset()
 			}
 		} else {
