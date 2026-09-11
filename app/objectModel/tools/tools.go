@@ -18,7 +18,7 @@ var posInput [3]float32
 var originalPos [3]float32
 var originalSize [3]float32
 var originalRot [3]float32
-var editingUnit *model.CubeUnit = model.NewUnit([3]float32{0, 0, 0}, [3]float32{1, 1, 1})
+var editingUnit *model.CubeUnit = model.NewUnit([3]float32{}, [3]float32{1, 1, 1}, [3]float32{})
 
 func toAbsolute(v1 [3]float32) (v2 [3]float32) {
 	v2[0] = v1[0] / 16
@@ -51,7 +51,7 @@ func toDegree(v1 [3]float32) (v2 [3]float32) {
 func reset() {
 	// texture.GenerateTexture()
 	posInput = [3]float32{}
-	editingUnit = model.NewUnit([3]float32{0, 0, 0}, [3]float32{1, 1, 1})
+	editingUnit = model.NewUnit([3]float32{}, [3]float32{1, 1, 1}, [3]float32{})
 }
 
 func setToEdit(unit *model.CubeUnit) {
@@ -133,8 +133,8 @@ func ShowUnits(node model.NodeTree) {
 			}
 			im.SameLine()
 			if im.Button("Clone") {
-				pos, size, _ := unit.Data()
-				u := model.NewUnit(pos, size)
+				pos, size, rot := unit.Data()
+				u := model.NewUnit(pos, size, rot)
 				ctx.model.AddUnit(u)
 				setToEdit(u)
 			}

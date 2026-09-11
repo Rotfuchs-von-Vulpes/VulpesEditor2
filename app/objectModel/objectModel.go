@@ -231,7 +231,7 @@ func NewTest() {
 	itc.id = uuid.New().String()
 	itc.focus = true
 	m := model.NewModel()
-	m.AddUnit(model.NewUnit([3]float32{0, 0, 0}, [3]float32{1, 1, 1}))
+	m.AddUnit(model.NewUnit([3]float32{0, 0, 0}, [3]float32{1, 1, 1}, [3]float32{0, 0, 0}))
 	itc.init(m)
 	tabs.Push(itc)
 }
@@ -242,7 +242,7 @@ func openNew(c creationData) {
 	itc.id = uuid.New().String()
 	itc.focus = true
 	m := model.NewModel()
-	m.AddUnit(model.NewUnit([3]float32{0, 0, 0}, [3]float32{1, 1, 1}))
+	m.AddUnit(model.NewUnit([3]float32{0, 0, 0}, [3]float32{1, 1, 1}, [3]float32{0, 0, 0}))
 	itc.init(m)
 	tabs.Push(itc)
 }

@@ -198,11 +198,12 @@ func (s CubeUnit) toBuffer(b *buffer) {
 	}
 }
 
-func NewUnit(pos, size [3]float32) (u *CubeUnit) {
+func NewUnit(pos, size, rot [3]float32) (u *CubeUnit) {
 	u = new(CubeUnit)
 	u.Id = uuid.New().String()
 	u.pos = pos
 	u.size = size
+	u.rot = rot
 	for i := range u.uvs {
 		u.uvs[i][0] = [2]float32{0, 0}
 		u.uvs[i][1] = [2]float32{1, 1}
@@ -402,6 +403,7 @@ type cube struct {
 	Id       string           `json:"id"`
 	Position [3]float32       `json:"position"`
 	Size     [3]float32       `json:"size"`
+	Rotation [3]float32       `json:"rotation"`
 	Uv       [6][2][2]float32 `json:"uv"`
 }
 
@@ -412,6 +414,7 @@ func (s *Model) saveModel(w *file.ArchiveWriter) (err error) {
 		c.Id = u.Id
 		c.Position = u.pos
 		c.Size = u.size
+		c.Rotation = u.rot
 		c.Uv = u.uvs
 		cubes = append(cubes, c)
 	}
@@ -478,7 +481,7 @@ func (m *Model) readModel(r *file.ArchiveReader) (err error) {
 		return
 	}
 	for i, c := range cubes {
-		u := NewUnit(c.Position, c.Size)
+		u := NewUnit(c.Position, c.Size, c.Rotation)
 		u.Id = c.Id
 		u.Name = fmt.Sprintf("Unit #%d", i)
 		u.SetUVs(c.Uv)
