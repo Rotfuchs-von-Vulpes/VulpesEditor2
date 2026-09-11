@@ -3,6 +3,7 @@ package model
 import (
 	"VulpesEditor/app/file"
 	"bytes"
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"slices"
@@ -231,14 +232,14 @@ func (s *buffer) addFace(face [4][5]float32, size, pos [3]float32) {
 }
 
 type Model struct {
-	id      string
+	Id      string
 	Units   []*CubeUnit
 	Changed bool
 }
 
 func NewModel() (s *Model) {
 	s = new(Model)
-	s.id = uuid.New().String()
+	s.Id = uuid.New().String()
 	return
 }
 
@@ -306,36 +307,8 @@ func (s *Model) Reset() {
 	s.Changed = false
 }
 
-type cube struct {
-	Id       string           `json:"id"`
-	Position [3]float32       `json:"position"`
-	Size     [3]float32       `json:"size"`
-	Uv       [6][2][2]float32 `json:"uv"`
-}
-
-func (s *Model) Save(w *file.ArchiveWriter) {
-	cubes := []cube{}
-	for _, u := range s.Units {
-		c := cube{}
-		c.Id = u.Id
-		c.Position = u.pos
-		c.Size = u.size
-		c.Uv = u.uvs
-		cubes = append(cubes, c)
-	}
-	buff := bytes.NewBuffer(nil)
-	encoder := json.NewEncoder(buff)
-	encoder.SetIndent("", "  ")
-	err := encoder.Encode(cubes)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	w.Write("model.json", buff.Bytes())
-}
-
 func (s *Model) GetId() string {
-	return s.id
+	return s.Id
 }
 
 func (s *Model) Parent() NodeTree {
@@ -374,24 +347,153 @@ func (s *Model) CanReceive(node NodeTree) bool {
 	return false
 }
 
-func OpenModel(r *file.ArchiveReader) (m *Model, err error) {
+type cube struct {
+	Id       string           `json:"id"`
+	Position [3]float32       `json:"position"`
+	Size     [3]float32       `json:"size"`
+	Uv       [6][2][2]float32 `json:"uv"`
+}
+
+func (s *Model) saveModel(w *file.ArchiveWriter) (err error) {
+	cubes := []cube{}
+	for _, u := range s.Units {
+		c := cube{}
+		c.Id = u.Id
+		c.Position = u.pos
+		c.Size = u.size
+		c.Uv = u.uvs
+		cubes = append(cubes, c)
+	}
+	buff := bytes.NewBuffer(nil)
+	encoder := json.NewEncoder(buff)
+	encoder.SetIndent("", "  ")
+	err = encoder.Encode(cubes)
+	if err != nil {
+		return
+	}
+	w.Write("model.json", buff.Bytes())
+	return
+}
+
+func (s *Model) saveHierarchy(w *file.ArchiveWriter) (err error) {
+	cubes := []cube{}
+	for _, u := range s.Units {
+		c := cube{}
+		c.Id = u.Id
+		c.Position = u.pos
+		c.Size = u.size
+		c.Uv = u.uvs
+		cubes = append(cubes, c)
+	}
+	buff := bytes.NewBuffer(nil)
+	encoder := csv.NewWriter(buff)
+	if err := encoder.Write([]string{"unit", "parent"}); err != nil {
+		return err
+	}
+	for _, u := range s.Units {
+		if u.parent == nil {
+			err = encoder.Write([]string{u.Id, s.Id})
+		} else {
+			err = encoder.Write([]string{u.Id, u.parent.Id})
+		}
+		if err != nil {
+			return
+		}
+	}
+	encoder.Flush()
+	w.Write("hierarchy.csv", buff.Bytes())
+	return
+}
+
+func (s *Model) Save(w *file.ArchiveWriter) (err error) {
+	if err := s.saveModel(w); err != nil {
+		return err
+	}
+	if err := s.saveHierarchy(w); err != nil {
+		return err
+	}
+	return
+}
+
+func (m *Model) readModel(r *file.ArchiveReader) (err error) {
 	f, err := r.Open("model.json")
 	if err != nil {
-		return nil, err
+		return
 	}
+	defer f.Close()
 	var cubes []cube
 	err = json.NewDecoder(f).Decode(&cubes)
 	if err != nil {
-		return nil, err
+		return
 	}
-	f.Close()
-	m = NewModel()
 	for i, c := range cubes {
 		u := NewUnit(c.Position, c.Size)
 		u.Id = c.Id
 		u.Name = fmt.Sprintf("Unit #%d", i)
 		u.SetUVs(c.Uv)
 		m.appendUnit(u)
+	}
+	return
+}
+
+func (m *Model) readHierarchy(r *file.ArchiveReader) (err error) {
+	f, err := r.Open("hierarchy.csv")
+	if err != nil {
+		return
+	}
+	defer f.Close()
+	data, err := csv.NewReader(f).ReadAll()
+	if err != nil {
+		return
+	}
+	for i, line := range data {
+		if i == 0 {
+			continue
+		}
+		if len(line) != 2 {
+			err = fmt.Errorf("Wrong Number of columns in line %d.", i)
+			return
+		}
+		childId := line[0]
+		parentId := line[1]
+		var child *CubeUnit
+		var parent *CubeUnit
+		for _, u := range m.Units {
+			if u.Id == childId {
+				child = u
+				break
+			}
+		}
+		if child == nil {
+			err = fmt.Errorf("Unit %s does not exist.", childId)
+			return
+		}
+		if m.Id == parentId {
+			continue
+		}
+		for _, u := range m.Units {
+			if u.Id == parentId {
+				parent = u
+				break
+			}
+		}
+		if parent == nil {
+			err = fmt.Errorf("Unit %s does not exist.", childId)
+			return
+		}
+		parent.Append(child)
+	}
+	return
+}
+
+func OpenModel(r *file.ArchiveReader, id string) (m *Model, err error) {
+	m = NewModel()
+	m.Id = id
+	if err := m.readModel(r); err != nil {
+		return nil, err
+	}
+	if err := m.readHierarchy(r); err != nil {
+		return nil, err
 	}
 	return
 }

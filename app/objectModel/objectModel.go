@@ -168,12 +168,17 @@ func (s *instance) Save() {
 		fmt.Println(err)
 		return
 	}
-	s.model.Save(w)
+	if err := s.model.Save(w); err != nil {
+		fmt.Println(err)
+		return
+	}
 	texture.Save(s.id, w)
 	b := strings.Builder{}
 	b.WriteString("model")
 	b.WriteRune('\n')
 	b.WriteString(s.name)
+	b.WriteRune('\n')
+	b.WriteString(s.model.Id)
 	w.Write("metaData.txt", []byte(b.String()))
 	w.Save()
 }
@@ -194,7 +199,7 @@ func OpenModel(path string) {
 	file := b.String()
 	f.Close()
 	field := strings.Split(file, "\n")
-	if len(field) < 2 {
+	if len(field) < 3 {
 		fmt.Println("Incomplete data")
 		return
 	}
@@ -204,9 +209,10 @@ func OpenModel(path string) {
 	}
 	itc := new(instance)
 	itc.name = field[1]
+	modelId := field[2]
 	itc.id = uuid.New().String()
 	itc.focus = true
-	m, err := model.OpenModel(r)
+	m, err := model.OpenModel(r, modelId)
 	if err != nil {
 		fmt.Println(err)
 		return
