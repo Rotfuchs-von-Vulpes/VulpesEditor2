@@ -198,7 +198,7 @@ func generateTexture() {
 		found := false
 		for i, s := range ctx.surfaces {
 			if u.Id == s.id {
-				if u.Changed {
+				if u.Resized {
 					ctx.surfaces[i] = primitive(u)
 				}
 				found = true

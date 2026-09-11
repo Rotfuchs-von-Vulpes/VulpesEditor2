@@ -30,6 +30,7 @@ type CubeUnit struct {
 	rot      [3]float32
 	uvs      [6][2][2]float32
 	Changed  bool
+	Resized  bool
 	QuadPos  [2]float32
 }
 
@@ -133,6 +134,9 @@ func (s *CubeUnit) Data() ([3]float32, [3]float32, [3]float32) {
 }
 
 func (s *CubeUnit) Edit(pos, size, rot [3]float32) {
+	if s.pos != pos {
+		s.Resized = true
+	}
 	s.pos = pos
 	s.size = size
 	s.rot = rot
@@ -349,6 +353,7 @@ func (s Model) ToBuffer() (vertices []float32, indexBuffer []uint32) {
 func (s *Model) Reset() {
 	for _, u := range s.Units {
 		u.Changed = false
+		u.Resized = false
 	}
 	s.Changed = false
 }
