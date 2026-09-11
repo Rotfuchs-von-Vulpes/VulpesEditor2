@@ -2,22 +2,23 @@ package tools
 
 import (
 	"VulpesEditor/app/objectModel/model"
+	"math"
 
 	im "github.com/AllenDang/cimgui-go/imgui"
 )
 
 type ToolContext struct {
-	name      string
-	model     *model.Model
-	sizeInput [3]float32
+	name          string
+	model         *model.Model
+	rotationInput [3]float32
+	sizeInput     [3]float32
 }
 
-var pos [3]float32
-var size = [3]float32{1, 1, 1}
 var posInput [3]float32
 var originalPos [3]float32
 var originalSize [3]float32
-var editingUnit *model.CubeUnit = model.NewUnit(pos, size)
+var originalRot [3]float32
+var editingUnit *model.CubeUnit = model.NewUnit([3]float32{0, 0, 0}, [3]float32{1, 1, 1})
 
 func toAbsolute(v1 [3]float32) (v2 [3]float32) {
 	v2[0] = v1[0] / 16
@@ -33,28 +34,35 @@ func toRelative(v1 [3]float32) (v2 [3]float32) {
 	return
 }
 
+func toRadians(v1 [3]float32) (v2 [3]float32) {
+	v2[0] = v1[0] * math.Pi / 180.0
+	v2[1] = v1[1] * math.Pi / 180.0
+	v2[2] = v1[2] * math.Pi / 180.0
+	return
+}
+
+func toDegree(v1 [3]float32) (v2 [3]float32) {
+	v2[0] = v1[0] * 180.0 / math.Pi
+	v2[1] = v1[1] * 180.0 / math.Pi
+	v2[2] = v1[2] * 180.0 / math.Pi
+	return
+}
+
 func reset() {
 	// texture.GenerateTexture()
 	posInput = [3]float32{}
-	editingUnit = model.NewUnit(pos, size)
+	editingUnit = model.NewUnit([3]float32{0, 0, 0}, [3]float32{1, 1, 1})
 }
 
 func setToEdit(unit *model.CubeUnit) {
 	editingUnit = unit
-	pos, size = unit.Data()
+	pos, size, rot := unit.Data()
 	originalPos = pos
 	originalSize = size
+	originalRot = rot
 	posInput = toRelative(pos)
 	ctx.sizeInput = toRelative(size)
-}
-
-func Write() {
-	editingUnit.Edit(pos, size)
-	reset()
-}
-
-func BeginDragSource() {
-
+	ctx.rotationInput = toDegree(rot)
 }
 
 var draging *model.CubeUnit
@@ -125,7 +133,7 @@ func ShowUnits(node model.NodeTree) {
 			}
 			im.SameLine()
 			if im.Button("Clone") {
-				pos, size := unit.Data()
+				pos, size, _ := unit.Data()
 				u := model.NewUnit(pos, size)
 				ctx.model.AddUnit(u)
 				setToEdit(u)
@@ -187,9 +195,10 @@ func Show(id string) {
 		}
 
 		c2 := im.InputFloat3("Position", &posInput)
-		c3 := im.InputFloat3("Size", &ctx.sizeInput)
+		c3 := im.InputFloat3("Rotation", &ctx.rotationInput)
+		c4 := im.InputFloat3("Size", &ctx.sizeInput)
 
-		if c3 {
+		if c4 {
 			if ctx.sizeInput[0] < 0 {
 				ctx.sizeInput[0] = 0
 			}
@@ -201,10 +210,11 @@ func Show(id string) {
 			}
 		}
 
-		if c1 || c2 || c3 {
-			pos = toAbsolute(posInput)
-			size = toAbsolute(ctx.sizeInput)
-			editingUnit.Edit(pos, size)
+		if c1 || c2 || c3 || c4 {
+			pos := toAbsolute(posInput)
+			size := toAbsolute(ctx.sizeInput)
+			rot := toRadians(ctx.rotationInput)
+			editingUnit.Edit(pos, size, rot)
 		}
 
 		if editingUnit.Source == nil {
@@ -223,7 +233,7 @@ func Show(id string) {
 			}
 			im.SameLine()
 			if im.Button("Cancel") {
-				editingUnit.Edit(originalPos, originalSize)
+				editingUnit.Edit(originalPos, originalSize, originalRot)
 				reset()
 			}
 		}

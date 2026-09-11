@@ -6,6 +6,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"math"
 	"slices"
 	"uuid"
 )
@@ -26,6 +27,7 @@ type CubeUnit struct {
 	children []*CubeUnit
 	pos      [3]float32
 	size     [3]float32
+	rot      [3]float32
 	uvs      [6][2][2]float32
 	Changed  bool
 	QuadPos  [2]float32
@@ -126,13 +128,14 @@ func (s *CubeUnit) SetUVs(uvs [6][2][2]float32) {
 	}
 }
 
-func (s *CubeUnit) Data() ([3]float32, [3]float32) {
-	return s.pos, s.size
+func (s *CubeUnit) Data() ([3]float32, [3]float32, [3]float32) {
+	return s.pos, s.size, s.rot
 }
 
-func (s *CubeUnit) Edit(pos, size [3]float32) {
+func (s *CubeUnit) Edit(pos, size, rot [3]float32) {
 	s.pos = pos
 	s.size = size
+	s.rot = rot
 	s.Changed = true
 	if s.Source != nil {
 		s.Source.Changed = true
@@ -178,16 +181,16 @@ func (s CubeUnit) toBuffer(b *buffer) {
 		{-1, -1, -1, s.uvs[5][0][0], s.uvs[5][1][1]},
 	}
 	if s.size[0] != 0 && s.size[2] != 0 {
-		b.addFace(upFace, s.size, s.pos)
-		b.addFace(downFace, s.size, s.pos)
+		b.addFace(upFace, s.size, s.pos, s.rot)
+		b.addFace(downFace, s.size, s.pos, s.rot)
 	}
 	if s.size[0] != 0 && s.size[1] != 0 {
-		b.addFace(frontFace, s.size, s.pos)
-		b.addFace(backFace, s.size, s.pos)
+		b.addFace(frontFace, s.size, s.pos, s.rot)
+		b.addFace(backFace, s.size, s.pos, s.rot)
 	}
 	if s.size[1] != 0 && s.size[2] != 0 {
-		b.addFace(rightFace, s.size, s.pos)
-		b.addFace(leftFace, s.size, s.pos)
+		b.addFace(rightFace, s.size, s.pos, s.rot)
+		b.addFace(leftFace, s.size, s.pos, s.rot)
 	}
 }
 
@@ -213,7 +216,42 @@ type buffer struct {
 	indices  []uint32
 }
 
-func (s *buffer) addFace(face [4][5]float32, size, pos [3]float32) {
+func rotatePointX(p1 [3]float64, angle float64) (p2 [3]float64) {
+	p2[0] = p1[0]
+	p2[1] = p1[1]*math.Cos(angle) - p1[2]*math.Sin(angle)
+	p2[2] = p1[1]*math.Sin(angle) + p1[2]*math.Cos(angle)
+	return
+}
+
+func rotatePointY(p1 [3]float64, angle float64) (p2 [3]float64) {
+	p2[0] = p1[0]*math.Cos(angle) + p1[2]*math.Sin(angle)
+	p2[1] = p1[1]
+	p2[2] = -p1[0]*math.Sin(angle) + p1[2]*math.Cos(angle)
+	return
+}
+
+func rotatePointZ(p1 [3]float64, angle float64) (p2 [3]float64) {
+	p2[0] = p1[0]*math.Cos(angle) - p1[1]*math.Sin(angle)
+	p2[1] = p1[0]*math.Sin(angle) + p1[1]*math.Cos(angle)
+	p2[2] = p1[2]
+	return
+}
+
+func toVec(x, y, z float32) (p1 [3]float64) {
+	p1[0] = float64(x)
+	p1[1] = float64(y)
+	p1[2] = float64(z)
+	return
+}
+
+func fromVec(p1 [3]float64) (x, y, z float32) {
+	x = float32(p1[0])
+	y = float32(p1[1])
+	z = float32(p1[2])
+	return
+}
+
+func (s *buffer) addFace(face [4][5]float32, size, pos, rot [3]float32) {
 	points := [][5]float32{}
 	points = append(points, face[0])
 	points = append(points, face[1])
@@ -222,9 +260,17 @@ func (s *buffer) addFace(face [4][5]float32, size, pos [3]float32) {
 	s.indices = append(s.indices, s.count, s.count+1, s.count+2)
 	s.indices = append(s.indices, s.count+2, s.count+3, s.count)
 	for _, point := range points {
-		s.vertices = append(s.vertices, point[0]*size[0]/2+pos[0])
-		s.vertices = append(s.vertices, point[1]*size[1]/2+pos[1])
-		s.vertices = append(s.vertices, point[2]*size[2]/2+pos[2])
+		angleX := float64(rot[0])
+		angleY := float64(rot[1])
+		angleZ := float64(rot[2])
+		vec := toVec(point[0]*size[0]/2, point[1]*size[1]/2, point[2]*size[2]/2)
+		vec = rotatePointX(vec, angleX)
+		vec = rotatePointY(vec, angleY)
+		vec = rotatePointZ(vec, angleZ)
+		point[0], point[1], point[2] = fromVec(vec)
+		s.vertices = append(s.vertices, point[0]+pos[0])
+		s.vertices = append(s.vertices, point[1]+pos[1])
+		s.vertices = append(s.vertices, point[2]+pos[2])
 		s.vertices = append(s.vertices, point[3])
 		s.vertices = append(s.vertices, point[4])
 	}

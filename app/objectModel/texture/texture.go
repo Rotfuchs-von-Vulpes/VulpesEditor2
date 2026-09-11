@@ -54,7 +54,7 @@ func writeTexture(s *MultiQuad, tex *texture.Texture) {
 
 func open(c *model.CubeUnit) (unity *MultiQuad) {
 	unity = new(MultiQuad)
-	_, size := c.Data()
+	_, size, _ := c.Data()
 
 	x := int32(size[0] * 16)
 	y := int32(size[1] * 16)
@@ -81,7 +81,7 @@ func open(c *model.CubeUnit) (unity *MultiQuad) {
 
 func primitive(c *model.CubeUnit) (unity *MultiQuad) {
 	unity = new(MultiQuad)
-	_, size := c.Data()
+	_, size, _ := c.Data()
 
 	x := int32(size[0] * 16)
 	y := int32(size[1] * 16)
