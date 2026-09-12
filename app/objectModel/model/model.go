@@ -32,6 +32,7 @@ type CubeUnit struct {
 	Changed  bool
 	Resized  bool
 	QuadPos  [2]float32
+	boneID   uint32
 }
 
 func (s *CubeUnit) GetId() string {
@@ -157,42 +158,43 @@ func (s CubeUnit) absolutePos() (pos [3]float32) {
 }
 
 func (s CubeUnit) toBuffer(b *buffer) {
+	boneId := math.Float32frombits(s.boneID)
 	// pos X, pos Y, pos Z, UV x, UV y
-	upFace := [4][5]float32{
-		{-1, 1, -1, s.uvs[0][0][0], s.uvs[0][0][1]},
-		{-1, 1, 1, s.uvs[0][0][0], s.uvs[0][1][1]},
-		{1, 1, 1, s.uvs[0][1][0], s.uvs[0][1][1]},
-		{1, 1, -1, s.uvs[0][1][0], s.uvs[0][0][1]},
+	upFace := [4][6]float32{
+		{-1, 1, -1, s.uvs[0][0][0], s.uvs[0][0][1], boneId},
+		{-1, 1, 1, s.uvs[0][0][0], s.uvs[0][1][1], boneId},
+		{1, 1, 1, s.uvs[0][1][0], s.uvs[0][1][1], boneId},
+		{1, 1, -1, s.uvs[0][1][0], s.uvs[0][0][1], boneId},
 	}
-	downFace := [4][5]float32{
-		{-1, -1, 1, s.uvs[1][1][0], s.uvs[1][0][1]},
-		{-1, -1, -1, s.uvs[1][1][0], s.uvs[1][1][1]},
-		{1, -1, -1, s.uvs[1][0][0], s.uvs[1][1][1]},
-		{1, -1, 1, s.uvs[1][0][0], s.uvs[1][0][1]},
+	downFace := [4][6]float32{
+		{-1, -1, 1, s.uvs[1][1][0], s.uvs[1][0][1], boneId},
+		{-1, -1, -1, s.uvs[1][1][0], s.uvs[1][1][1], boneId},
+		{1, -1, -1, s.uvs[1][0][0], s.uvs[1][1][1], boneId},
+		{1, -1, 1, s.uvs[1][0][0], s.uvs[1][0][1], boneId},
 	}
-	frontFace := [4][5]float32{
-		{1, -1, 1, s.uvs[2][1][0], s.uvs[2][1][1]},
-		{1, 1, 1, s.uvs[2][1][0], s.uvs[2][0][1]},
-		{-1, 1, 1, s.uvs[2][0][0], s.uvs[2][0][1]},
-		{-1, -1, 1, s.uvs[2][0][0], s.uvs[2][1][1]},
+	frontFace := [4][6]float32{
+		{1, -1, 1, s.uvs[2][1][0], s.uvs[2][1][1], boneId},
+		{1, 1, 1, s.uvs[2][1][0], s.uvs[2][0][1], boneId},
+		{-1, 1, 1, s.uvs[2][0][0], s.uvs[2][0][1], boneId},
+		{-1, -1, 1, s.uvs[2][0][0], s.uvs[2][1][1], boneId},
 	}
-	backFace := [4][5]float32{
-		{-1, -1, -1, s.uvs[3][1][0], s.uvs[3][1][1]},
-		{-1, 1, -1, s.uvs[3][1][0], s.uvs[3][0][1]},
-		{1, 1, -1, s.uvs[3][0][0], s.uvs[3][0][1]},
-		{1, -1, -1, s.uvs[3][0][0], s.uvs[3][1][1]},
+	backFace := [4][6]float32{
+		{-1, -1, -1, s.uvs[3][1][0], s.uvs[3][1][1], boneId},
+		{-1, 1, -1, s.uvs[3][1][0], s.uvs[3][0][1], boneId},
+		{1, 1, -1, s.uvs[3][0][0], s.uvs[3][0][1], boneId},
+		{1, -1, -1, s.uvs[3][0][0], s.uvs[3][1][1], boneId},
 	}
-	rightFace := [4][5]float32{
-		{1, -1, -1, s.uvs[4][1][0], s.uvs[4][1][1]},
-		{1, 1, -1, s.uvs[4][1][0], s.uvs[4][0][1]},
-		{1, 1, 1, s.uvs[4][0][0], s.uvs[4][0][1]},
-		{1, -1, 1, s.uvs[4][0][0], s.uvs[4][1][1]},
+	rightFace := [4][6]float32{
+		{1, -1, -1, s.uvs[4][1][0], s.uvs[4][1][1], boneId},
+		{1, 1, -1, s.uvs[4][1][0], s.uvs[4][0][1], boneId},
+		{1, 1, 1, s.uvs[4][0][0], s.uvs[4][0][1], boneId},
+		{1, -1, 1, s.uvs[4][0][0], s.uvs[4][1][1], boneId},
 	}
-	leftFace := [4][5]float32{
-		{-1, -1, 1, s.uvs[5][1][0], s.uvs[5][1][1]},
-		{-1, 1, 1, s.uvs[5][1][0], s.uvs[5][0][1]},
-		{-1, 1, -1, s.uvs[5][0][0], s.uvs[5][0][1]},
-		{-1, -1, -1, s.uvs[5][0][0], s.uvs[5][1][1]},
+	leftFace := [4][6]float32{
+		{-1, -1, 1, s.uvs[5][1][0], s.uvs[5][1][1], boneId},
+		{-1, 1, 1, s.uvs[5][1][0], s.uvs[5][0][1], boneId},
+		{-1, 1, -1, s.uvs[5][0][0], s.uvs[5][0][1], boneId},
+		{-1, -1, -1, s.uvs[5][0][0], s.uvs[5][1][1], boneId},
 	}
 	pos := s.absolutePos()
 	if s.size[0] != 0 && s.size[2] != 0 {
@@ -267,8 +269,8 @@ func fromVec(p1 [3]float64) (x, y, z float32) {
 	return
 }
 
-func (s *buffer) addFace(face [4][5]float32, size, pos, rot [3]float32) {
-	points := [][5]float32{}
+func (s *buffer) addFace(face [4][6]float32, size, pos, rot [3]float32) {
+	points := [][6]float32{}
 	points = append(points, face[0])
 	points = append(points, face[1])
 	points = append(points, face[2])
@@ -289,6 +291,7 @@ func (s *buffer) addFace(face [4][5]float32, size, pos, rot [3]float32) {
 		s.vertices = append(s.vertices, point[2]+pos[2])
 		s.vertices = append(s.vertices, point[3])
 		s.vertices = append(s.vertices, point[4])
+		s.vertices = append(s.vertices, point[5])
 	}
 	s.count += 4
 }
@@ -314,10 +317,11 @@ func (s *Model) AppendUnit(unit *CubeUnit) bool {
 	s.Units = append(s.Units, unit)
 	s.Changed = true
 	unit.parent = nil
+	unit.boneID = s.count
 	if unit.Name == "" {
 		unit.Name = fmt.Sprintf("Unit #%d", s.count)
-		s.count++
 	}
+	s.count++
 	return true
 }
 

@@ -363,6 +363,14 @@ func Nuke() {
 	gl.DeleteVertexArrays(1, &rTex.outlineVao)
 	gl.DeleteBuffers(1, &rTex.vbo)
 	gl.DeleteProgram(rTex.shaderHandle)
+
+	gl.UseProgram(rMol.shaderHandle)
+	for _, m := range AllMeshs {
+		gl.DeleteVertexArrays(1, &m.vao)
+		gl.DeleteBuffers(1, &m.vbo)
+		gl.DeleteBuffers(1, &m.ebo)
+	}
+	gl.DeleteProgram(rMol.shaderHandle)
 }
 
 func (f *FrameBuffer) RenderTexture(t1 uint32, zoom float32, pos [2]float32, width, height float32) {
@@ -402,6 +410,8 @@ type Mesh struct {
 	length        int32
 }
 
+var AllMeshs []*Mesh
+
 func NewMesh() (m *Mesh) {
 	m = new(Mesh)
 
@@ -414,12 +424,16 @@ func NewMesh() (m *Mesh) {
 	gl.BindVertexArray(m.vao)
 	gl.BindBuffer(gl.ARRAY_BUFFER, m.vbo)
 
-	gl.VertexAttribPointerWithOffset(0, 3, gl.FLOAT, false, 5*4, 0)
-	gl.VertexAttribPointerWithOffset(1, 2, gl.FLOAT, false, 5*4, 3*4)
+	gl.VertexAttribPointerWithOffset(0, 3, gl.FLOAT, false, 6*4, 0)
+	gl.VertexAttribPointerWithOffset(1, 2, gl.FLOAT, false, 6*4, 3*4)
+	gl.VertexAttribPointerWithOffset(2, 1, gl.FLOAT, false, 6*4, 5*4)
 	gl.EnableVertexAttribArray(0)
 	gl.EnableVertexAttribArray(1)
+	gl.EnableVertexAttribArray(2)
 
 	gl.GenTextures(1, &m.texture)
+
+	AllMeshs = append(AllMeshs, m)
 
 	return
 }

@@ -2,6 +2,7 @@
 
 layout (location = 0) in vec3 vert;
 layout (location = 1) in vec2 vertTexCoord;
+layout (location = 2) in float boneId;
 
 uniform mat4 projection;
 uniform mat4 view;
