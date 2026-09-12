@@ -149,7 +149,7 @@ func toFloat(v1, offset [2]int32, size, d float32) (v2 [2]float32) {
 }
 
 func setUv(unit *model.CubeUnit, surface MultiQuad, size float32) {
-	var d float32 = 0.0001
+	var d float32 = 0.001
 	for i := range 6 {
 		q := surface.quads[i]
 		init := toFloat(q.pos, surface.pos, size, d)
