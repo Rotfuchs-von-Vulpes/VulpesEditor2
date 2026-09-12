@@ -146,6 +146,16 @@ func (s *CubeUnit) Edit(pos, size, rot [3]float32) {
 	}
 }
 
+func (s CubeUnit) absolutePos() (pos [3]float32) {
+	if s.parent != nil {
+		pos = s.parent.absolutePos()
+	}
+	pos[0] += s.pos[0]
+	pos[1] += s.pos[1]
+	pos[2] += s.pos[2]
+	return
+}
+
 func (s CubeUnit) toBuffer(b *buffer) {
 	// pos X, pos Y, pos Z, UV x, UV y
 	upFace := [4][5]float32{
@@ -184,17 +194,18 @@ func (s CubeUnit) toBuffer(b *buffer) {
 		{-1, 1, -1, s.uvs[5][0][0], s.uvs[5][0][1]},
 		{-1, -1, -1, s.uvs[5][0][0], s.uvs[5][1][1]},
 	}
+	pos := s.absolutePos()
 	if s.size[0] != 0 && s.size[2] != 0 {
-		b.addFace(upFace, s.size, s.pos, s.rot)
-		b.addFace(downFace, s.size, s.pos, s.rot)
+		b.addFace(upFace, s.size, pos, s.rot)
+		b.addFace(downFace, s.size, pos, s.rot)
 	}
 	if s.size[0] != 0 && s.size[1] != 0 {
-		b.addFace(frontFace, s.size, s.pos, s.rot)
-		b.addFace(backFace, s.size, s.pos, s.rot)
+		b.addFace(frontFace, s.size, pos, s.rot)
+		b.addFace(backFace, s.size, pos, s.rot)
 	}
 	if s.size[1] != 0 && s.size[2] != 0 {
-		b.addFace(rightFace, s.size, s.pos, s.rot)
-		b.addFace(leftFace, s.size, s.pos, s.rot)
+		b.addFace(rightFace, s.size, pos, s.rot)
+		b.addFace(leftFace, s.size, pos, s.rot)
 	}
 }
 
@@ -297,11 +308,7 @@ func NewModel() (s *Model) {
 
 func (s *Model) AppendUnit(unit *CubeUnit) bool {
 	if unit.Source != nil {
-		if unit.Source == s {
-			return false
-		} else {
-			unit.Source.Remove(unit)
-		}
+		unit.Source.Remove(unit)
 	}
 	unit.Source = s
 	s.Units = append(s.Units, unit)
