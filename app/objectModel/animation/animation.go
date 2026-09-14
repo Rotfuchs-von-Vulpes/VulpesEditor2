@@ -143,6 +143,14 @@ func linear(n1, n2, t float32) float32 {
 	return (n1-n2)*t + n2
 }
 
+func (s *boneAnimator) parent() (u *model.CubeUnit) {
+	parent, ok := s.unit.Parent().(*model.CubeUnit)
+	if !ok {
+		return nil
+	}
+	return parent
+}
+
 func (s *boneAnimator) get(time int64) (ok bool, trans mgl32.Mat4) {
 	if len(s.keyframes) == 0 {
 		ok = false
@@ -201,7 +209,7 @@ type animator struct {
 
 	running bool
 
-	bones map[uint32]boneAnimator
+	bones map[uint32]*boneAnimator
 
 	last int64
 }
@@ -219,15 +227,18 @@ func (s *animator) loop() {
 }
 
 func (s *animator) getTrans(boneId uint32) mgl32.Mat4 {
-	trans, ok1 := s.bones[boneId]
-	if !ok1 {
-		return mgl32.Ident4()
-	}
-	ok2, m := trans.get(s.time)
+	var m1 mgl32.Mat4
+	boneAnimator, _ := s.bones[boneId]
+	var ok2 bool
+	ok2, m1 = boneAnimator.get(s.time)
 	if !ok2 {
-		return mgl32.Ident4()
+		m1 = mgl32.Ident4()
 	}
-	return m
+	if u := boneAnimator.parent(); u != nil {
+		m2 := s.getTrans(u.BoneID)
+		m1 = m1.Mul4(m2)
+	}
+	return m1
 }
 
 func (s *animator) stop() {
@@ -242,7 +253,7 @@ func (s *animator) play() {
 func newAnimator() (r *animator) {
 	r = new(animator)
 	r.last = time.Now().UnixMilli()
-	r.bones = make(map[uint32]boneAnimator)
+	r.bones = make(map[uint32]*boneAnimator)
 	return
 }
 
@@ -250,7 +261,9 @@ func constructAnimation() {
 	ctx.animator = newAnimator()
 	var maximum int64
 	for _, u := range ctx.model.Units {
-		var bA boneAnimator
+		bA := new(boneAnimator)
+		bA.unit = u
+		ctx.animator.bones[u.BoneID] = bA
 		boneA, ok := ctx.animation.bones[u.Id]
 		if !ok {
 			continue
@@ -265,12 +278,12 @@ func constructAnimation() {
 			}
 		}
 		if len(bA.keyframes) == 0 {
+			ctx.animator.bones[u.BoneID] = bA
 			continue
 		}
 		slices.SortFunc(bA.keyframes, func(A, B boneTransformation) int {
 			return int(A.time - B.time)
 		})
-		bA.unit = u
 		ctx.animator.bones[u.BoneID] = bA
 	}
 	ctx.animator.loopTime = maximum
@@ -292,15 +305,17 @@ func Show(id string) {
 
 	if ctx.animator != nil {
 		ctx.animator.loop()
-		for _, b := range ctx.model.Units {
-			m := ctx.animator.getTrans(b.BoneID)
-			ctx.mesh.SetBoneTransMatrix(b.BoneID, m)
+		if ctx.animator.running {
+			for _, b := range ctx.model.Units {
+				m := ctx.animator.getTrans(b.BoneID)
+				ctx.mesh.SetBoneTransMatrix(b.BoneID, m)
+			}
 		}
 	}
 
 	if ctx.model.Changed {
 		reset()
-		selectBone(1)
+		selectBone(0)
 		f1 := ctx.boneAnim.addKeyFrame()
 		f1.time = 0
 		f1.trans.rot[2] = 0
