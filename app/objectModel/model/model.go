@@ -3,6 +3,7 @@ package model
 import (
 	"VulpesEditor/app/file"
 	"bytes"
+	"encoding/binary"
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
@@ -32,7 +33,7 @@ type CubeUnit struct {
 	Changed  bool
 	Resized  bool
 	QuadPos  [2]float32
-	boneID   uint32
+	BoneID   uint32
 }
 
 func (s *CubeUnit) GetId() string {
@@ -158,56 +159,55 @@ func (s CubeUnit) absolutePos() (pos [3]float32) {
 }
 
 func (s CubeUnit) toBuffer(b *buffer) {
-	boneId := math.Float32frombits(s.boneID)
 	// pos X, pos Y, pos Z, UV x, UV y
-	upFace := [4][6]float32{
-		{-1, 1, -1, s.uvs[0][0][0], s.uvs[0][0][1], boneId},
-		{-1, 1, 1, s.uvs[0][0][0], s.uvs[0][1][1], boneId},
-		{1, 1, 1, s.uvs[0][1][0], s.uvs[0][1][1], boneId},
-		{1, 1, -1, s.uvs[0][1][0], s.uvs[0][0][1], boneId},
+	upFace := [4][5]float32{
+		{-1, 1, -1, s.uvs[0][0][0], s.uvs[0][0][1]},
+		{-1, 1, 1, s.uvs[0][0][0], s.uvs[0][1][1]},
+		{1, 1, 1, s.uvs[0][1][0], s.uvs[0][1][1]},
+		{1, 1, -1, s.uvs[0][1][0], s.uvs[0][0][1]},
 	}
-	downFace := [4][6]float32{
-		{-1, -1, 1, s.uvs[1][1][0], s.uvs[1][0][1], boneId},
-		{-1, -1, -1, s.uvs[1][1][0], s.uvs[1][1][1], boneId},
-		{1, -1, -1, s.uvs[1][0][0], s.uvs[1][1][1], boneId},
-		{1, -1, 1, s.uvs[1][0][0], s.uvs[1][0][1], boneId},
+	downFace := [4][5]float32{
+		{-1, -1, 1, s.uvs[1][1][0], s.uvs[1][0][1]},
+		{-1, -1, -1, s.uvs[1][1][0], s.uvs[1][1][1]},
+		{1, -1, -1, s.uvs[1][0][0], s.uvs[1][1][1]},
+		{1, -1, 1, s.uvs[1][0][0], s.uvs[1][0][1]},
 	}
-	frontFace := [4][6]float32{
-		{1, -1, 1, s.uvs[2][1][0], s.uvs[2][1][1], boneId},
-		{1, 1, 1, s.uvs[2][1][0], s.uvs[2][0][1], boneId},
-		{-1, 1, 1, s.uvs[2][0][0], s.uvs[2][0][1], boneId},
-		{-1, -1, 1, s.uvs[2][0][0], s.uvs[2][1][1], boneId},
+	frontFace := [4][5]float32{
+		{1, -1, 1, s.uvs[2][1][0], s.uvs[2][1][1]},
+		{1, 1, 1, s.uvs[2][1][0], s.uvs[2][0][1]},
+		{-1, 1, 1, s.uvs[2][0][0], s.uvs[2][0][1]},
+		{-1, -1, 1, s.uvs[2][0][0], s.uvs[2][1][1]},
 	}
-	backFace := [4][6]float32{
-		{-1, -1, -1, s.uvs[3][1][0], s.uvs[3][1][1], boneId},
-		{-1, 1, -1, s.uvs[3][1][0], s.uvs[3][0][1], boneId},
-		{1, 1, -1, s.uvs[3][0][0], s.uvs[3][0][1], boneId},
-		{1, -1, -1, s.uvs[3][0][0], s.uvs[3][1][1], boneId},
+	backFace := [4][5]float32{
+		{-1, -1, -1, s.uvs[3][1][0], s.uvs[3][1][1]},
+		{-1, 1, -1, s.uvs[3][1][0], s.uvs[3][0][1]},
+		{1, 1, -1, s.uvs[3][0][0], s.uvs[3][0][1]},
+		{1, -1, -1, s.uvs[3][0][0], s.uvs[3][1][1]},
 	}
-	rightFace := [4][6]float32{
-		{1, -1, -1, s.uvs[4][1][0], s.uvs[4][1][1], boneId},
-		{1, 1, -1, s.uvs[4][1][0], s.uvs[4][0][1], boneId},
-		{1, 1, 1, s.uvs[4][0][0], s.uvs[4][0][1], boneId},
-		{1, -1, 1, s.uvs[4][0][0], s.uvs[4][1][1], boneId},
+	rightFace := [4][5]float32{
+		{1, -1, -1, s.uvs[4][1][0], s.uvs[4][1][1]},
+		{1, 1, -1, s.uvs[4][1][0], s.uvs[4][0][1]},
+		{1, 1, 1, s.uvs[4][0][0], s.uvs[4][0][1]},
+		{1, -1, 1, s.uvs[4][0][0], s.uvs[4][1][1]},
 	}
-	leftFace := [4][6]float32{
-		{-1, -1, 1, s.uvs[5][1][0], s.uvs[5][1][1], boneId},
-		{-1, 1, 1, s.uvs[5][1][0], s.uvs[5][0][1], boneId},
-		{-1, 1, -1, s.uvs[5][0][0], s.uvs[5][0][1], boneId},
-		{-1, -1, -1, s.uvs[5][0][0], s.uvs[5][1][1], boneId},
+	leftFace := [4][5]float32{
+		{-1, -1, 1, s.uvs[5][1][0], s.uvs[5][1][1]},
+		{-1, 1, 1, s.uvs[5][1][0], s.uvs[5][0][1]},
+		{-1, 1, -1, s.uvs[5][0][0], s.uvs[5][0][1]},
+		{-1, -1, -1, s.uvs[5][0][0], s.uvs[5][1][1]},
 	}
 	pos := s.absolutePos()
 	if s.size[0] != 0 && s.size[2] != 0 {
-		b.addFace(upFace, s.size, pos, s.rot)
-		b.addFace(downFace, s.size, pos, s.rot)
+		b.addFace(upFace, s.size, pos, s.rot, s.BoneID)
+		b.addFace(downFace, s.size, pos, s.rot, s.BoneID)
 	}
 	if s.size[0] != 0 && s.size[1] != 0 {
-		b.addFace(frontFace, s.size, pos, s.rot)
-		b.addFace(backFace, s.size, pos, s.rot)
+		b.addFace(frontFace, s.size, pos, s.rot, s.BoneID)
+		b.addFace(backFace, s.size, pos, s.rot, s.BoneID)
 	}
 	if s.size[1] != 0 && s.size[2] != 0 {
-		b.addFace(rightFace, s.size, pos, s.rot)
-		b.addFace(leftFace, s.size, pos, s.rot)
+		b.addFace(rightFace, s.size, pos, s.rot, s.BoneID)
+		b.addFace(leftFace, s.size, pos, s.rot, s.BoneID)
 	}
 }
 
@@ -230,7 +230,7 @@ func length[T any](b []T) uint32 {
 
 type buffer struct {
 	count    uint32
-	vertices []float32
+	vertices *bytes.Buffer
 	indices  []uint32
 }
 
@@ -269,8 +269,8 @@ func fromVec(p1 [3]float64) (x, y, z float32) {
 	return
 }
 
-func (s *buffer) addFace(face [4][6]float32, size, pos, rot [3]float32) {
-	points := [][6]float32{}
+func (s *buffer) addFace(face [4][5]float32, size, pos, rot [3]float32, boneID uint32) {
+	points := [][5]float32{}
 	points = append(points, face[0])
 	points = append(points, face[1])
 	points = append(points, face[2])
@@ -286,12 +286,12 @@ func (s *buffer) addFace(face [4][6]float32, size, pos, rot [3]float32) {
 		vec = rotatePointY(vec, angleY)
 		vec = rotatePointZ(vec, angleZ)
 		point[0], point[1], point[2] = fromVec(vec)
-		s.vertices = append(s.vertices, point[0]+pos[0])
-		s.vertices = append(s.vertices, point[1]+pos[1])
-		s.vertices = append(s.vertices, point[2]+pos[2])
-		s.vertices = append(s.vertices, point[3])
-		s.vertices = append(s.vertices, point[4])
-		s.vertices = append(s.vertices, point[5])
+		binary.Write(s.vertices, binary.LittleEndian, point[0]+pos[0])
+		binary.Write(s.vertices, binary.LittleEndian, point[1]+pos[1])
+		binary.Write(s.vertices, binary.LittleEndian, point[2]+pos[2])
+		binary.Write(s.vertices, binary.LittleEndian, point[3])
+		binary.Write(s.vertices, binary.LittleEndian, point[4])
+		binary.Write(s.vertices, binary.LittleEndian, boneID)
 	}
 	s.count += 4
 }
@@ -317,7 +317,7 @@ func (s *Model) AppendUnit(unit *CubeUnit) bool {
 	s.Units = append(s.Units, unit)
 	s.Changed = true
 	unit.parent = nil
-	unit.boneID = s.count
+	unit.BoneID = s.count
 	if unit.Name == "" {
 		unit.Name = fmt.Sprintf("Unit #%d", s.count)
 	}
@@ -342,13 +342,14 @@ func (s *Model) Remove(unit *CubeUnit) (err error) {
 	return
 }
 
-func (s Model) ToBuffer() (vertices []float32, indexBuffer []uint32) {
+func (s Model) ToBuffer() (vertices []byte, indexBuffer []uint32) {
 	b := new(buffer)
+	b.vertices = new(bytes.Buffer)
 	for _, unit := range s.Units {
 		unit.toBuffer(b)
 	}
 
-	return b.vertices, b.indices
+	return b.vertices.Bytes(), b.indices
 }
 
 func (s *Model) Reset() {

@@ -2,8 +2,10 @@ package objectModel
 
 import (
 	"VulpesEditor/app/file"
+	"VulpesEditor/app/front/renderer"
 	"VulpesEditor/app/front/tabs"
 	"VulpesEditor/app/history"
+	"VulpesEditor/app/objectModel/animation"
 	"VulpesEditor/app/objectModel/model"
 	"VulpesEditor/app/objectModel/texture"
 	"VulpesEditor/app/objectModel/tools"
@@ -128,17 +130,20 @@ type instance struct {
 	title string
 
 	model *model.Model
+	mesh  *renderer.Mesh
 
 	id    string
 	focus bool
 }
 
-func (s *instance) init(m *model.Model) {
+func (s *instance) init(md *model.Model, ms *renderer.Mesh) {
 	history.New(s.id)
-	s.model = m
+	s.model = md
+	s.mesh = ms
+	animation.New(s.id, s.model, s.mesh)
 	tools.New(s.id, s.name, s.model)
 	texture.New(s.id, s.name, s.model)
-	view.New(s.id, s.model)
+	view.New(s.id, s.model, s.mesh)
 	s.title = s.name + " Model"
 }
 
@@ -156,6 +161,7 @@ func (s *instance) Name() string {
 
 func (s *instance) Show() {
 	history.Loop(s.id)
+	animation.Show(s.id)
 	tools.Show(s.id)
 	texture.Show(s.id)
 	view.Show(s.id)
@@ -212,12 +218,13 @@ func OpenModel(path string) {
 	modelId := field[2]
 	itc.id = uuid.New().String()
 	itc.focus = true
-	m, err := model.OpenModel(r, modelId)
+	md, err := model.OpenModel(r, modelId)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	itc.init(m)
+	ms := renderer.NewMesh()
+	itc.init(md, ms)
 	if err := texture.Open(itc.id, r); err != nil {
 		fmt.Println(err)
 		return
@@ -230,9 +237,10 @@ func NewTest() {
 	itc.name = "Test"
 	itc.id = uuid.New().String()
 	itc.focus = true
-	m := model.NewModel()
-	m.AppendUnit(model.NewUnit([3]float32{0, 0, 0}, [3]float32{1, 1, 1}, [3]float32{0, 0, 0}))
-	itc.init(m)
+	md := model.NewModel()
+	md.AppendUnit(model.NewUnit([3]float32{0, 0, 0}, [3]float32{1, 1, 1}, [3]float32{0, 0, 0}))
+	ms := renderer.NewMesh()
+	itc.init(md, ms)
 	tabs.Push(itc)
 }
 
@@ -241,8 +249,9 @@ func openNew(c creationData) {
 	itc.name = c.name
 	itc.id = uuid.New().String()
 	itc.focus = true
-	m := model.NewModel()
-	m.AppendUnit(model.NewUnit([3]float32{0, 0, 0}, [3]float32{1, 1, 1}, [3]float32{0, 0, 0}))
-	itc.init(m)
+	md := model.NewModel()
+	md.AppendUnit(model.NewUnit([3]float32{0, 0, 0}, [3]float32{1, 1, 1}, [3]float32{0, 0, 0}))
+	ms := renderer.NewMesh()
+	itc.init(md, ms)
 	tabs.Push(itc)
 }

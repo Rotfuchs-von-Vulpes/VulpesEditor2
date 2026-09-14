@@ -59,6 +59,7 @@ type modelUniforms struct {
 	view       int32
 	model      int32
 	texUnit    int32
+	bones      int32
 }
 
 type textureRender struct {
@@ -278,6 +279,7 @@ func Init() {
 		rMol.uniforms.projection = gl.GetUniformLocation(rMol.shaderHandle, Str("projection"))
 		rMol.uniforms.model = gl.GetUniformLocation(rMol.shaderHandle, Str("model"))
 		rMol.uniforms.texUnit = gl.GetUniformLocation(rMol.shaderHandle, Str("tex"))
+		rMol.uniforms.bones = gl.GetUniformLocation(rMol.shaderHandle, Str("gBones"))
 		gl.Uniform1i(rTex.uniforms.texUnit, 0)
 	}
 
@@ -408,6 +410,7 @@ type Mesh struct {
 	vao, vbo, ebo uint32
 	texture       uint32
 	length        int32
+	bones         [64]mgl32.Mat4
 }
 
 var AllMeshs []*Mesh
@@ -426,25 +429,29 @@ func NewMesh() (m *Mesh) {
 
 	gl.VertexAttribPointerWithOffset(0, 3, gl.FLOAT, false, 6*4, 0)
 	gl.VertexAttribPointerWithOffset(1, 2, gl.FLOAT, false, 6*4, 3*4)
-	gl.VertexAttribPointerWithOffset(2, 1, gl.FLOAT, false, 6*4, 5*4)
+	gl.VertexAttribIPointerWithOffset(2, 1, gl.UNSIGNED_INT, 6*4, 5*4)
 	gl.EnableVertexAttribArray(0)
 	gl.EnableVertexAttribArray(1)
 	gl.EnableVertexAttribArray(2)
 
 	gl.GenTextures(1, &m.texture)
 
+	for i := range m.bones {
+		m.bones[i] = mgl32.Ident4()
+	}
+
 	AllMeshs = append(AllMeshs, m)
 
 	return
 }
 
-func (s *Mesh) SetVertices(vertices []float32, indices []uint32) {
+func (s *Mesh) SetVertices(vertices []byte, indices []uint32) {
 	gl.UseProgram(rMol.shaderHandle)
 
 	gl.BindVertexArray(s.vao)
 
 	gl.BindBuffer(gl.ARRAY_BUFFER, s.vbo)
-	gl.BufferData(gl.ARRAY_BUFFER, 4*len(vertices), gl.Ptr(&vertices[0]), gl.STATIC_DRAW)
+	gl.BufferData(gl.ARRAY_BUFFER, len(vertices), gl.Ptr(vertices), gl.STATIC_DRAW)
 
 	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, s.ebo)
 	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, 4*len(indices), gl.Ptr(&indices[0]), gl.STATIC_DRAW)
@@ -454,6 +461,13 @@ func (s *Mesh) SetVertices(vertices []float32, indices []uint32) {
 
 func (s *Mesh) SetTexture(width, height int32, data []float32) {
 	WriteTexture(s.texture, width, height, data)
+}
+
+func (s *Mesh) SetBoneTransMatrix(boneID uint32, m mgl32.Mat4) {
+	if boneID >= 64 {
+		return
+	}
+	s.bones[boneID] = m
 }
 
 type Camera struct {
@@ -516,6 +530,7 @@ func (f *FrameBuffer) RenderModel(camera *Camera, mesh *Mesh) {
 	gl.UniformMatrix4fv(rMol.uniforms.projection, 1, false, &camera.proj[0])
 	gl.UniformMatrix4fv(rMol.uniforms.view, 1, false, &camera.view[0])
 	gl.UniformMatrix4fv(rMol.uniforms.model, 1, false, &model[0])
+	gl.UniformMatrix4fv(rMol.uniforms.bones, 64, false, &mesh.bones[0][0])
 
 	gl.ClearColor(0.29, 0.29, 0.39, 1.0)
 	gl.Clear(gl.COLOR_BUFFER_BIT)
