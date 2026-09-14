@@ -16,7 +16,6 @@ type AnimationContext struct {
 	model *model.Model
 	mesh  *renderer.Mesh
 
-	bones     []*bone
 	animation *animation
 	boneAnim  *boneAnimation
 
@@ -24,7 +23,7 @@ type AnimationContext struct {
 
 	running bool
 
-	editBone          *bone
+	editBone          *model.CubeUnit
 	editKeyframe      *keyFrame
 	bonesToSelect     []string
 	keyFramesToSelect []string
@@ -32,48 +31,13 @@ type AnimationContext struct {
 	keyFrameSelected  int32
 }
 
-type bone struct {
-	unitId   string
-	boneId   uint32
-	parent   *bone
-	children []*bone
-}
-
-func newBone(unit *model.CubeUnit) (b *bone) {
-	b = new(bone)
-	b.unitId = unit.Id
-	b.boneId = unit.BoneID
-	return
-}
-
-func calcBones() {
-	ctx.bones = nil
+func reset() {
 	ctx.bonesToSelect = nil
 	for _, u := range ctx.model.Units {
-		ctx.bones = append(ctx.bones, newBone(u))
 		ctx.bonesToSelect = append(ctx.bonesToSelect, u.Name)
 		bA := new(boneAnimation)
 		bA.unitId = u.Id
 		ctx.animation.bones[u.Id] = bA
-	}
-	for _, u := range ctx.model.Units {
-		var current *bone
-		for _, b := range ctx.bones {
-			if b.unitId == u.Id {
-				current = b
-				break
-			}
-		}
-		parent, ok := u.Parent().(*model.CubeUnit)
-		if ok {
-			for _, b := range ctx.bones {
-				if b.unitId == parent.Id {
-					current.parent = b
-					b.children = append(b.children, current)
-					break
-				}
-			}
-		}
 	}
 }
 
@@ -120,25 +84,36 @@ type transformation struct {
 }
 
 func selectBone(index int32) {
-	if int(index) >= len(ctx.bones) {
+	ctx.boneSelected = index
+
+	if int(index) >= len(ctx.model.Units) {
 		return
 	}
 
-	ctx.editBone = ctx.bones[index]
+	ctx.editBone = ctx.model.Units[index]
 	var ok bool
-	var unitId = ctx.editBone.unitId
-	ctx.boneAnim, ok = ctx.animation.bones[unitId]
+	ctx.boneAnim, ok = ctx.animation.bones[ctx.editBone.Id]
 	if !ok {
 		ctx.boneAnim = new(boneAnimation)
-		ctx.boneAnim.unitId = unitId
-		ctx.animation.bones[unitId] = ctx.boneAnim
+		ctx.boneAnim.unitId = ctx.editBone.Id
+		ctx.animation.bones[ctx.editBone.Id] = ctx.boneAnim
 	}
+
+	ctx.keyFrameSelected = 0
+	ctx.editKeyframe = nil
 }
 
 func selectKeyFrame(index int32) {
+	ctx.keyFrameSelected = index
+
+	if ctx.boneAnim == nil {
+		return
+	}
+
 	if int(index) >= len(ctx.boneAnim.keyFrames) {
 		return
 	}
+
 	ctx.editKeyframe = ctx.boneAnim.keyFrames[index]
 }
 
@@ -160,6 +135,7 @@ type boneTransformation struct {
 }
 
 type boneAnimator struct {
+	unit      *model.CubeUnit
 	keyframes []boneTransformation
 }
 
@@ -205,10 +181,13 @@ func (s *boneAnimator) get(time int64) (ok bool, trans mgl32.Mat4) {
 	b.rot[2] = linear(last.trans.rot[2], next.trans.rot[2], coeff)
 
 	trans = mgl32.Ident4()
+	pos := s.unit.AbsolutePos()
+	trans = trans.Mul4(mgl32.Translate3D(pos[0], pos[1], pos[2]))
 	trans = trans.Mul4(mgl32.Scale3D(b.size[0], b.size[1], b.size[2]))
 	trans = trans.Mul4(mgl32.HomogRotate3D(b.rot[0], mgl32.Vec3{1, 0, 0}))
 	trans = trans.Mul4(mgl32.HomogRotate3D(b.rot[1], mgl32.Vec3{0, 1, 0}))
 	trans = trans.Mul4(mgl32.HomogRotate3D(b.rot[2], mgl32.Vec3{0, 0, 1}))
+	trans = trans.Mul4(mgl32.Translate3D(-pos[0], -pos[1], -pos[2]))
 	trans = trans.Mul4(mgl32.Translate3D(b.pos[0], b.pos[1], b.pos[2]))
 
 	ok = true
@@ -220,18 +199,22 @@ type animator struct {
 	time     int64
 	step     float32
 
+	running bool
+
 	bones map[uint32]boneAnimator
 
 	last int64
 }
 
 func (s *animator) loop() {
-	now := time.Now().UnixMilli()
-	s.time += now - s.last
-	s.last = now
+	if s.running {
+		now := time.Now().UnixMilli()
+		s.time += now - s.last
+		s.last = now
 
-	if s.time > s.loopTime {
-		s.time = s.time % s.loopTime
+		if s.time > s.loopTime {
+			s.time = s.time % s.loopTime
+		}
 	}
 }
 
@@ -247,6 +230,15 @@ func (s *animator) getTrans(boneId uint32) mgl32.Mat4 {
 	return m
 }
 
+func (s *animator) stop() {
+	s.running = false
+}
+
+func (s *animator) play() {
+	s.last = time.Now().UnixMilli()
+	s.running = true
+}
+
 func newAnimator() (r *animator) {
 	r = new(animator)
 	r.last = time.Now().UnixMilli()
@@ -257,14 +249,14 @@ func newAnimator() (r *animator) {
 func constructAnimation() {
 	ctx.animator = newAnimator()
 	var maximum int64
-	for _, b := range ctx.bones {
+	for _, u := range ctx.model.Units {
 		var bA boneAnimator
-		boneA, ok := ctx.animation.bones[b.unitId]
+		boneA, ok := ctx.animation.bones[u.Id]
 		if !ok {
 			continue
 		}
 		for _, k := range boneA.keyFrames {
-			if k.unitId == b.unitId {
+			if k.unitId == u.Id {
 				var key boneTransformation
 				key.time = int64(k.time * 1000)
 				maximum = max(maximum, key.time)
@@ -278,7 +270,8 @@ func constructAnimation() {
 		slices.SortFunc(bA.keyframes, func(A, B boneTransformation) int {
 			return int(A.time - B.time)
 		})
-		ctx.animator.bones[b.boneId] = bA
+		bA.unit = u
+		ctx.animator.bones[u.BoneID] = bA
 	}
 	ctx.animator.loopTime = maximum
 	if ctx.animator.loopTime == 0 {
@@ -295,20 +288,19 @@ func Show(id string) {
 			ctx.keyFramesToSelect = append(ctx.keyFramesToSelect, fmt.Sprintf("Keyframe #%d", k.id))
 		}
 	}
+	selectKeyFrame(ctx.keyFrameSelected)
 
-	if ctx.running {
-		if ctx.animator != nil {
-			ctx.animator.loop()
-			for _, b := range ctx.bones {
-				m := ctx.animator.getTrans(b.boneId)
-				ctx.mesh.SetBoneTransMatrix(b.boneId, m)
-			}
+	if ctx.animator != nil {
+		ctx.animator.loop()
+		for _, b := range ctx.model.Units {
+			m := ctx.animator.getTrans(b.BoneID)
+			ctx.mesh.SetBoneTransMatrix(b.BoneID, m)
 		}
 	}
 
 	if ctx.model.Changed {
-		calcBones()
-		selectBone(0)
+		reset()
+		selectBone(1)
 		f1 := ctx.boneAnim.addKeyFrame()
 		f1.time = 0
 		f1.trans.rot[2] = 0
@@ -331,21 +323,34 @@ func Show(id string) {
 	}
 
 	if im.Begin("Animation") {
+		cant := ctx.animator == nil
+		if cant {
+			im.BeginDisabled()
+		}
 		if im.Button("Run") {
-			ctx.running = !ctx.running
+			if ctx.animator.running {
+				ctx.animator.stop()
+			} else {
+				ctx.animator.play()
+			}
+		}
+		if cant {
+			im.EndDisabled()
 		}
 		if im.ComboStrarr("Bone", &ctx.boneSelected, ctx.bonesToSelect, int32(len(ctx.bonesToSelect))) {
 			selectBone(ctx.boneSelected)
 		}
-		cant := ctx.boneAnim == nil
+		cant = ctx.boneAnim == nil
 		if cant {
 			im.BeginDisabled()
 		}
 		if im.Button("Add Keyframe") {
 			setKeyFrameToEdit(ctx.boneAnim.addKeyFrame())
 		}
-		if im.ComboStrarr("Keyframe", &ctx.keyFrameSelected, ctx.keyFramesToSelect, int32(len(ctx.keyFramesToSelect))) {
-			selectKeyFrame(ctx.keyFrameSelected)
+		if len(ctx.keyFramesToSelect) > 0 {
+			if im.ComboStrarr("Keyframe", &ctx.keyFrameSelected, ctx.keyFramesToSelect, int32(len(ctx.keyFramesToSelect))) {
+				selectKeyFrame(ctx.keyFrameSelected)
+			}
 		}
 		if cant {
 			im.EndDisabled()

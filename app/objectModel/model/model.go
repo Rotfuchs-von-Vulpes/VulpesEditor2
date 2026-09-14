@@ -148,9 +148,9 @@ func (s *CubeUnit) Edit(pos, size, rot [3]float32) {
 	}
 }
 
-func (s CubeUnit) absolutePos() (pos [3]float32) {
+func (s CubeUnit) AbsolutePos() (pos [3]float32) {
 	if s.parent != nil {
-		pos = s.parent.absolutePos()
+		pos = s.parent.AbsolutePos()
 	}
 	pos[0] += s.pos[0]
 	pos[1] += s.pos[1]
@@ -196,7 +196,7 @@ func (s CubeUnit) toBuffer(b *buffer) {
 		{-1, 1, -1, s.uvs[5][0][0], s.uvs[5][0][1]},
 		{-1, -1, -1, s.uvs[5][0][0], s.uvs[5][1][1]},
 	}
-	pos := s.absolutePos()
+	pos := s.AbsolutePos()
 	if s.size[0] != 0 && s.size[2] != 0 {
 		b.addFace(upFace, s.size, pos, s.rot, s.BoneID)
 		b.addFace(downFace, s.size, pos, s.rot, s.BoneID)
