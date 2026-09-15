@@ -228,7 +228,10 @@ func (s *animator) loop() {
 
 func (s *animator) getTrans(boneId uint32) mgl32.Mat4 {
 	var m1 mgl32.Mat4
-	boneAnimator, _ := s.bones[boneId]
+	boneAnimator, ok1 := s.bones[boneId]
+	if !ok1 {
+		return mgl32.Ident4()
+	}
 	var ok2 bool
 	ok2, m1 = boneAnimator.get(s.time)
 	if !ok2 {

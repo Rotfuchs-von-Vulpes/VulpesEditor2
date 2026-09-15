@@ -161,10 +161,10 @@ func (s *instance) Name() string {
 
 func (s *instance) Show() {
 	history.Loop(s.id)
-	animation.Show(s.id)
 	tools.Show(s.id)
 	texture.Show(s.id)
 	view.Show(s.id)
+	animation.Show(s.id)
 	s.model.Reset()
 }
 

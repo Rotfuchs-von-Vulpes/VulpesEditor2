@@ -96,6 +96,7 @@ func (s *CubeUnit) Append(node NodeTree) bool {
 	case (*CubeUnit):
 		if s.CanReceive(v) {
 			if s.Source != nil {
+				s.Source.Changed = true
 				s.Source.AppendUnit(v)
 			}
 			if v.parent != nil {
@@ -322,6 +323,7 @@ func (s *Model) AppendUnit(unit *CubeUnit) bool {
 		unit.Name = fmt.Sprintf("Unit #%d", s.count)
 	}
 	s.count++
+	s.Changed = true
 	return true
 }
 
