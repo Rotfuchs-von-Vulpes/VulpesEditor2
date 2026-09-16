@@ -338,6 +338,10 @@ func Show(id string) {
 		constructAnimation()
 
 		ctx.running = false
+
+		for _, b := range ctx.model.Units {
+			ctx.mesh.SetBoneTransMatrix(b.BoneID, mgl32.Ident4())
+		}
 	}
 
 	if im.Begin("Animation") {
