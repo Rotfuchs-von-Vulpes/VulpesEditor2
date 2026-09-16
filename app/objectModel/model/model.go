@@ -56,12 +56,12 @@ func (s *CubeUnit) Children() (r []NodeTree) {
 }
 
 func (s *CubeUnit) Remove(unit *CubeUnit) {
-	if unit.parent == s.parent {
-		unit.parent = nil
-	}
 	s.children = slices.DeleteFunc(s.children, func(u *CubeUnit) bool {
 		return u.Id == unit.Id
 	})
+	if s.Source != nil {
+		s.Source.addChange(ChangeHierarchy)
+	}
 }
 
 func (s *CubeUnit) CanReceive(node NodeTree) bool {
@@ -96,7 +96,6 @@ func (s *CubeUnit) Append(node NodeTree) bool {
 	case (*CubeUnit):
 		if s.CanReceive(v) {
 			if s.Source != nil {
-				s.Source.Changed = true
 				s.Source.AppendUnit(v)
 			}
 			if v.parent != nil {
@@ -117,7 +116,7 @@ func (s *CubeUnit) SetUV(faceCount int, init, end [2]float32) {
 	s.uvs[faceCount][0] = init
 	s.uvs[faceCount][1] = end
 	if s.Source != nil {
-		s.Source.Changed = true
+		s.Source.addChange(ChangeTexture)
 	}
 	if faceCount == 2 {
 		s.QuadPos = init
@@ -128,7 +127,7 @@ func (s *CubeUnit) SetUVs(uvs [6][2][2]float32) {
 	s.uvs = uvs
 	s.QuadPos = uvs[2][0]
 	if s.Source != nil {
-		s.Source.Changed = true
+		s.Source.addChange(ChangeTexture)
 	}
 }
 
@@ -145,7 +144,7 @@ func (s *CubeUnit) Edit(pos, size, rot [3]float32) {
 	s.rot = rot
 	s.Changed = true
 	if s.Source != nil {
-		s.Source.Changed = true
+		s.Source.addChange(ChangeUnits)
 	}
 }
 
@@ -298,10 +297,51 @@ func (s *buffer) addFace(face [4][5]float32, size, pos, rot [3]float32, boneID u
 }
 
 type Model struct {
-	Id      string
-	Units   []*CubeUnit
-	Changed bool
-	count   uint32
+	Id    string
+	Units []*CubeUnit
+	count uint32
+
+	allChanges   ChangeType
+	listeners    []string
+	acknowledged []string
+}
+
+type ChangeType int
+
+const (
+	ChangeHierarchy ChangeType = 1 << iota
+	ChangeTexture
+	ChangeSize
+	ChangeUnits
+)
+
+func (s *Model) Inscribe(id string) {
+	s.listeners = append(s.listeners, id)
+}
+
+func (s *Model) Changed(id string, changes ChangeType) (r bool) {
+	if slices.Contains(s.acknowledged, id) {
+		return false
+	} else {
+		s.acknowledged = append(s.acknowledged, id)
+		r = s.allChanges&changes != 0
+		all := true
+		for _, l := range s.listeners {
+			if !slices.Contains(s.acknowledged, l) {
+				all = false
+				break
+			}
+		}
+		if all {
+			s.acknowledged = nil
+			s.allChanges = 0
+		}
+		return
+	}
+}
+
+func (s *Model) addChange(changes ChangeType) {
+	s.allChanges |= changes
 }
 
 func NewModel() (s *Model) {
@@ -316,14 +356,13 @@ func (s *Model) AppendUnit(unit *CubeUnit) bool {
 	}
 	unit.Source = s
 	s.Units = append(s.Units, unit)
-	s.Changed = true
 	unit.parent = nil
 	unit.BoneID = s.count
 	if unit.Name == "" {
 		unit.Name = fmt.Sprintf("Unit #%d", s.count)
 	}
 	s.count++
-	s.Changed = true
+	s.addChange(ChangeHierarchy | ChangeUnits)
 	return true
 }
 
@@ -339,7 +378,7 @@ func (s *Model) Remove(unit *CubeUnit) (err error) {
 			unit.parent.Remove(unit)
 		}
 		unit.Source = nil
-		s.Changed = true
+		s.addChange(ChangeUnits)
 	}
 	return
 }
@@ -359,7 +398,6 @@ func (s *Model) Reset() {
 		u.Changed = false
 		u.Resized = false
 	}
-	s.Changed = false
 }
 
 func (s *Model) GetId() string {
@@ -413,12 +451,13 @@ type cube struct {
 func (s *Model) saveModel(w *file.ArchiveWriter) (err error) {
 	cubes := []cube{}
 	for _, u := range s.Units {
-		c := cube{}
-		c.Id = u.Id
-		c.Position = u.pos
-		c.Size = u.size
-		c.Rotation = u.rot
-		c.Uv = u.uvs
+		c := cube{
+			Id:       u.Id,
+			Position: u.pos,
+			Size:     u.size,
+			Rotation: u.rot,
+			Uv:       u.uvs,
+		}
 		cubes = append(cubes, c)
 	}
 	buff := bytes.NewBuffer(nil)
@@ -433,15 +472,6 @@ func (s *Model) saveModel(w *file.ArchiveWriter) (err error) {
 }
 
 func (s *Model) saveHierarchy(w *file.ArchiveWriter) (err error) {
-	cubes := []cube{}
-	for _, u := range s.Units {
-		c := cube{}
-		c.Id = u.Id
-		c.Position = u.pos
-		c.Size = u.size
-		c.Uv = u.uvs
-		cubes = append(cubes, c)
-	}
 	buff := bytes.NewBuffer(nil)
 	encoder := csv.NewWriter(buff)
 	if err := encoder.Write([]string{"unit", "parent"}); err != nil {

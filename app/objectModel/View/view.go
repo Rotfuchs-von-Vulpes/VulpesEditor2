@@ -111,7 +111,7 @@ func buttonRelease(buttons [5]bool) {
 func Show(id string) {
 	ctxManager.Check(id)
 
-	if ctx.model.Changed {
+	if ctx.model.Changed("view", model.ChangeTexture|model.ChangeUnits) {
 		f, e := ctx.model.ToBuffer()
 		ctx.mesh.SetVertices(f, e)
 	}

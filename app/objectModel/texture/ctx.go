@@ -16,6 +16,6 @@ func New(id, name string, m *model.Model) {
 	ctx = new(TextureContext)
 	ctx.name = name
 	ctx.model = m
-	// GenerateTexture()
+	ctx.model.Inscribe("texture")
 	ctxManager.Add(id, ctx)
 }

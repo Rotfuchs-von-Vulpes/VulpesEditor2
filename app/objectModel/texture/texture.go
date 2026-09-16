@@ -267,7 +267,7 @@ func call() {
 
 func Show(id string) {
 	ctxManager.Check(id)
-	if ctx.model.Changed {
+	if ctx.model.Changed("texture", model.ChangeSize|model.ChangeUnits) {
 		generateTexture()
 	}
 	call()

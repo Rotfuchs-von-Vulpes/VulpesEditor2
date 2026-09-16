@@ -316,7 +316,7 @@ func Show(id string) {
 		}
 	}
 
-	if ctx.model.Changed {
+	if ctx.model.Changed("animation", model.ChangeHierarchy|model.ChangeUnits) {
 		reset()
 		selectBone(0)
 		f1 := ctx.boneAnim.addKeyFrame()

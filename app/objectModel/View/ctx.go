@@ -27,6 +27,7 @@ func OpenModel(id string, model *model.Model, mesh *renderer.Mesh) {
 	ctx.camera = renderer.NewCamera(500, 500)
 	ctx.modelViewer = renderer.CreateFramebuffer(500, 500)
 	ctx.model = model
+	ctx.model.Inscribe("view")
 	f, e := ctx.model.ToBuffer()
 	ctx.mesh = mesh
 	ctx.mesh.SetVertices(f, e)
