@@ -137,7 +137,7 @@ func (s *CubeUnit) Data() ([3]float32, [3]float32, [3]float32) {
 
 func (s *CubeUnit) Edit(pos, size, rot [3]float32) {
 	if s.size != size {
-		s.Resized = true
+		s.Source.addChange(ChangeSize)
 	}
 	s.pos = pos
 	s.size = size
