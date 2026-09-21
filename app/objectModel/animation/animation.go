@@ -13,8 +13,9 @@ import (
 )
 
 type AnimationContext struct {
-	model *model.Model
-	mesh  *renderer.Mesh
+	model     *model.Model
+	mesh      *renderer.Mesh
+	modelComm *model.ChangeAsker
 
 	animation *animation
 	boneAnim  *boneAnimation
@@ -316,7 +317,7 @@ func Show(id string) {
 		}
 	}
 
-	if ctx.model.Changed("animation", model.ChangeHierarchy|model.ChangeUnits) {
+	if ctx.modelComm.Changed(model.ChangeHierarchy | model.ChangeUnits) {
 		reset()
 		selectBone(0)
 		f1 := ctx.boneAnim.addKeyFrame()

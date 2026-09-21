@@ -11,6 +11,7 @@ import (
 
 type ModelContext struct {
 	model       *model.Model
+	modelComm   *model.ChangeAsker
 	modelViewer *renderer.FrameBuffer
 	camera      *renderer.Camera
 	mesh        *renderer.Mesh
@@ -111,7 +112,7 @@ func buttonRelease(buttons [5]bool) {
 func Show(id string) {
 	ctxManager.Check(id)
 
-	if ctx.model.Changed("view", model.ChangeTexture|model.ChangeUnits) {
+	if ctx.modelComm.Changed(model.ChangeTexture | model.ChangeUnits) {
 		f, e := ctx.model.ToBuffer()
 		ctx.mesh.SetVertices(f, e)
 	}

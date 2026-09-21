@@ -17,7 +17,7 @@ func (s *AnimationContext) Use() {
 func New(id string, md *model.Model, ms *renderer.Mesh) {
 	ctx := new(AnimationContext)
 	ctx.model = md
-	ctx.model.Inscribe("animation")
+	ctx.modelComm = md.NewChangeAsker()
 	ctx.mesh = ms
 	ctx.animation = new(animation)
 	ctx.animation.bones = map[string]*boneAnimation{}

@@ -238,10 +238,11 @@ func GetData() (width, height int32, data []float32) {
 type TextureContext struct {
 	name string
 
-	model    *model.Model
-	texture  *texture.Texture
-	surfaces []*MultiQuad
-	size     int32
+	model     *model.Model
+	modelComm *model.ChangeAsker
+	texture   *texture.Texture
+	surfaces  []*MultiQuad
+	size      int32
 
 	callbacks  []func()
 	changed    bool
@@ -267,7 +268,7 @@ func call() {
 
 func Show(id string) {
 	ctxManager.Check(id)
-	if ctx.model.Changed("texture", model.ChangeSize|model.ChangeUnits) {
+	if ctx.modelComm.Changed(model.ChangeSize | model.ChangeUnits) {
 		generateTexture()
 	}
 	call()

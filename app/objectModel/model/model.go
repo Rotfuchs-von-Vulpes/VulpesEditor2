@@ -306,6 +306,19 @@ type Model struct {
 	acknowledged []string
 }
 
+type ChangeAsker struct {
+	id    string
+	model *Model
+}
+
+func (m *Model) NewChangeAsker() (c *ChangeAsker) {
+	c = new(ChangeAsker)
+	c.id = uuid.New().String()
+	m.listeners = append(m.listeners, c.id)
+	c.model = m
+	return
+}
+
 type ChangeType int
 
 const (
@@ -315,26 +328,22 @@ const (
 	ChangeUnits
 )
 
-func (s *Model) Inscribe(id string) {
-	s.listeners = append(s.listeners, id)
-}
-
-func (s *Model) Changed(id string, changes ChangeType) (r bool) {
-	if slices.Contains(s.acknowledged, id) {
+func (s *ChangeAsker) Changed(changes ChangeType) (r bool) {
+	if slices.Contains(s.model.acknowledged, s.id) {
 		return false
 	} else {
-		s.acknowledged = append(s.acknowledged, id)
-		r = s.allChanges&changes != 0
+		s.model.acknowledged = append(s.model.acknowledged, s.id)
+		r = s.model.allChanges&changes != 0
 		all := true
-		for _, l := range s.listeners {
-			if !slices.Contains(s.acknowledged, l) {
+		for _, l := range s.model.listeners {
+			if !slices.Contains(s.model.acknowledged, l) {
 				all = false
 				break
 			}
 		}
 		if all {
-			s.acknowledged = nil
-			s.allChanges = 0
+			s.model.acknowledged = nil
+			s.model.allChanges = 0
 		}
 		return
 	}
