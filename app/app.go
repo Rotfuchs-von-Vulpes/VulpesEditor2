@@ -1,6 +1,7 @@
 package app
 
 import (
+	"VulpesEditor/app/blockCreator"
 	"VulpesEditor/app/front"
 	"VulpesEditor/app/front/tabs"
 	"VulpesEditor/app/objectModel"
@@ -32,6 +33,8 @@ func AfterCreateContext() {
 			textureDraw.NewTest()
 		case "model":
 			objectModel.NewTest()
+		case "block":
+			blockCreator.NewTest()
 		}
 	} else {
 		*name += ".zip"

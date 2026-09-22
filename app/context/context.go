@@ -15,6 +15,7 @@ func (s *Manager) Add(id string, value Context) {
 		panic("Alreade in use")
 	}
 	s.data[id] = value
+	value.Use()
 }
 
 func (s *Manager) Check(id string) {

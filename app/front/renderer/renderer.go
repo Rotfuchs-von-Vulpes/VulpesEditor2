@@ -16,12 +16,6 @@ func Str(str string) *uint8 {
 
 const FLOAT_SIZE = 4
 
-//go:embed shaders/triangle.vert
-var vertexShader string
-
-//go:embed shaders/triangle.frag
-var fragmentShader string
-
 //go:embed shaders/texture.vert
 var texVertexShader string
 
@@ -34,15 +28,11 @@ var modelVertexShader string
 //go:embed shaders/model.frag
 var modelFragmentShader string
 
-type uniforms struct {
-	color int32
-}
+//go:embed shaders/blocks.vert
+var blocksVertexShader string
 
-type renderer struct {
-	shaderHandle uint32
-	vao, vbo     uint32
-	uniforms     uniforms
-}
+//go:embed shaders/blocks.frag
+var blocksFragmentShader string
 
 type textureUniforms struct {
 	zoom    int32
@@ -54,14 +44,6 @@ type textureUniforms struct {
 	size    int32
 }
 
-type modelUniforms struct {
-	projection int32
-	view       int32
-	model      int32
-	texUnit    int32
-	bones      int32
-}
-
 type textureRender struct {
 	shaderHandle uint32
 	textureVao   uint32
@@ -70,9 +52,29 @@ type textureRender struct {
 	uniforms     textureUniforms
 }
 
+type modelUniforms struct {
+	projection int32
+	view       int32
+	model      int32
+	texUnit    int32
+	bones      int32
+}
+
 type modelRender struct {
 	shaderHandle uint32
 	uniforms     modelUniforms
+}
+
+type blocksUniforms struct {
+	projection int32
+	view       int32
+	model      int32
+	texUnit    int32
+}
+
+type blocksRender struct {
+	shaderHandle uint32
+	uniforms     blocksUniforms
 }
 
 type windowScreen struct {
@@ -87,7 +89,7 @@ type FrameBuffer struct {
 }
 
 var w windowScreen
-var r renderer
+var rBlo blocksRender
 var rMol modelRender
 var rTex textureRender
 
@@ -148,57 +150,19 @@ func Init() {
 	gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 
 	{
-		r.shaderHandle = gl.CreateProgram()
-		vertHandle := gl.CreateShader(gl.VERTEX_SHADER)
-		fragHandle := gl.CreateShader(gl.FRAGMENT_SHADER)
-		glShaderSource(vertHandle, vertexShader)
-		glShaderSource(fragHandle, fragmentShader)
-		gl.CompileShader(vertHandle)
-		glError(vertHandle, gl.COMPILE_STATUS, gl.GetShaderiv, gl.GetShaderInfoLog, "Vertex shader error")
-		gl.CompileShader(fragHandle)
-		glError(fragHandle, gl.COMPILE_STATUS, gl.GetShaderiv, gl.GetShaderInfoLog, "Fragment shader error")
-		gl.AttachShader(r.shaderHandle, vertHandle)
-		gl.AttachShader(r.shaderHandle, fragHandle)
-		gl.LinkProgram(r.shaderHandle)
-		glError(r.shaderHandle, gl.LINK_STATUS, gl.GetProgramiv, gl.GetProgramInfoLog, "Linking program error")
-		gl.DeleteShader(vertHandle)
-		gl.DeleteShader(fragHandle)
-
-		r.uniforms.color = gl.GetUniformLocation(r.shaderHandle, Str("color"))
-
-		vertices := []float32{
-			-0.5, -0.5, 0.0,
-			0.5, -0.5, 0.0,
-			0.0, 0.5, 0.0,
-		}
-
-		gl.GenVertexArrays(1, &r.vao)
-		gl.GenBuffers(1, &r.vbo)
-		gl.BindVertexArray(r.vao)
-
-		gl.BindBuffer(gl.ARRAY_BUFFER, r.vbo)
-		gl.BufferData(gl.ARRAY_BUFFER, int(FLOAT_SIZE)*len(vertices), gl.Ptr(&vertices[0]), gl.STATIC_DRAW)
-
-		gl.VertexAttribPointer(0, 3, gl.FLOAT, false, 3*FLOAT_SIZE, nil)
-		gl.EnableVertexAttribArray(0)
-		gl.BindBuffer(gl.ARRAY_BUFFER, 0)
-		gl.BindVertexArray(0)
-	}
-
-	{
 		rTex.shaderHandle = gl.CreateProgram()
 		vertHandle := gl.CreateShader(gl.VERTEX_SHADER)
 		fragHandle := gl.CreateShader(gl.FRAGMENT_SHADER)
 		glShaderSource(vertHandle, texVertexShader)
 		glShaderSource(fragHandle, texFragmentShader)
 		gl.CompileShader(vertHandle)
-		glError(vertHandle, gl.COMPILE_STATUS, gl.GetShaderiv, gl.GetShaderInfoLog, "Vertex shader error")
+		glError(vertHandle, gl.COMPILE_STATUS, gl.GetShaderiv, gl.GetShaderInfoLog, "Texture: Vertex shader error")
 		gl.CompileShader(fragHandle)
-		glError(fragHandle, gl.COMPILE_STATUS, gl.GetShaderiv, gl.GetShaderInfoLog, "Fragment shader error")
+		glError(fragHandle, gl.COMPILE_STATUS, gl.GetShaderiv, gl.GetShaderInfoLog, "Texture: Fragment shader error")
 		gl.AttachShader(rTex.shaderHandle, vertHandle)
 		gl.AttachShader(rTex.shaderHandle, fragHandle)
 		gl.LinkProgram(rTex.shaderHandle)
-		glError(rTex.shaderHandle, gl.LINK_STATUS, gl.GetProgramiv, gl.GetProgramInfoLog, "Linking program error")
+		glError(rTex.shaderHandle, gl.LINK_STATUS, gl.GetProgramiv, gl.GetProgramInfoLog, "Texture: Linking program error")
 		gl.DeleteShader(vertHandle)
 		gl.DeleteShader(fragHandle)
 
@@ -265,13 +229,13 @@ func Init() {
 		glShaderSource(vertHandle, modelVertexShader)
 		glShaderSource(fragHandle, modelFragmentShader)
 		gl.CompileShader(vertHandle)
-		glError(vertHandle, gl.COMPILE_STATUS, gl.GetShaderiv, gl.GetShaderInfoLog, "Vertex shader error")
+		glError(vertHandle, gl.COMPILE_STATUS, gl.GetShaderiv, gl.GetShaderInfoLog, "Model: Vertex shader error")
 		gl.CompileShader(fragHandle)
-		glError(fragHandle, gl.COMPILE_STATUS, gl.GetShaderiv, gl.GetShaderInfoLog, "Fragment shader error")
+		glError(fragHandle, gl.COMPILE_STATUS, gl.GetShaderiv, gl.GetShaderInfoLog, "Model: Fragment shader error")
 		gl.AttachShader(rMol.shaderHandle, vertHandle)
 		gl.AttachShader(rMol.shaderHandle, fragHandle)
 		gl.LinkProgram(rMol.shaderHandle)
-		glError(rMol.shaderHandle, gl.LINK_STATUS, gl.GetProgramiv, gl.GetProgramInfoLog, "Linking program error")
+		glError(rMol.shaderHandle, gl.LINK_STATUS, gl.GetProgramiv, gl.GetProgramInfoLog, "Model: Linking program error")
 		gl.DeleteShader(vertHandle)
 		gl.DeleteShader(fragHandle)
 
@@ -280,7 +244,31 @@ func Init() {
 		rMol.uniforms.model = gl.GetUniformLocation(rMol.shaderHandle, Str("model"))
 		rMol.uniforms.texUnit = gl.GetUniformLocation(rMol.shaderHandle, Str("tex"))
 		rMol.uniforms.bones = gl.GetUniformLocation(rMol.shaderHandle, Str("gBones"))
-		gl.Uniform1i(rTex.uniforms.texUnit, 0)
+		gl.Uniform1i(rMol.uniforms.texUnit, 0)
+	}
+
+	{
+		rBlo.shaderHandle = gl.CreateProgram()
+		vertHandle := gl.CreateShader(gl.VERTEX_SHADER)
+		fragHandle := gl.CreateShader(gl.FRAGMENT_SHADER)
+		glShaderSource(vertHandle, blocksVertexShader)
+		glShaderSource(fragHandle, blocksFragmentShader)
+		gl.CompileShader(vertHandle)
+		glError(vertHandle, gl.COMPILE_STATUS, gl.GetShaderiv, gl.GetShaderInfoLog, "Blocks: Vertex shader error")
+		gl.CompileShader(fragHandle)
+		glError(fragHandle, gl.COMPILE_STATUS, gl.GetShaderiv, gl.GetShaderInfoLog, "Blocks: Fragment shader error")
+		gl.AttachShader(rBlo.shaderHandle, vertHandle)
+		gl.AttachShader(rBlo.shaderHandle, fragHandle)
+		gl.LinkProgram(rBlo.shaderHandle)
+		glError(rBlo.shaderHandle, gl.LINK_STATUS, gl.GetProgramiv, gl.GetProgramInfoLog, "Blocks: Linking program error")
+		gl.DeleteShader(vertHandle)
+		gl.DeleteShader(fragHandle)
+
+		rBlo.uniforms.view = gl.GetUniformLocation(rBlo.shaderHandle, Str("view"))
+		rBlo.uniforms.projection = gl.GetUniformLocation(rBlo.shaderHandle, Str("projection"))
+		rBlo.uniforms.model = gl.GetUniformLocation(rBlo.shaderHandle, Str("model"))
+		// rBlo.uniforms.texUnit = gl.GetUniformLocation(rBlo.shaderHandle, Str("tex"))
+		// gl.Uniform1i(rBlo.uniforms.texUnit, 0)
 	}
 
 	if gl.CheckFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE {
@@ -322,21 +310,6 @@ func CreateFramebuffer(width, height int32) (f *FrameBuffer) {
 	return f
 }
 
-func (f FrameBuffer) Render(clearColor [3]float32, objectColor [3]float32) {
-	gl.Viewport(0, 0, f.width, f.height)
-	gl.BindFramebuffer(gl.FRAMEBUFFER, f.fbo)
-	gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, f.colorBuffer, 0)
-	gl.FramebufferTexture(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, f.depth, 0)
-
-	gl.ClearColor(clearColor[0], clearColor[1], clearColor[2], 1.0)
-	gl.Clear(gl.COLOR_BUFFER_BIT)
-	gl.UseProgram(r.shaderHandle)
-	gl.Uniform3f(r.uniforms.color, objectColor[0], objectColor[1], objectColor[2])
-	gl.BindVertexArray(r.vao)
-	gl.DrawArrays(gl.TRIANGLES, 0, 3)
-	gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
-}
-
 func (f *FrameBuffer) Resize(width, height int32) {
 	f.width = width
 	f.height = height
@@ -355,11 +328,6 @@ func (f FrameBuffer) Size() imgui.Vec2 {
 }
 
 func Nuke() {
-	gl.UseProgram(r.shaderHandle)
-	gl.DeleteVertexArrays(1, &r.vao)
-	gl.DeleteBuffers(1, &r.vbo)
-	gl.DeleteProgram(r.shaderHandle)
-
 	gl.UseProgram(rTex.shaderHandle)
 	gl.DeleteVertexArrays(1, &rTex.textureVao)
 	gl.DeleteVertexArrays(1, &rTex.outlineVao)
@@ -368,106 +336,9 @@ func Nuke() {
 
 	gl.UseProgram(rMol.shaderHandle)
 	for _, m := range AllMeshs {
-		gl.DeleteVertexArrays(1, &m.vao)
-		gl.DeleteBuffers(1, &m.vbo)
-		gl.DeleteBuffers(1, &m.ebo)
+		m.clean()
 	}
 	gl.DeleteProgram(rMol.shaderHandle)
-}
-
-func (f *FrameBuffer) RenderTexture(t1 uint32, zoom float32, pos [2]float32, width, height float32) {
-	gl.Viewport(0, 0, f.width, f.height)
-	gl.BindFramebuffer(gl.FRAMEBUFFER, f.fbo)
-	gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, f.colorBuffer, 0)
-	gl.FramebufferTexture(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, f.depth, 0)
-	gl.ActiveTexture(gl.TEXTURE0)
-	gl.BindTexture(gl.TEXTURE_2D, t1)
-
-	size := f.Size()
-	texAspect := width / height
-	moveX := 2 * pos[0] / (texAspect * size.X * zoom)
-	moveY := 2 * pos[1] / (size.Y * zoom)
-
-	gl.UseProgram(rTex.shaderHandle)
-	gl.Uniform1f(rTex.uniforms.aspect, float32(f.height)/float32(f.width)*texAspect)
-	gl.Uniform1i(rTex.uniforms.outline, 0)
-	gl.Uniform1f(rTex.uniforms.zoom, zoom)
-	gl.Uniform2f(rTex.uniforms.move, moveX, moveY)
-	gl.Uniform2f(rTex.uniforms.size, width, height)
-
-	gl.ClearColor(0.29, 0.29, 0.39, 1.0)
-	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-	gl.BindVertexArray(rTex.textureVao)
-	gl.DrawArrays(gl.TRIANGLES, 0, 6)
-	gl.Uniform1i(rTex.uniforms.outline, 1)
-	gl.BindVertexArray(rTex.outlineVao)
-	gl.Clear(gl.DEPTH_BUFFER_BIT)
-	gl.DrawArrays(gl.LINE_LOOP, 0, 4)
-	gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
-}
-
-type Mesh struct {
-	vao, vbo, ebo uint32
-	texture       uint32
-	length        int32
-	bones         [64]mgl32.Mat4
-}
-
-var AllMeshs []*Mesh
-
-func NewMesh() (m *Mesh) {
-	m = new(Mesh)
-
-	gl.UseProgram(rMol.shaderHandle)
-
-	gl.GenVertexArrays(1, &m.vao)
-	gl.GenBuffers(1, &m.vbo)
-	gl.GenBuffers(1, &m.ebo)
-
-	gl.BindVertexArray(m.vao)
-	gl.BindBuffer(gl.ARRAY_BUFFER, m.vbo)
-
-	gl.VertexAttribPointerWithOffset(0, 3, gl.FLOAT, false, 6*4, 0)
-	gl.VertexAttribPointerWithOffset(1, 2, gl.FLOAT, false, 6*4, 3*4)
-	gl.VertexAttribIPointerWithOffset(2, 1, gl.UNSIGNED_INT, 6*4, 5*4)
-	gl.EnableVertexAttribArray(0)
-	gl.EnableVertexAttribArray(1)
-	gl.EnableVertexAttribArray(2)
-
-	gl.GenTextures(1, &m.texture)
-
-	for i := range m.bones {
-		m.bones[i] = mgl32.Ident4()
-	}
-
-	AllMeshs = append(AllMeshs, m)
-
-	return
-}
-
-func (s *Mesh) SetVertices(vertices []byte, indices []uint32) {
-	gl.UseProgram(rMol.shaderHandle)
-
-	gl.BindVertexArray(s.vao)
-
-	gl.BindBuffer(gl.ARRAY_BUFFER, s.vbo)
-	gl.BufferData(gl.ARRAY_BUFFER, len(vertices), gl.Ptr(vertices), gl.STATIC_DRAW)
-
-	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, s.ebo)
-	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, 4*len(indices), gl.Ptr(&indices[0]), gl.STATIC_DRAW)
-
-	s.length = int32(len(indices))
-}
-
-func (s *Mesh) SetTexture(width, height int32, data []float32) {
-	WriteTexture(s.texture, width, height, data)
-}
-
-func (s *Mesh) SetBoneTransMatrix(boneID uint32, m mgl32.Mat4) {
-	if boneID >= 64 {
-		return
-	}
-	s.bones[boneID] = m
 }
 
 type Camera struct {
@@ -513,7 +384,194 @@ func (s *Camera) Turn(versor mgl32.Vec3) {
 	s.view = mgl32.LookAtV(s.Pos, s.Front, s.up)
 }
 
-func (f *FrameBuffer) RenderModel(camera *Camera, mesh *Mesh) {
+func (f *FrameBuffer) RenderTexture(t1 uint32, zoom float32, pos [2]float32, width, height float32) {
+	gl.Viewport(0, 0, f.width, f.height)
+	gl.BindFramebuffer(gl.FRAMEBUFFER, f.fbo)
+	gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, f.colorBuffer, 0)
+	gl.FramebufferTexture(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, f.depth, 0)
+	gl.ActiveTexture(gl.TEXTURE0)
+	gl.BindTexture(gl.TEXTURE_2D, t1)
+
+	size := f.Size()
+	texAspect := width / height
+	moveX := 2 * pos[0] / (texAspect * size.X * zoom)
+	moveY := 2 * pos[1] / (size.Y * zoom)
+
+	gl.UseProgram(rTex.shaderHandle)
+	gl.Uniform1f(rTex.uniforms.aspect, float32(f.height)/float32(f.width)*texAspect)
+	gl.Uniform1i(rTex.uniforms.outline, 0)
+	gl.Uniform1f(rTex.uniforms.zoom, zoom)
+	gl.Uniform2f(rTex.uniforms.move, moveX, moveY)
+	gl.Uniform2f(rTex.uniforms.size, width, height)
+
+	gl.ClearColor(0.29, 0.29, 0.39, 1.0)
+	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+	gl.BindVertexArray(rTex.textureVao)
+	gl.DrawArrays(gl.TRIANGLES, 0, 6)
+	gl.Uniform1i(rTex.uniforms.outline, 1)
+	gl.BindVertexArray(rTex.outlineVao)
+	gl.Clear(gl.DEPTH_BUFFER_BIT)
+	gl.DrawArrays(gl.LINE_LOOP, 0, 4)
+	gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
+}
+
+type BlocksMesh struct {
+	vao, vbo, ebo uint32
+	texture       uint32
+	length        int32
+	model         mgl32.Mat4
+}
+
+func NewBlocksMesh() (m *BlocksMesh) {
+	m = new(BlocksMesh)
+
+	gl.UseProgram(rMol.shaderHandle)
+
+	gl.GenVertexArrays(1, &m.vao)
+	gl.GenBuffers(1, &m.vbo)
+	gl.GenBuffers(1, &m.ebo)
+
+	gl.BindVertexArray(m.vao)
+	gl.BindBuffer(gl.ARRAY_BUFFER, m.vbo)
+
+	gl.VertexAttribPointerWithOffset(0, 3, gl.FLOAT, false, 6*4, 0)
+	gl.VertexAttribPointerWithOffset(1, 2, gl.FLOAT, false, 6*4, 3*4)
+	gl.VertexAttribIPointerWithOffset(2, 1, gl.UNSIGNED_INT, 6*4, 5*4)
+	gl.EnableVertexAttribArray(0)
+	gl.EnableVertexAttribArray(1)
+	gl.EnableVertexAttribArray(2)
+
+	AllMeshs = append(AllMeshs, m)
+
+	return
+}
+
+func (m *BlocksMesh) Centralize(width, height, depth int32) {
+	m.model = mgl32.Translate3D(-float32(width), -float32(height), -float32(depth))
+}
+
+func (m *BlocksMesh) clean() {
+	gl.DeleteVertexArrays(1, &m.vao)
+	gl.DeleteBuffers(1, &m.vbo)
+	gl.DeleteBuffers(1, &m.ebo)
+}
+
+func (m *BlocksMesh) SetVertices(vertices []byte, indices []uint32) {
+	gl.UseProgram(rBlo.shaderHandle)
+
+	gl.BindVertexArray(m.vao)
+
+	if len(vertices) != 0 || len(indices) != 0 {
+		gl.BindBuffer(gl.ARRAY_BUFFER, m.vbo)
+		gl.BufferData(gl.ARRAY_BUFFER, len(vertices), gl.Ptr(vertices), gl.STATIC_DRAW)
+
+		gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, m.ebo)
+		gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, 4*len(indices), gl.Ptr(&indices[0]), gl.STATIC_DRAW)
+	}
+
+	m.length = int32(len(indices))
+}
+
+func (f *FrameBuffer) RenderBlocks(camera *Camera, mesh *BlocksMesh) {
+	camera.resize(f.width, f.height)
+
+	gl.Viewport(0, 0, f.width, f.height)
+	gl.BindFramebuffer(gl.FRAMEBUFFER, f.fbo)
+	gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, f.colorBuffer, 0)
+	gl.FramebufferTexture(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, f.depth, 0)
+	gl.ActiveTexture(gl.TEXTURE0)
+	gl.BindTexture(gl.TEXTURE_2D, mesh.texture)
+
+	gl.UseProgram(rBlo.shaderHandle)
+
+	gl.UniformMatrix4fv(rBlo.uniforms.projection, 1, false, &camera.proj[0])
+	gl.UniformMatrix4fv(rBlo.uniforms.view, 1, false, &camera.view[0])
+	gl.UniformMatrix4fv(rBlo.uniforms.model, 1, false, &mesh.model[0])
+
+	gl.ClearColor(0.29, 0.29, 0.39, 1.0)
+	gl.Clear(gl.COLOR_BUFFER_BIT)
+	gl.Clear(gl.DEPTH_BUFFER_BIT)
+	gl.BindVertexArray(mesh.vao)
+	gl.BindBuffer(gl.ARRAY_BUFFER, mesh.vbo)
+	gl.DrawElementsWithOffset(gl.TRIANGLES, mesh.length, gl.UNSIGNED_INT, 0)
+	gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
+}
+
+type ModelMesh struct {
+	vao, vbo, ebo uint32
+	texture       uint32
+	length        int32
+	bones         [64]mgl32.Mat4
+}
+
+func (m *ModelMesh) clean() {
+	gl.DeleteVertexArrays(1, &m.vao)
+	gl.DeleteBuffers(1, &m.vbo)
+	gl.DeleteBuffers(1, &m.ebo)
+}
+
+type Mesh interface {
+	clean()
+}
+
+var AllMeshs []Mesh
+
+func NewModelMesh() (m *ModelMesh) {
+	m = new(ModelMesh)
+
+	gl.UseProgram(rMol.shaderHandle)
+
+	gl.GenVertexArrays(1, &m.vao)
+	gl.GenBuffers(1, &m.vbo)
+	gl.GenBuffers(1, &m.ebo)
+
+	gl.BindVertexArray(m.vao)
+	gl.BindBuffer(gl.ARRAY_BUFFER, m.vbo)
+
+	gl.VertexAttribPointerWithOffset(0, 3, gl.FLOAT, false, 6*4, 0)
+	gl.VertexAttribPointerWithOffset(1, 2, gl.FLOAT, false, 6*4, 3*4)
+	gl.VertexAttribIPointerWithOffset(2, 1, gl.UNSIGNED_INT, 6*4, 5*4)
+	gl.EnableVertexAttribArray(0)
+	gl.EnableVertexAttribArray(1)
+	gl.EnableVertexAttribArray(2)
+
+	gl.GenTextures(1, &m.texture)
+
+	for i := range m.bones {
+		m.bones[i] = mgl32.Ident4()
+	}
+
+	AllMeshs = append(AllMeshs, m)
+
+	return
+}
+
+func (s *ModelMesh) SetVertices(vertices []byte, indices []uint32) {
+	gl.UseProgram(rMol.shaderHandle)
+
+	gl.BindVertexArray(s.vao)
+
+	gl.BindBuffer(gl.ARRAY_BUFFER, s.vbo)
+	gl.BufferData(gl.ARRAY_BUFFER, len(vertices), gl.Ptr(vertices), gl.STATIC_DRAW)
+
+	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, s.ebo)
+	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, 4*len(indices), gl.Ptr(&indices[0]), gl.STATIC_DRAW)
+
+	s.length = int32(len(indices))
+}
+
+func (s *ModelMesh) SetTexture(width, height int32, data []float32) {
+	WriteTexture(s.texture, width, height, data)
+}
+
+func (s *ModelMesh) SetBoneTransMatrix(boneID uint32, m mgl32.Mat4) {
+	if boneID >= 64 {
+		return
+	}
+	s.bones[boneID] = m
+}
+
+func (f *FrameBuffer) RenderModel(camera *Camera, mesh *ModelMesh) {
 	camera.resize(f.width, f.height)
 
 	gl.Viewport(0, 0, f.width, f.height)

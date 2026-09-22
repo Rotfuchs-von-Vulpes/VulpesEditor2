@@ -16,16 +16,16 @@ func (s *ModelContext) Use() {
 var ctx *ModelContext
 var ctxManager = context.New()
 
-func New(id string, model *model.Model, mesh *renderer.Mesh) {
+func New(id string, model *model.Model, mesh *renderer.ModelMesh) {
 	OpenModel(id, model, mesh)
 }
 
-func OpenModel(id string, model *model.Model, mesh *renderer.Mesh) {
+func OpenModel(id string, model *model.Model, mesh *renderer.ModelMesh) {
 	ctx = new(ModelContext)
 	ctx.accumulation = [2]float32{math.Pi / 4, math.Pi / 8}
 	ctx.zoom = 3
 	ctx.camera = renderer.NewCamera(500, 500)
-	ctx.modelViewer = renderer.CreateFramebuffer(500, 500)
+	ctx.viewer = renderer.CreateFramebuffer(500, 500)
 	ctx.model = model
 	ctx.modelComm = model.NewChangeAsker()
 	f, e := ctx.model.ToBuffer()
@@ -45,7 +45,7 @@ func Save(w *file.ArchiveWriter) {
 	// ctx.texture.Save(w)
 }
 
-func Open(id string, model *model.Model, mesh *renderer.Mesh, r *file.ArchiveReader) (err error) {
+func Open(id string, model *model.Model, mesh *renderer.ModelMesh, r *file.ArchiveReader) (err error) {
 	OpenModel(id, model, mesh)
 	return
 }

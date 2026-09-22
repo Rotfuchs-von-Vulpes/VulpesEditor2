@@ -14,7 +14,7 @@ func (s *AnimationContext) Use() {
 	ctx = s
 }
 
-func New(id string, md *model.Model, ms *renderer.Mesh) {
+func New(id string, md *model.Model, ms *renderer.ModelMesh) {
 	ctx := new(AnimationContext)
 	ctx.model = md
 	ctx.modelComm = md.NewChangeAsker()

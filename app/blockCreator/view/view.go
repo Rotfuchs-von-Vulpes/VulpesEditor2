@@ -2,19 +2,16 @@ package view
 
 import (
 	"VulpesEditor/app/front/renderer"
-	"VulpesEditor/app/objectModel/model"
 	"math"
 
 	im "github.com/AllenDang/cimgui-go/imgui"
 	"github.com/go-gl/mathgl/mgl32"
 )
 
-type ModelContext struct {
-	model     *model.Model
-	modelComm *model.ChangeAsker
-	viewer    *renderer.FrameBuffer
-	camera    *renderer.Camera
-	mesh      *renderer.ModelMesh
+type viewContext struct {
+	camera *renderer.Camera
+	mesh   *renderer.BlocksMesh
+	viewer *renderer.FrameBuffer
 
 	pos          [2]float32
 	accumulation [2]float32
@@ -112,10 +109,10 @@ func buttonRelease(buttons [5]bool) {
 func Show(id string) {
 	ctxManager.Check(id)
 
-	if ctx.modelComm.Changed(model.ChangeTexture | model.ChangeUnits) {
-		f, e := ctx.model.ToBuffer()
-		ctx.mesh.SetVertices(f, e)
-	}
+	// if ctx.modelComm.Changed(model.ChangeTexture | model.ChangeUnits) {
+	// 	f, e := ctx.model.ToBuffer()
+	// 	ctx.mesh.SetVertices(f, e)
+	// }
 
 	if toFocus {
 		im.SetNextWindowFocus()
@@ -159,7 +156,7 @@ func Show(id string) {
 		}
 	}
 
-	ctx.viewer.RenderModel(ctx.camera, ctx.mesh)
+	ctx.viewer.RenderBlocks(ctx.camera, ctx.mesh)
 
 	im.End()
 }

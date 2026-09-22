@@ -14,7 +14,7 @@ import (
 
 type AnimationContext struct {
 	model     *model.Model
-	mesh      *renderer.Mesh
+	mesh      *renderer.ModelMesh
 	modelComm *model.ChangeAsker
 
 	animation *animation

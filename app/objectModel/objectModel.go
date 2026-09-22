@@ -130,13 +130,13 @@ type instance struct {
 	title string
 
 	model *model.Model
-	mesh  *renderer.Mesh
+	mesh  *renderer.ModelMesh
 
 	id    string
 	focus bool
 }
 
-func (s *instance) init(md *model.Model, ms *renderer.Mesh) {
+func (s *instance) init(md *model.Model, ms *renderer.ModelMesh) {
 	history.New(s.id)
 	s.model = md
 	s.mesh = ms
@@ -223,7 +223,7 @@ func OpenModel(path string) {
 		fmt.Println(err)
 		return
 	}
-	ms := renderer.NewMesh()
+	ms := renderer.NewModelMesh()
 	itc.init(md, ms)
 	if err := texture.Open(itc.id, r); err != nil {
 		fmt.Println(err)
@@ -239,7 +239,7 @@ func NewTest() {
 	itc.focus = true
 	md := model.NewModel()
 	md.AppendUnit(model.NewUnit([3]float32{0, 0, 0}, [3]float32{1, 1, 1}, [3]float32{0, 0, 0}))
-	ms := renderer.NewMesh()
+	ms := renderer.NewModelMesh()
 	itc.init(md, ms)
 	tabs.Push(itc)
 }
@@ -251,7 +251,7 @@ func openNew(c creationData) {
 	itc.focus = true
 	md := model.NewModel()
 	md.AppendUnit(model.NewUnit([3]float32{0, 0, 0}, [3]float32{1, 1, 1}, [3]float32{0, 0, 0}))
-	ms := renderer.NewMesh()
+	ms := renderer.NewModelMesh()
 	itc.init(md, ms)
 	tabs.Push(itc)
 }
