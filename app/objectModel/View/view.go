@@ -163,7 +163,3 @@ func Show(id string) {
 
 	im.End()
 }
-
-func Model() *model.Model {
-	return ctx.model
-}
