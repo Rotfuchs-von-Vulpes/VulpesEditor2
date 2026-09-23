@@ -374,14 +374,14 @@ func (s *Camera) setup() {
 
 func (s *Camera) Move(pos [3]float32) {
 	s.Pos = pos
-	s.view = mgl32.LookAtV(s.Pos, s.Front, s.up)
+	s.view = mgl32.LookAtV(s.Pos, s.Front.Add(s.Pos), s.up)
 }
 
 func (s *Camera) Turn(versor mgl32.Vec3) {
 	s.Front = versor.Normalize()
 	s.right = s.Front.Cross(mgl32.Vec3{0, 1, 0}).Normalize()
 	s.up = s.right.Cross(s.Front).Normalize()
-	s.view = mgl32.LookAtV(s.Pos, s.Front, s.up)
+	s.view = mgl32.LookAtV(s.Pos, s.Front.Add(s.Pos), s.up)
 }
 
 func (f *FrameBuffer) RenderTexture(t1 uint32, zoom float32, pos [2]float32, width, height float32) {
@@ -424,6 +424,8 @@ type BlocksMesh struct {
 
 func NewBlocksMesh() (m *BlocksMesh) {
 	m = new(BlocksMesh)
+
+	m.model = mgl32.Ident4()
 
 	gl.UseProgram(rMol.shaderHandle)
 

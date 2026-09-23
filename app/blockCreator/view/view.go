@@ -1,6 +1,7 @@
 package view
 
 import (
+	"VulpesEditor/app/blockCreator/chunk"
 	"VulpesEditor/app/front/renderer"
 	"math"
 
@@ -12,6 +13,8 @@ type viewContext struct {
 	camera *renderer.Camera
 	mesh   *renderer.BlocksMesh
 	viewer *renderer.FrameBuffer
+
+	chunk *chunk.Chunk
 
 	pos          [2]float32
 	accumulation [2]float32
@@ -50,12 +53,14 @@ func moveCamera() {
 }
 
 func calcCamera() {
+	diff := mgl32.Vec3{float32(ctx.chunk.Width) / 2, float32(ctx.chunk.Height) / 2, float32(ctx.chunk.Depth) / 2}
 	x := ctx.zoom * float32(math.Cos(float64(ctx.pos[0]))*math.Cos(float64(ctx.pos[1])))
 	y := ctx.zoom * float32(math.Sin(float64(ctx.pos[1])))
 	z := ctx.zoom * float32(math.Sin(float64(ctx.pos[0]))*math.Cos(float64(ctx.pos[1])))
 
 	cameraPos := mgl32.Vec3{x, y, z}
 	cameraFront := cameraPos.Mul(-1)
+	cameraPos = cameraPos.Add(diff)
 
 	ctx.camera.Move(cameraPos)
 	ctx.camera.Turn(cameraFront)
@@ -90,6 +95,12 @@ func buttonPress(buttons [5]bool) {
 	if buttons[0] || buttons[1] {
 		firstButton = buttons[0]
 		toFocus = true
+		if buttons[0] && ctx.chunk.Destruct(ctx.camera.Pos, ctx.camera.Front) {
+			ctx.mesh.SetVertices(ctx.chunk.ToBuffer())
+		}
+		if buttons[1] && ctx.chunk.Construct(ctx.camera.Pos, ctx.camera.Front) {
+			ctx.mesh.SetVertices(ctx.chunk.ToBuffer())
+		}
 	}
 }
 

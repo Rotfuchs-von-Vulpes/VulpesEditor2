@@ -3,6 +3,9 @@ package chunk
 import (
 	"bytes"
 	"encoding/binary"
+	"math"
+
+	"github.com/go-gl/mathgl/mgl32"
 )
 
 type PositionInt [3]int32
@@ -30,18 +33,18 @@ type block struct {
 type Chunk struct {
 	id string
 
-	width  int32
-	depth  int32
-	height int32
+	Width  int32
+	Depth  int32
+	Height int32
 
 	blocks []uint32
 }
 
 func New(width, height, depth int32) (c *Chunk) {
 	c = new(Chunk)
-	c.width = width
-	c.height = height
-	c.depth = depth
+	c.Width = width
+	c.Height = height
+	c.Depth = depth
 	for range width * height * depth {
 		c.blocks = append(c.blocks, 0)
 	}
@@ -49,20 +52,20 @@ func New(width, height, depth int32) (c *Chunk) {
 }
 
 func (c *Chunk) index(pos PositionInt) int32 {
-	return pos[0] + int32(c.height)*pos[1] + int32(c.height*c.depth)*pos[2]
+	return pos[0] + int32(c.Height)*pos[1] + int32(c.Height*c.Depth)*pos[2]
 }
 
 func (c *Chunk) isOutside(pos PositionInt) bool {
 	x := pos[0]
 	y := pos[1]
 	z := pos[2]
-	if x >= int32(c.width) || x < 0 {
+	if x >= int32(c.Width) || x < 0 {
 		return true
 	}
-	if y >= int32(c.height) || y < 0 {
+	if y >= int32(c.Height) || y < 0 {
 		return true
 	}
-	if z >= int32(c.depth) || z < 0 {
+	if z >= int32(c.Depth) || z < 0 {
 		return true
 	}
 	return false
@@ -225,9 +228,9 @@ func (c *Chunk) hasSideExposed(cube *cubeUnit, faces *[]faceUnit) bool {
 
 func (c *Chunk) ToBuffer() ([]byte, []uint32) {
 	var faces []faceUnit
-	for x := range c.width {
-		for y := range c.height {
-			for z := range c.depth {
+	for x := range c.Width {
+		for y := range c.Height {
+			for z := range c.Depth {
 				var pos PositionInt = [3]int32{x, y, z}
 				var cube cubeUnit
 				cube.id = c.getBlock(pos)
@@ -259,8 +262,8 @@ func (c *Chunk) ToBuffer() ([]byte, []uint32) {
 	return verticesBuffer.Bytes(), indices
 }
 
-func Test() ([]byte, []uint32) {
-	c := New(16, 16, 16)
+func Test() (c *Chunk) {
+	c = New(16, 16, 16)
 	for x := range 16 {
 		for y := range 16 {
 			for z := range 16 {
@@ -274,5 +277,134 @@ func Test() ([]byte, []uint32) {
 			}
 		}
 	}
-	return c.ToBuffer()
+	return c
+}
+
+const MAX_DISTANCE = 20
+
+func sign(n float32) int32 {
+	if n < 0 {
+		return -1
+	} else if n == 0 {
+		return 0
+	} else {
+		return 1
+	}
+}
+
+func abs(v float32) float32 {
+	if v < 0 {
+		return -v
+	}
+	return v
+}
+
+func floor(n float32) float32 {
+	return float32(math.Floor(float64(n)))
+}
+
+type RaycastResult struct {
+	Hit      bool
+	BlockPos PositionInt
+	Face     mgl32.Vec3
+}
+
+func (c *Chunk) getHovered(camPos, camDir mgl32.Vec3) (ok bool, side, blockPos PositionInt) {
+	current := PositionInt{
+		int32(floor(camPos[0])),
+		int32(floor(camPos[1])),
+		int32(floor(camPos[2])),
+	}
+
+	var stepX, stepY, stepZ int32 = 1, 1, 1
+	if camDir[0] < 0 {
+		stepX = -1
+	}
+	if camDir[1] < 0 {
+		stepY = -1
+	}
+	if camDir[2] < 0 {
+		stepZ = -1
+	}
+
+	tDeltaX := abs(1.0 / camDir[0])
+	tDeltaY := abs(1.0 / camDir[1])
+	tDeltaZ := abs(1.0 / camDir[2])
+
+	var tMaxX, tMaxY, tMaxZ float32
+
+	if camDir[0] > 0 {
+		tMaxX = (floor(camPos[0]) + 1.0 - camPos[0]) * tDeltaX
+	} else {
+		tMaxX = (camPos[0] - floor(camPos[0])) * tDeltaX
+	}
+
+	if camDir[1] > 0 {
+		tMaxY = (floor(camPos[1]) + 1.0 - camPos[1]) * tDeltaY
+	} else {
+		tMaxY = (camPos[1] - floor(camPos[1])) * tDeltaY
+	}
+
+	if camDir[2] > 0 {
+		tMaxZ = (floor(camPos[2]) + 1.0 - camPos[2]) * tDeltaZ
+	} else {
+		tMaxZ = (camPos[2] - floor(camPos[2])) * tDeltaZ
+	}
+
+	for {
+		if !c.isAir(current) {
+			ok = true
+			blockPos = current
+			return
+		}
+
+		side = current
+		if tMaxX < tMaxY {
+			if tMaxX < tMaxZ {
+				if tMaxX > MAX_DISTANCE {
+					break
+				}
+				current[0] += stepX
+				tMaxX += tDeltaX
+			} else {
+				if tMaxZ > MAX_DISTANCE {
+					break
+				}
+				current[2] += stepZ
+				tMaxZ += tDeltaZ
+			}
+		} else {
+			if tMaxY < tMaxZ {
+				if tMaxY > MAX_DISTANCE {
+					break
+				}
+				current[1] += stepY
+				tMaxY += tDeltaY
+			} else {
+				if tMaxZ > MAX_DISTANCE {
+					break
+				}
+				current[2] += stepZ
+				tMaxZ += tDeltaZ
+			}
+		}
+	}
+
+	return
+}
+
+func (c *Chunk) Destruct(pos, direction mgl32.Vec3) bool {
+	ok, _, blockPos := c.getHovered(pos, direction)
+	if ok {
+		c.setBlock(blockPos, 0)
+	}
+	return ok
+}
+
+func (c *Chunk) Construct(pos, direction mgl32.Vec3) bool {
+	ok, blockPos, _ := c.getHovered(pos, direction)
+	if ok {
+		c.setBlock(blockPos, 1)
+	}
+	return ok
 }
