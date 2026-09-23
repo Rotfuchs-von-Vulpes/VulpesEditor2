@@ -20,6 +20,7 @@ type instance struct {
 }
 
 func (s *instance) init() {
+	s.title = s.name + " Blocks"
 	view.New(s.id)
 }
 
