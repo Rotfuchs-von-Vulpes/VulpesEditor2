@@ -280,7 +280,7 @@ func Test() (c *Chunk) {
 	return c
 }
 
-const MAX_DISTANCE = 20
+const MAX_DISTANCE = 40
 
 func sign(n float32) int32 {
 	if n < 0 {
@@ -399,6 +399,15 @@ func (c *Chunk) Destruct(pos, direction mgl32.Vec3) bool {
 		c.setBlock(blockPos, 0)
 	}
 	return ok
+}
+
+func (c *Chunk) Hovered(pos, direction mgl32.Vec3) (ok bool, p mgl32.Vec3) {
+	ok, _, bp := c.getHovered(pos, direction)
+	if ok {
+		ok = true
+		p = mgl32.Vec3{float32(bp[0]), float32(bp[1]), float32(bp[2])}
+	}
+	return ok, p
 }
 
 func (c *Chunk) Construct(pos, direction mgl32.Vec3) bool {

@@ -34,6 +34,12 @@ var blocksVertexShader string
 //go:embed shaders/blocks.frag
 var blocksFragmentShader string
 
+//go:embed shaders/frame.vert
+var frameVertexShader string
+
+//go:embed shaders/frame.frag
+var frameFragmentShader string
+
 type textureUniforms struct {
 	zoom    int32
 	move    int32
@@ -75,6 +81,21 @@ type blocksUniforms struct {
 type blocksRender struct {
 	shaderHandle uint32
 	uniforms     blocksUniforms
+
+	frameVAO, frameVBO uint32
+}
+
+type frameUniforms struct {
+	projection int32
+	view       int32
+	model      int32
+}
+
+type frameRender struct {
+	shaderHandle uint32
+	uniforms     frameUniforms
+	vao, vbo     uint32
+	length       int
 }
 
 type windowScreen struct {
@@ -90,6 +111,7 @@ type FrameBuffer struct {
 
 var w windowScreen
 var rBlo blocksRender
+var rBloF frameRender
 var rMol modelRender
 var rTex textureRender
 
@@ -271,6 +293,72 @@ func Init() {
 		// gl.Uniform1i(rBlo.uniforms.texUnit, 0)
 	}
 
+	{
+		rBloF.shaderHandle = gl.CreateProgram()
+		vertHandle := gl.CreateShader(gl.VERTEX_SHADER)
+		fragHandle := gl.CreateShader(gl.FRAGMENT_SHADER)
+		glShaderSource(vertHandle, frameVertexShader)
+		glShaderSource(fragHandle, frameFragmentShader)
+		gl.CompileShader(vertHandle)
+		glError(vertHandle, gl.COMPILE_STATUS, gl.GetShaderiv, gl.GetShaderInfoLog, "Frame: Vertex shader error")
+		gl.CompileShader(fragHandle)
+		glError(fragHandle, gl.COMPILE_STATUS, gl.GetShaderiv, gl.GetShaderInfoLog, "Frame: Fragment shader error")
+		gl.AttachShader(rBloF.shaderHandle, vertHandle)
+		gl.AttachShader(rBloF.shaderHandle, fragHandle)
+		gl.LinkProgram(rBloF.shaderHandle)
+		glError(rBloF.shaderHandle, gl.LINK_STATUS, gl.GetProgramiv, gl.GetProgramInfoLog, "Frame: Linking program error")
+		gl.DeleteShader(vertHandle)
+		gl.DeleteShader(fragHandle)
+
+		vertices := []float32{
+			0.0, 0.0, 0.0,
+			0.0, 0.0, 1.0,
+			0.0, 1.0, 1.0,
+			0.0, 1.0, 0.0,
+
+			0.0, 0.0, 0.0,
+			1.0, 0.0, 0.0,
+			1.0, 1.0, 0.0,
+			0.0, 1.0, 0.0,
+
+			1.0, 0.0, 0.0,
+			1.0, 0.0, 1.0,
+			1.0, 1.0, 1.0,
+			1.0, 1.0, 0.0,
+
+			0.0, 0.0, 1.0,
+			1.0, 0.0, 1.0,
+			1.0, 1.0, 1.0,
+			0.0, 1.0, 1.0,
+		}
+
+		for i, v := range vertices {
+			if v < 0.5 {
+				vertices[i] = -0.01
+			} else {
+				vertices[i] = 1.01
+			}
+		}
+
+		rBloF.length = len(vertices)
+
+		gl.UseProgram(rBlo.shaderHandle)
+
+		gl.GenVertexArrays(1, &rBloF.vao)
+		gl.GenBuffers(1, &rBloF.vbo)
+
+		gl.BindVertexArray(rBloF.vao)
+		gl.BindBuffer(gl.ARRAY_BUFFER, rBloF.vbo)
+		gl.BufferData(gl.ARRAY_BUFFER, int(FLOAT_SIZE)*len(vertices), gl.Ptr(&vertices[0]), gl.STATIC_DRAW)
+
+		gl.VertexAttribPointerWithOffset(0, 3, gl.FLOAT, false, 3*4, 0)
+		gl.EnableVertexAttribArray(0)
+
+		rBloF.uniforms.view = gl.GetUniformLocation(rBloF.shaderHandle, Str("view"))
+		rBloF.uniforms.projection = gl.GetUniformLocation(rBloF.shaderHandle, Str("projection"))
+		rBloF.uniforms.model = gl.GetUniformLocation(rBloF.shaderHandle, Str("model"))
+	}
+
 	if gl.CheckFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE {
 		fmt.Println(gl.CheckFramebufferStatus(gl.FRAMEBUFFER))
 		panic("Framebuffer error")
@@ -344,10 +432,10 @@ func Nuke() {
 type Camera struct {
 	Pos           mgl32.Vec3
 	Front         mgl32.Vec3
-	up            mgl32.Vec3
-	right         mgl32.Vec3
+	Up            mgl32.Vec3
+	Right         mgl32.Vec3
 	viewPort      [2]float32
-	proj, view    mgl32.Mat4
+	Proj, View    mgl32.Mat4
 	width, height float32
 }
 
@@ -361,27 +449,27 @@ func NewCamera(w, h int32) (c *Camera) {
 func (s *Camera) resize(w, h int32) {
 	s.width = float32(w)
 	s.height = float32(h)
-	s.proj = mgl32.Perspective(mgl32.DegToRad(45.0), s.width/s.height, 0.01, 1000.0)
+	s.Proj = mgl32.Perspective(mgl32.DegToRad(45.0), s.width/s.height, 0.01, 1000.0)
 }
 
 func (s *Camera) setup() {
 	s.Pos = [3]float32{0, 0, 0}
 	s.Front = [3]float32{0, 0, 1}
-	s.up = [3]float32{0, 1, 0}
-	s.right = [3]float32{1, 0, 0}
-	s.view = mgl32.LookAtV(s.Pos, s.Front, s.right)
+	s.Up = [3]float32{0, 1, 0}
+	s.Right = [3]float32{1, 0, 0}
+	s.View = mgl32.LookAtV(s.Pos, s.Front, s.Right)
 }
 
 func (s *Camera) Move(pos [3]float32) {
 	s.Pos = pos
-	s.view = mgl32.LookAtV(s.Pos, s.Front.Add(s.Pos), s.up)
+	s.View = mgl32.LookAtV(s.Pos, s.Front.Add(s.Pos), s.Up)
 }
 
 func (s *Camera) Turn(versor mgl32.Vec3) {
 	s.Front = versor.Normalize()
-	s.right = s.Front.Cross(mgl32.Vec3{0, 1, 0}).Normalize()
-	s.up = s.right.Cross(s.Front).Normalize()
-	s.view = mgl32.LookAtV(s.Pos, s.Front.Add(s.Pos), s.up)
+	s.Right = s.Front.Cross(mgl32.Vec3{0, 1, 0}).Normalize()
+	s.Up = s.Right.Cross(s.Front).Normalize()
+	s.View = mgl32.LookAtV(s.Pos, s.Front.Add(s.Pos), s.Up)
 }
 
 func (f *FrameBuffer) RenderTexture(t1 uint32, zoom float32, pos [2]float32, width, height float32) {
@@ -486,8 +574,8 @@ func (f *FrameBuffer) RenderBlocks(camera *Camera, mesh *BlocksMesh) {
 
 	gl.UseProgram(rBlo.shaderHandle)
 
-	gl.UniformMatrix4fv(rBlo.uniforms.projection, 1, false, &camera.proj[0])
-	gl.UniformMatrix4fv(rBlo.uniforms.view, 1, false, &camera.view[0])
+	gl.UniformMatrix4fv(rBlo.uniforms.projection, 1, false, &camera.Proj[0])
+	gl.UniformMatrix4fv(rBlo.uniforms.view, 1, false, &camera.View[0])
 	gl.UniformMatrix4fv(rBlo.uniforms.model, 1, false, &mesh.model[0])
 
 	gl.ClearColor(0.29, 0.29, 0.39, 1.0)
@@ -496,6 +584,33 @@ func (f *FrameBuffer) RenderBlocks(camera *Camera, mesh *BlocksMesh) {
 	gl.BindVertexArray(mesh.vao)
 	gl.BindBuffer(gl.ARRAY_BUFFER, mesh.vbo)
 	gl.DrawElementsWithOffset(gl.TRIANGLES, mesh.length, gl.UNSIGNED_INT, 0)
+	gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
+}
+
+func (f *FrameBuffer) RenderHoveredFrame(camera *Camera, pos mgl32.Vec3) {
+	camera.resize(f.width, f.height)
+
+	gl.Viewport(0, 0, f.width, f.height)
+	gl.BindFramebuffer(gl.FRAMEBUFFER, f.fbo)
+	gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, f.colorBuffer, 0)
+	gl.FramebufferTexture(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, f.depth, 0)
+
+	gl.UseProgram(rBloF.shaderHandle)
+
+	model := mgl32.Ident4().Mul4(mgl32.Translate3D(pos[0], pos[1], pos[2]))
+
+	gl.UniformMatrix4fv(rBloF.uniforms.projection, 1, false, &camera.Proj[0])
+	gl.UniformMatrix4fv(rBloF.uniforms.view, 1, false, &camera.View[0])
+	gl.UniformMatrix4fv(rBloF.uniforms.model, 1, false, &model[0])
+
+	gl.ClearColor(0.29, 0.29, 0.39, 1.0)
+	gl.BindVertexArray(rBloF.vao)
+	gl.BindBuffer(gl.ARRAY_BUFFER, rBloF.vbo)
+	gl.PolygonMode(gl.FRONT_AND_BACK, gl.LINE)
+	gl.Disable(gl.CULL_FACE)
+	gl.DrawArrays(gl.QUADS, 0, int32(rBloF.length))
+	gl.PolygonMode(gl.FRONT_AND_BACK, gl.FILL)
+	gl.Enable(gl.CULL_FACE)
 	gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
 }
 
@@ -587,8 +702,8 @@ func (f *FrameBuffer) RenderModel(camera *Camera, mesh *ModelMesh) {
 
 	model := mgl32.Ident4()
 
-	gl.UniformMatrix4fv(rMol.uniforms.projection, 1, false, &camera.proj[0])
-	gl.UniformMatrix4fv(rMol.uniforms.view, 1, false, &camera.view[0])
+	gl.UniformMatrix4fv(rMol.uniforms.projection, 1, false, &camera.Proj[0])
+	gl.UniformMatrix4fv(rMol.uniforms.view, 1, false, &camera.View[0])
 	gl.UniformMatrix4fv(rMol.uniforms.model, 1, false, &model[0])
 	gl.UniformMatrix4fv(rMol.uniforms.bones, 64, false, &mesh.bones[0][0])
 

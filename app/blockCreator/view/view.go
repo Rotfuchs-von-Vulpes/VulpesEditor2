@@ -32,6 +32,11 @@ var (
 
 	firstButton bool
 	toFocus     bool
+
+	rayOrigin      mgl32.Vec3
+	rayVersor      mgl32.Vec3
+	hoverdBlockPos mgl32.Vec3
+	isHovering     bool
 )
 
 func moveCamera() {
@@ -76,12 +81,47 @@ func scroll(yoffset float32) {
 	calcCamera()
 }
 
+func linear(p1, p2, v float32) (u float32) {
+	if v > 1 {
+		v = 1
+	} else if v < -1 {
+		v = -1
+	}
+	v = v/2 + 0.5
+	u = p1*v + p2*(1-v)
+	return
+}
+
+func CalculateMouseRay(screenX, screenY float32) (rayOrigin, rayDirection mgl32.Vec3) {
+	ndcX := (2.0*screenX)/viwerSize[0] - 1.0
+	ndcY := 1.0 - (2.0*screenY)/viwerSize[1]
+
+	clipCoords := mgl32.Vec4{ndcX, ndcY, -1.0, 1.0}
+
+	invProj := ctx.camera.Proj.Inv()
+	eyeCoords := invProj.Mul4x1(clipCoords)
+	eyeCoords = mgl32.Vec4{eyeCoords.X(), eyeCoords.Y(), -1.0, 0.0}
+
+	invView := ctx.camera.View.Inv()
+	worldCoords4 := invView.Mul4x1(eyeCoords)
+
+	rayDirection = mgl32.Vec3{worldCoords4.X(), worldCoords4.Y(), worldCoords4.Z()}.Normalize()
+
+	rayOrigin = mgl32.Vec3{invView.At(0, 3), invView.At(1, 3), invView.At(2, 3)}
+
+	return rayOrigin, rayDirection
+}
+
 func move(pos im.Vec2) {
 	mousePos = [2]float32{pos.X, pos.Y}
 
 	if mouseCanDrag {
 		moveCamera()
 	}
+
+	rayOrigin, rayVersor = CalculateMouseRay(pos.X, pos.Y)
+
+	isHovering, hoverdBlockPos = ctx.chunk.Hovered(rayOrigin, rayVersor)
 }
 
 var secondButton bool
@@ -95,10 +135,10 @@ func buttonPress(buttons [5]bool) {
 	if buttons[0] || buttons[1] {
 		firstButton = buttons[0]
 		toFocus = true
-		if buttons[0] && ctx.chunk.Destruct(ctx.camera.Pos, ctx.camera.Front) {
+		if buttons[0] && ctx.chunk.Destruct(rayOrigin, rayVersor) {
 			ctx.mesh.SetVertices(ctx.chunk.ToBuffer())
 		}
-		if buttons[1] && ctx.chunk.Construct(ctx.camera.Pos, ctx.camera.Front) {
+		if buttons[1] && ctx.chunk.Construct(rayOrigin, rayVersor) {
 			ctx.mesh.SetVertices(ctx.chunk.ToBuffer())
 		}
 	}
@@ -168,6 +208,9 @@ func Show(id string) {
 	}
 
 	ctx.viewer.RenderBlocks(ctx.camera, ctx.mesh)
+	if isHovering {
+		ctx.viewer.RenderHoveredFrame(ctx.camera, hoverdBlockPos)
+	}
 
 	im.End()
 }
