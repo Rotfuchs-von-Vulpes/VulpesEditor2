@@ -1,0 +1,54 @@
+package canvas
+
+import (
+	"VulpesEditor/app/context"
+	"VulpesEditor/app/editors/textureDraw/canvas/texture"
+	"VulpesEditor/app/editors/textureDraw/canvas/textureEdit"
+	"VulpesEditor/app/file"
+	"VulpesEditor/app/front/renderer"
+	"io"
+)
+
+func (s *TextureContext) Use() {
+	ctx = s
+}
+
+var ctx *TextureContext
+var ctxManager = context.New()
+
+func New(id string, w, h int32) {
+	OpenTexture(id, textureEdit.New(texture.New(w, h)))
+}
+
+func OpenTexture(id string, tex *textureEdit.TextureEdit) {
+	ctx = new(TextureContext)
+	ctx.zoom = 0.9
+	ctx.textureViewer = renderer.CreateFramebuffer(500, 500)
+	viwerSize = [2]float32{500, 500}
+	ctx.texture = tex
+	ctxManager.Add(id, ctx)
+}
+
+func Save(w *file.ArchiveWriter) {
+	ctx.texture.Save(w)
+}
+
+func OpenImage(id string, r io.Reader) (width, height int32, err error) {
+	tex, err := textureEdit.OpenImage(r)
+	if err != nil {
+		return
+	}
+	OpenTexture(id, tex)
+	width = tex.Width
+	height = tex.Height
+	return
+}
+
+func Open(id string, r *file.ArchiveReader) (err error) {
+	tex, err := textureEdit.Open(r)
+	if err != nil {
+		return err
+	}
+	OpenTexture(id, tex)
+	return
+}

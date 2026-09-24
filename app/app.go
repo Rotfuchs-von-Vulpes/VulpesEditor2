@@ -1,11 +1,11 @@
 package app
 
 import (
-	"VulpesEditor/app/blockCreator"
+	"VulpesEditor/app/editors/blockCreator"
+	"VulpesEditor/app/editors/objectModel"
+	"VulpesEditor/app/editors/textureDraw"
 	"VulpesEditor/app/front"
 	"VulpesEditor/app/front/tabs"
-	"VulpesEditor/app/objectModel"
-	"VulpesEditor/app/textureDraw"
 	"VulpesEditor/app/util"
 	"flag"
 	"strconv"
