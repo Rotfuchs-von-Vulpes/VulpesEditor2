@@ -8,4 +8,4 @@ require (
 	github.com/go-gl/mathgl v1.2.0
 )
 
-replace github.com/AllenDang/cimgui-go => github.com/Rotfuchs-von-Vulpes/cimgui-go v1.5.2
+replace github.com/AllenDang/cimgui-go => github.com/Rotfuchs-von-Vulpes/cimgui-go v1.6.1
