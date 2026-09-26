@@ -12,6 +12,7 @@ import (
 	"VulpesEditor/app/util"
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -217,6 +218,20 @@ func (s *SubProject) Add(tex *texture.Texture) {
 func (s *instance) notify() {
 	for _, f := range s.sub.callbacks {
 		f(canvas.GetTexture(s.id).Clone().Colors)
+	}
+}
+
+func (s *instance) Export() {
+	path := filepath.Join(util.AppDir, "assets", "textures", s.name+".png")
+	f, err := os.Create(path)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer f.Close()
+	err = canvas.GetTexture(s.id).ToPNG(f)
+	if err != nil {
+		fmt.Println(err)
 	}
 }
 

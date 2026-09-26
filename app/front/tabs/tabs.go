@@ -7,6 +7,7 @@ type Tab interface {
 	Show()
 	Focus() bool
 	Save()
+	Export()
 }
 
 var AllTabs []Tab

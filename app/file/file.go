@@ -35,6 +35,23 @@ func GetAllProjects(kind string) (projects []Project) {
 	return
 }
 
+func GetAllAssets(kind string) (projects []Project) {
+	assetsDir := filepath.Join(util.AppDir, "assets", kind)
+
+	if files, err := os.ReadDir(assetsDir); err == nil {
+		for _, file := range files {
+			if !file.IsDir() {
+				var p Project
+				p.Name = file.Name()
+				p.Path = filepath.Join(assetsDir, file.Name())
+				projects = append(projects, p)
+			}
+		}
+	}
+
+	return
+}
+
 func NewArchive(path, name string) (w *ArchiveWriter, err error) {
 	os.MkdirAll(path, os.ModePerm)
 	w = new(ArchiveWriter)

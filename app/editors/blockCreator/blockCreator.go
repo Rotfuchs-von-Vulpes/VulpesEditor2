@@ -1,6 +1,7 @@
 package blockCreator
 
 import (
+	"VulpesEditor/app/editors/blockCreator/blocks"
 	"VulpesEditor/app/editors/blockCreator/view"
 	"VulpesEditor/app/file"
 	"VulpesEditor/app/front/tabs"
@@ -21,6 +22,7 @@ type instance struct {
 
 func (s *instance) init() {
 	s.title = s.name + " Blocks"
+	blocks.New(s.id)
 	view.New(s.id)
 }
 
@@ -37,6 +39,7 @@ func (s *instance) Name() string {
 }
 
 func (s *instance) Show() {
+	blocks.Show(s.id)
 	view.Show(s.id)
 }
 
@@ -53,6 +56,10 @@ func (s *instance) Save() {
 	b.WriteString(s.name)
 	w.Write("metaData.txt", []byte(b.String()))
 	w.Save()
+}
+
+func (s *instance) Export() {
+
 }
 
 type creationData struct {

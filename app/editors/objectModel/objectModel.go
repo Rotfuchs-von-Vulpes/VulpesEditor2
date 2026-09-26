@@ -189,6 +189,10 @@ func (s *instance) Save() {
 	w.Save()
 }
 
+func (s *instance) Export() {
+
+}
+
 func OpenModel(path string) {
 	r, err := file.Load(path)
 	if err != nil {

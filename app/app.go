@@ -64,6 +64,7 @@ func BeforeDestroyContext() {
 
 var first = true
 var save = false
+var export = false
 var close = false
 
 func Loop() {
@@ -105,6 +106,9 @@ func Loop() {
 				}
 				if im.MenuItemBool("Save") {
 					save = true
+				}
+				if im.MenuItemBool("Export") {
+					export = true
 				}
 				if im.MenuItemBool("Close") {
 					close = true
@@ -166,6 +170,9 @@ func Loop() {
 					if save {
 						t.Save()
 					}
+					if export {
+						t.Export()
+					}
 					if close {
 						tabs.Close(i)
 					}
@@ -182,5 +189,6 @@ func Loop() {
 	objectModel.Show()
 
 	save = false
+	export = false
 	close = false
 }
