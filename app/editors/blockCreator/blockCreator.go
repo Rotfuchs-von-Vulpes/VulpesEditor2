@@ -12,6 +12,10 @@ import (
 	"uuid"
 )
 
+func Init() {
+	blocks.Init()
+}
+
 type instance struct {
 	name  string
 	title string

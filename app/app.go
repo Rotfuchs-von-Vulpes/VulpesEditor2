@@ -16,6 +16,7 @@ import (
 func Init() {
 	util.Init()
 	textureDraw.Init()
+	blockCreator.Init()
 }
 
 func AfterCreateContext() {

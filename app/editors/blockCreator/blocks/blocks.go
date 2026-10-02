@@ -1,16 +1,22 @@
 package blocks
 
 import (
+	blocksfile "VulpesEditor/app/editors/blockCreator/blocks/blocksFile"
 	"VulpesEditor/app/file"
 	"fmt"
 	"image/png"
 	"os"
 	"path/filepath"
 	"slices"
+	"uuid"
 
 	"github.com/AllenDang/cimgui-go/backend"
 	im "github.com/AllenDang/cimgui-go/imgui"
 )
+
+func Init() {
+	blocksfile.Init()
+}
 
 type texture struct {
 	name string
@@ -27,7 +33,7 @@ type BlocksContext struct {
 	blockNameInput   string
 	appendedTextures []*texture
 
-	top, bottom, left, right, front, back *texButton
+	textures [6]*texButton
 }
 
 func getAllTextures() {
@@ -99,12 +105,10 @@ func ShowSelectTexturePopUp() {
 
 func resetBlockCreation() {
 	ctx.appendedTextures = nil
-	ctx.top.ref = nil
-	ctx.bottom.ref = nil
-	ctx.front.ref = nil
-	ctx.back.ref = nil
-	ctx.left.ref = nil
-	ctx.right.ref = nil
+	for _, texButton := range ctx.textures {
+		texButton.idx = -1
+		texButton.ref = nil
+	}
 	ctx.blockNameInput = ""
 }
 
@@ -128,6 +132,39 @@ func (s *texButton) show() {
 	}
 }
 
+func getTextures() (err error, textures [6]string) {
+	for i, texButton := range ctx.textures {
+		textures[i] = ctx.appendedTextures[texButton.idx].name
+	}
+	return
+}
+
+func addBlock() (err error) {
+	if ctx.blockNameInput == "" {
+		err = fmt.Errorf("Blank name")
+		return
+	}
+	var b blocksfile.BlockJSON
+	b.Id = uuid.New().String()
+	b.Name = ctx.blockNameInput
+	var textures [6]string
+	err, textures = getTextures()
+	if err != nil {
+		return
+	}
+	for i, tex := range textures {
+		idx := slices.Index(b.Textures, tex)
+		if idx == -1 {
+			b.TexIdx[i] = len(b.Textures)
+			b.Textures = append(b.Textures, tex)
+		} else {
+			b.TexIdx[i] = idx
+		}
+	}
+	b.SaveBlock()
+	return
+}
+
 func Show(id string) {
 	ctxManager.Check(id)
 
@@ -142,18 +179,22 @@ func Show(id string) {
 			openTextureSelection()
 		}
 		if len(ctx.appendedTextures) > 0 {
-			ctx.top.show()
-			ctx.left.show()
+			ctx.textures[0].show()
+			ctx.textures[1].show()
 			im.SameLine()
-			ctx.front.show()
+			ctx.textures[2].show()
 			im.SameLine()
-			ctx.right.show()
+			ctx.textures[3].show()
 			im.SameLine()
-			ctx.back.show()
-			ctx.bottom.show()
+			ctx.textures[4].show()
+			ctx.textures[5].show()
 		}
 		if im.Button("Add") {
-			resetBlockCreation()
+			if err := addBlock(); err != nil {
+				fmt.Println(err)
+			} else {
+				resetBlockCreation()
+			}
 		}
 		im.SameLine()
 		if im.Button("Close") {
