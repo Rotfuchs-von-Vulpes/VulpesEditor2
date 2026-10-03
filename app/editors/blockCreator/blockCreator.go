@@ -16,6 +16,10 @@ func Init() {
 	blocks.Init()
 }
 
+func AfterCreateContext() {
+	blocks.AfterCreateContext()
+}
+
 type instance struct {
 	name  string
 	title string

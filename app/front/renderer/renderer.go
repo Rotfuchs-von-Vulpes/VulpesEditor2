@@ -75,11 +75,13 @@ type blocksUniforms struct {
 	projection int32
 	view       int32
 	model      int32
+	invMV      int32
 	texUnit    int32
 }
 
 type blocksRender struct {
 	shaderHandle uint32
+	textures     uint32
 	uniforms     blocksUniforms
 
 	frameVAO, frameVBO uint32
@@ -136,7 +138,6 @@ func CreateTexture(width, height int32, data []float32) (id uint32) {
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.LINEAR)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
-	gl.BindTexture(gl.TEXTURE_2D, 0)
 	return id
 }
 
@@ -147,7 +148,31 @@ func WriteTexture(id uint32, width, height int32, data []float32) {
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.LINEAR)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
-	gl.BindTexture(gl.TEXTURE_2D, 0)
+}
+
+func Create3DTextureBlocks() (id uint32) {
+	gl.GenTextures(1, &id)
+	gl.BindTexture(gl.TEXTURE_3D, id)
+	gl.TexImage3D(gl.TEXTURE_3D, 0, gl.RGBA16, 16, 16, 1, 0, gl.RGBA, gl.FLOAT, nil)
+	gl.TexParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_S, gl.LINEAR)
+	gl.TexParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_T, gl.LINEAR)
+	gl.TexParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_R, gl.LINEAR)
+	gl.TexParameteri(gl.TEXTURE_3D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+	gl.TexParameteri(gl.TEXTURE_3D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
+	return id
+}
+
+func Write3DTextureBlocks(count int32, data []float32) {
+	if count == 0 {
+		return
+	}
+	gl.BindTexture(gl.TEXTURE_3D, rBlo.textures)
+	gl.TexImage3D(gl.TEXTURE_3D, 0, gl.RGBA16, 16, 16, count, 0, gl.RGBA, gl.FLOAT, gl.Ptr(data))
+	gl.TexParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_S, gl.LINEAR)
+	gl.TexParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_T, gl.LINEAR)
+	gl.TexParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_R, gl.LINEAR)
+	gl.TexParameteri(gl.TEXTURE_3D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+	gl.TexParameteri(gl.TEXTURE_3D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
 }
 
 func Init() {
@@ -285,12 +310,14 @@ func Init() {
 		glError(rBlo.shaderHandle, gl.LINK_STATUS, gl.GetProgramiv, gl.GetProgramInfoLog, "Blocks: Linking program error")
 		gl.DeleteShader(vertHandle)
 		gl.DeleteShader(fragHandle)
+		rBlo.textures = Create3DTextureBlocks()
 
 		rBlo.uniforms.view = gl.GetUniformLocation(rBlo.shaderHandle, Str("view"))
 		rBlo.uniforms.projection = gl.GetUniformLocation(rBlo.shaderHandle, Str("projection"))
 		rBlo.uniforms.model = gl.GetUniformLocation(rBlo.shaderHandle, Str("model"))
-		// rBlo.uniforms.texUnit = gl.GetUniformLocation(rBlo.shaderHandle, Str("tex"))
-		// gl.Uniform1i(rBlo.uniforms.texUnit, 0)
+		rBlo.uniforms.invMV = gl.GetUniformLocation(rBlo.shaderHandle, Str("invMV"))
+		rBlo.uniforms.texUnit = gl.GetUniformLocation(rBlo.shaderHandle, Str("tex"))
+		gl.Uniform1ui(rBlo.uniforms.texUnit, rBlo.textures)
 	}
 
 	{
@@ -574,9 +601,11 @@ func (f *FrameBuffer) RenderBlocks(camera *Camera, mesh *BlocksMesh) {
 
 	gl.UseProgram(rBlo.shaderHandle)
 
+	invMV := camera.View.Mul4(mesh.model).Inv().Mat3()
 	gl.UniformMatrix4fv(rBlo.uniforms.projection, 1, false, &camera.Proj[0])
 	gl.UniformMatrix4fv(rBlo.uniforms.view, 1, false, &camera.View[0])
 	gl.UniformMatrix4fv(rBlo.uniforms.model, 1, false, &mesh.model[0])
+	gl.UniformMatrix3fv(rBlo.uniforms.invMV, 1, false, &invMV[0])
 
 	gl.ClearColor(0.29, 0.29, 0.39, 1.0)
 	gl.Clear(gl.COLOR_BUFFER_BIT)
@@ -690,6 +719,43 @@ func (s *ModelMesh) SetBoneTransMatrix(boneID uint32, m mgl32.Mat4) {
 
 func (f *FrameBuffer) RenderModel(camera *Camera, mesh *ModelMesh) {
 	camera.resize(f.width, f.height)
+
+	gl.Viewport(0, 0, f.width, f.height)
+	gl.BindFramebuffer(gl.FRAMEBUFFER, f.fbo)
+	gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, f.colorBuffer, 0)
+	gl.FramebufferTexture(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, f.depth, 0)
+	gl.ActiveTexture(gl.TEXTURE0)
+	gl.BindTexture(gl.TEXTURE_2D, mesh.texture)
+
+	gl.UseProgram(rMol.shaderHandle)
+
+	model := mgl32.Ident4()
+
+	gl.UniformMatrix4fv(rMol.uniforms.projection, 1, false, &camera.Proj[0])
+	gl.UniformMatrix4fv(rMol.uniforms.view, 1, false, &camera.View[0])
+	gl.UniformMatrix4fv(rMol.uniforms.model, 1, false, &model[0])
+	gl.UniformMatrix4fv(rMol.uniforms.bones, 64, false, &mesh.bones[0][0])
+
+	gl.ClearColor(0.29, 0.29, 0.39, 1.0)
+	gl.Clear(gl.COLOR_BUFFER_BIT)
+	gl.Clear(gl.DEPTH_BUFFER_BIT)
+	gl.BindVertexArray(mesh.vao)
+	gl.BindBuffer(gl.ARRAY_BUFFER, mesh.vbo)
+	gl.DrawElementsWithOffset(gl.TRIANGLES, mesh.length, gl.UNSIGNED_INT, 0)
+	gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
+}
+
+func (f *FrameBuffer) RenderBlock(mesh *ModelMesh) {
+	camera := NewCamera(f.width, f.height)
+
+	diff := mgl32.Vec3{0.5, 0.5, 0.5}
+
+	cameraPos := mgl32.Vec3{2, 2, 2}
+	cameraFront := cameraPos.Mul(-1)
+	cameraPos = cameraPos.Add(diff)
+
+	camera.Move(cameraPos)
+	camera.Turn(cameraFront)
 
 	gl.Viewport(0, 0, f.width, f.height)
 	gl.BindFramebuffer(gl.FRAMEBUFFER, f.fbo)

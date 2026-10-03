@@ -3,6 +3,7 @@ package blocksfile
 import (
 	"VulpesEditor/app/editors/textureDraw/canvas/texture"
 	"VulpesEditor/app/file"
+	"VulpesEditor/app/front/renderer"
 	"VulpesEditor/app/util"
 	"encoding/json/jsontext"
 	"encoding/json/v2"
@@ -10,6 +11,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 )
 
 var blocksDir string
@@ -20,7 +22,15 @@ func Init() {
 	if err := os.MkdirAll(blocksDir, os.ModePerm); err != nil {
 		panic(err)
 	}
+
+	getAllTextures()
 	AllBlocks = GetAllBlocks()
+}
+
+var idToIdx map[string]int
+
+func AfterCreateContext() {
+	sendAllTextures()
 }
 
 type Block struct {
@@ -38,6 +48,28 @@ type BlockJSON struct {
 }
 
 var allTextureFiles []file.Project
+
+func sendAllTextures() {
+	idToIdx = make(map[string]int)
+
+	var allTextures []*texture.Texture
+	for _, b := range AllBlocks {
+		for _, tex := range b.Textures {
+			if !slices.Contains(allTextures, tex) {
+				if tex.Id == "" {
+					continue
+				}
+				idToIdx[tex.Id] = len(allTextures)
+				allTextures = append(allTextures, tex)
+			}
+		}
+	}
+	data := []float32{}
+	for _, tex := range allTextures {
+		data = append(data, tex.FlatColors()...)
+	}
+	renderer.Write3DTextureBlocks(int32(len(allTextures)), data)
+}
 
 func getAllTextures() {
 	allTextureFiles = nil
@@ -69,6 +101,7 @@ func getTexture(name string) (err error, tex *texture.Texture) {
 			}
 			defer f.Close()
 			tex, err = texture.DecodePNG(f)
+			tex.Id = t.Name
 			return
 		}
 	}
@@ -85,12 +118,11 @@ func digestBlock(in io.Reader) (err error, block Block) {
 	if err = json.Unmarshal(buff, &b); err != nil {
 		return
 	}
-	err, block = b.ToBlock()
+	err, block = b.toBlockInternal()
 	return
 }
 
-func (b BlockJSON) ToBlock() (err error, block Block) {
-	getAllTextures()
+func (b BlockJSON) toBlockInternal() (err error, block Block) {
 	block.Name = b.Name
 	block.Id = b.Id
 	var textures []*texture.Texture
@@ -109,6 +141,12 @@ func (b BlockJSON) ToBlock() (err error, block Block) {
 		block.Textures[i] = textures[texIdx]
 	}
 	return
+}
+
+func (b BlockJSON) ToBlock() (err error, block Block) {
+	getAllTextures()
+	sendAllTextures()
+	return b.toBlockInternal()
 }
 
 func (b BlockJSON) SaveBlock() (err error) {

@@ -22,6 +22,7 @@ func Init() {
 func AfterCreateContext() {
 	front.Init()
 	objectModel.Init()
+	blockCreator.AfterCreateContext()
 
 	testing := flag.String("o", "", "-o (texture|model)")
 	name := flag.String("n", "", "-n [ProjectName]")

@@ -18,6 +18,10 @@ func Init() {
 	blocksfile.Init()
 }
 
+func AfterCreateContext() {
+	blocksfile.AfterCreateContext()
+}
+
 type texture struct {
 	name string
 	data *backend.Texture

@@ -34,6 +34,7 @@ func blankTexture(width, height int32) (data [][4]float32) {
 }
 
 type Texture struct {
+	Id     string
 	Width  int32
 	Height int32
 	Colors [][4]float32
