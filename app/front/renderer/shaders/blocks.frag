@@ -20,7 +20,7 @@ float luminance(vec3 color) {
     return dot(color, vec3(0.2125f, 0.7153f, 0.0721f));
 }
 
-const vec3 sunColor = vec3(1.0f, 0.9f, 0.9f);
+const vec3 sunColor = vec3(0.5f, 0.45f, 0.45f);
 const vec3 skyColor = vec3(0.8f, 0.8f, 0.9f);
 const vec3 _Ambient = vec3(0.02f, 0.04f, 0.08f);
 
