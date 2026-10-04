@@ -27,7 +27,7 @@ func Init() {
 	AllBlocks = GetAllBlocks()
 }
 
-var idToIdx map[string]int
+var idToIdx map[string]uint32
 
 func AfterCreateContext() {
 	sendAllTextures()
@@ -50,7 +50,7 @@ type BlockJSON struct {
 var allTextureFiles []file.Project
 
 func sendAllTextures() {
-	idToIdx = make(map[string]int)
+	idToIdx = make(map[string]uint32)
 
 	var allTextures []*texture.Texture
 	for _, b := range AllBlocks {
@@ -59,16 +59,16 @@ func sendAllTextures() {
 				if tex.Id == "" {
 					continue
 				}
-				idToIdx[tex.Id] = len(allTextures)
+				idToIdx[tex.Id] = uint32(len(allTextures))
 				allTextures = append(allTextures, tex)
 			}
 		}
 	}
-	data := []float32{}
+	data := [][]float32{}
 	for _, tex := range allTextures {
-		data = append(data, tex.FlatColors()...)
+		data = append(data, tex.FlatColors())
 	}
-	renderer.Write3DTextureBlocks(int32(len(allTextures)), data)
+	renderer.Write3DTextureBlocks(data)
 }
 
 func getAllTextures() {
@@ -184,4 +184,23 @@ func GetAllBlocks() (final []Block) {
 		}
 	}
 	return
+}
+
+type Side uint32
+
+const (
+	sideTop Side = iota
+	sideBottom
+	sideEast
+	sideWest
+	sideNorth
+	sideSouth
+)
+
+func GetTexID(blockId uint32, side int) uint32 {
+	idx := blockId - 1
+	if int(idx) >= len(AllBlocks) {
+		return 0
+	}
+	return idToIdx[AllBlocks[idx].Textures[side].Id]
 }

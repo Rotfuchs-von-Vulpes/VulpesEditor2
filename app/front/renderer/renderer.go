@@ -134,8 +134,8 @@ func CreateTexture(width, height int32, data []float32) (id uint32) {
 	gl.GenTextures(1, &id)
 	gl.BindTexture(gl.TEXTURE_2D, id)
 	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGBA16, width, height, 0, gl.RGBA, gl.FLOAT, gl.Ptr(data))
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.LINEAR)
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.LINEAR)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
 	return id
@@ -144,35 +144,38 @@ func CreateTexture(width, height int32, data []float32) (id uint32) {
 func WriteTexture(id uint32, width, height int32, data []float32) {
 	gl.BindTexture(gl.TEXTURE_2D, id)
 	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGBA16, width, height, 0, gl.RGBA, gl.FLOAT, gl.Ptr(data))
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.LINEAR)
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.LINEAR)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
 }
 
 func Create3DTextureBlocks() (id uint32) {
 	gl.GenTextures(1, &id)
-	gl.BindTexture(gl.TEXTURE_3D, id)
-	gl.TexImage3D(gl.TEXTURE_3D, 0, gl.RGBA16, 16, 16, 1, 0, gl.RGBA, gl.FLOAT, nil)
-	gl.TexParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_S, gl.LINEAR)
-	gl.TexParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_T, gl.LINEAR)
-	gl.TexParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_R, gl.LINEAR)
-	gl.TexParameteri(gl.TEXTURE_3D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-	gl.TexParameteri(gl.TEXTURE_3D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
+	gl.BindTexture(gl.TEXTURE_2D_ARRAY, id)
+	gl.TexParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_S, gl.REPEAT)
+	gl.TexParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_T, gl.REPEAT)
+	gl.TexParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_R, gl.REPEAT)
+	gl.TexParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+	gl.TexParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
+	gl.TexImage3D(gl.TEXTURE_2D_ARRAY, 0, gl.RGBA32F, 16, 16, 1, 0, gl.RGBA, gl.FLOAT, nil)
 	return id
 }
 
-func Write3DTextureBlocks(count int32, data []float32) {
-	if count == 0 {
+func Write3DTextureBlocks(datas [][]float32) {
+	if int32(len(datas)) == 0 {
 		return
 	}
-	gl.BindTexture(gl.TEXTURE_3D, rBlo.textures)
-	gl.TexImage3D(gl.TEXTURE_3D, 0, gl.RGBA16, 16, 16, count, 0, gl.RGBA, gl.FLOAT, gl.Ptr(data))
-	gl.TexParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_S, gl.LINEAR)
-	gl.TexParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_T, gl.LINEAR)
-	gl.TexParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_R, gl.LINEAR)
-	gl.TexParameteri(gl.TEXTURE_3D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-	gl.TexParameteri(gl.TEXTURE_3D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
+	gl.BindTexture(gl.TEXTURE_2D_ARRAY, rBlo.textures)
+	gl.TexParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_S, gl.REPEAT)
+	gl.TexParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_T, gl.REPEAT)
+	gl.TexParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_R, gl.REPEAT)
+	gl.TexParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+	gl.TexParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
+	gl.TexImage3D(gl.TEXTURE_2D_ARRAY, 0, gl.RGBA32F, 16, 16, int32(len(datas)), 0, gl.RGBA, gl.FLOAT, nil)
+	for i, data := range datas {
+		gl.TexSubImage3D(gl.TEXTURE_2D_ARRAY, 0, 0, 0, int32(i), 16, 16, 1, gl.RGBA, gl.FLOAT, gl.Ptr(data))
+	}
 }
 
 func Init() {
@@ -597,11 +600,12 @@ func (f *FrameBuffer) RenderBlocks(camera *Camera, mesh *BlocksMesh) {
 	gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, f.colorBuffer, 0)
 	gl.FramebufferTexture(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, f.depth, 0)
 	gl.ActiveTexture(gl.TEXTURE0)
-	gl.BindTexture(gl.TEXTURE_2D, mesh.texture)
+	gl.BindTexture(gl.TEXTURE_2D_ARRAY, rBlo.textures)
 
 	gl.UseProgram(rBlo.shaderHandle)
 
 	invMV := camera.View.Mul4(mesh.model).Inv().Mat3()
+	gl.Uniform1ui(rBlo.uniforms.texUnit, 0)
 	gl.UniformMatrix4fv(rBlo.uniforms.projection, 1, false, &camera.Proj[0])
 	gl.UniformMatrix4fv(rBlo.uniforms.view, 1, false, &camera.View[0])
 	gl.UniformMatrix4fv(rBlo.uniforms.model, 1, false, &mesh.model[0])

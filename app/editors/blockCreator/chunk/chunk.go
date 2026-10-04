@@ -1,6 +1,7 @@
 package chunk
 
 import (
+	blocksfile "VulpesEditor/app/editors/blockCreator/blocks/blocksFile"
 	"bytes"
 	"encoding/binary"
 	"math"
@@ -200,27 +201,27 @@ func NewFace(pos PositionInt, id uint32, side Side) (face faceUnit) {
 func (c *Chunk) hasSideExposed(cube *cubeUnit, faces *[]faceUnit) bool {
 	final := false
 	if c.isSIdeExposed(cube.pos, TOP) {
-		*faces = append(*faces, NewFace(cube.pos, cube.id, sideTop))
+		*faces = append(*faces, NewFace(cube.pos, blocksfile.GetTexID(cube.id, 0), sideTop))
 		final = true
 	}
 	if c.isSIdeExposed(cube.pos, BOTTOM) {
-		*faces = append(*faces, NewFace(cube.pos, cube.id, sideBottom))
+		*faces = append(*faces, NewFace(cube.pos, blocksfile.GetTexID(cube.id, 1), sideBottom))
 		final = true
 	}
 	if c.isSIdeExposed(cube.pos, EAST) {
-		*faces = append(*faces, NewFace(cube.pos, cube.id, sideEast))
+		*faces = append(*faces, NewFace(cube.pos, blocksfile.GetTexID(cube.id, 2), sideEast))
 		final = true
 	}
 	if c.isSIdeExposed(cube.pos, WEST) {
-		*faces = append(*faces, NewFace(cube.pos, cube.id, sideWest))
+		*faces = append(*faces, NewFace(cube.pos, blocksfile.GetTexID(cube.id, 3), sideWest))
 		final = true
 	}
 	if c.isSIdeExposed(cube.pos, NORTH) {
-		*faces = append(*faces, NewFace(cube.pos, cube.id, sideNorth))
+		*faces = append(*faces, NewFace(cube.pos, blocksfile.GetTexID(cube.id, 4), sideNorth))
 		final = true
 	}
 	if c.isSIdeExposed(cube.pos, SOUTH) {
-		*faces = append(*faces, NewFace(cube.pos, cube.id, sideSouth))
+		*faces = append(*faces, NewFace(cube.pos, blocksfile.GetTexID(cube.id, 5), sideSouth))
 		final = true
 	}
 	return final
@@ -260,6 +261,12 @@ func (c *Chunk) ToBuffer() ([]byte, []uint32) {
 		count += 4
 	}
 	return verticesBuffer.Bytes(), indices
+}
+
+func Block(blockID uint32) (c *Chunk) {
+	c = New(1, 1, 1)
+	c.setBlock(PositionInt{0, 0, 0}, blockID)
+	return c
 }
 
 func Test() (c *Chunk) {
@@ -417,7 +424,7 @@ func (c *Chunk) Hovered(pos, direction mgl32.Vec3) (ok bool, p mgl32.Vec3) {
 func (c *Chunk) Construct(pos, direction mgl32.Vec3) bool {
 	ok, blockPos, _ := c.getHovered(pos, direction)
 	if ok {
-		c.setBlock(blockPos, 1)
+		c.setBlock(blockPos, 2)
 	}
 	return ok
 }

@@ -1,6 +1,6 @@
 #version 330
 
-uniform sampler3D tex;
+uniform sampler2DArray tex;
 
 in vec2 fragTexCoord;
 in vec3 position;
