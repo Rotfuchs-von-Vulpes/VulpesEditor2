@@ -162,7 +162,7 @@ func addBlock() (err error) {
 		return
 	}
 	var b blocksfile.BlockJSON
-	b.Id = uuid.New().String()
+	b.Id = uuid.NewV7().String()
 	b.Name = ctx.blockNameInput
 	var textures [6]string
 	err, textures = getTextures()
@@ -179,6 +179,7 @@ func addBlock() (err error) {
 		}
 	}
 	b.SaveBlock()
+	err, _ = b.ToBlock()
 	return
 }
 
@@ -235,22 +236,24 @@ func Show(id string) {
 		}
 		if len(ctx.appendedTextures) > 0 {
 			ctx.textures[0].show()
-			ctx.textures[1].show()
-			im.SameLine()
 			ctx.textures[2].show()
 			im.SameLine()
 			ctx.textures[3].show()
 			im.SameLine()
 			ctx.textures[4].show()
+			im.SameLine()
 			ctx.textures[5].show()
+			ctx.textures[1].show()
 		}
 		if im.Button("Add") {
 			if err := addBlock(); err != nil {
 				fmt.Println(err)
 			} else {
 				resetBlockCreation()
-				b := blocksfile.AllBlocks[len(blocksfile.AllBlocks)-1]
-				blocks = append(blocks, newBlockButton(b.Name, uint32(len(blocksfile.AllBlocks))))
+				blocks = nil
+				for i, b := range blocksfile.AllBlocks {
+					blocks = append(blocks, newBlockButton(b.Name, uint32(i+1)))
+				}
 			}
 		}
 		im.SameLine()

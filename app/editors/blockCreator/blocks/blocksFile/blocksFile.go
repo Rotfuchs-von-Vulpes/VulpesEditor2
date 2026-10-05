@@ -144,9 +144,23 @@ func (b BlockJSON) toBlockInternal() (err error, block Block) {
 }
 
 func (b BlockJSON) ToBlock() (err error, block Block) {
+	err, block = b.toBlockInternal()
+	if err != nil {
+		return
+	}
 	getAllTextures()
+	found := false
+	for _, b2 := range AllBlocks {
+		if b2.Id == b.Id {
+			found = true
+			break
+		}
+	}
+	if !found {
+		AllBlocks = append(AllBlocks, block)
+	}
 	sendAllTextures()
-	return b.toBlockInternal()
+	return
 }
 
 func (b BlockJSON) SaveBlock() (err error) {
@@ -179,23 +193,11 @@ func GetAllBlocks() (final []Block) {
 				}
 				final = append(final, b)
 				f.Close()
-				fmt.Println(b.Name + " loaded!")
 			}
 		}
 	}
 	return
 }
-
-type Side uint32
-
-const (
-	sideTop Side = iota
-	sideBottom
-	sideEast
-	sideWest
-	sideNorth
-	sideSouth
-)
 
 func GetTexID(blockId uint32, side int) uint32 {
 	idx := blockId - 1

@@ -130,25 +130,25 @@ func (f *faceUnit) getVertices() [4]PositionFloat {
 		p3 = f.pos.Add(PositionFloat{1, 0, 1})
 		p4 = f.pos.Add(PositionFloat{0, 0, 1})
 	case sideEast:
-		p1 = f.pos.Add(PositionFloat{0, 1, 0})
-		p2 = f.pos.Add(PositionFloat{0, 1, 1})
-		p3 = f.pos.Add(PositionFloat{0, 0, 1})
-		p4 = f.pos
+		p1 = f.pos
+		p2 = f.pos.Add(PositionFloat{0, 1, 0})
+		p3 = f.pos.Add(PositionFloat{0, 1, 1})
+		p4 = f.pos.Add(PositionFloat{0, 0, 1})
 	case sideWest:
-		p1 = f.pos.Add(PositionFloat{0, 1, 0})
-		p2 = f.pos
-		p3 = f.pos.Add(PositionFloat{0, 0, 1})
-		p4 = f.pos.Add(PositionFloat{0, 1, 1})
-	case sideNorth:
-		p1 = f.pos.Add(PositionFloat{0, 1, 0})
-		p2 = f.pos
-		p3 = f.pos.Add(PositionFloat{1, 0, 0})
-		p4 = f.pos.Add(PositionFloat{1, 1, 0})
-	case sideSouth:
-		p1 = f.pos.Add(PositionFloat{0, 1, 0})
-		p2 = f.pos.Add(PositionFloat{1, 1, 0})
-		p3 = f.pos.Add(PositionFloat{1, 0, 0})
+		p1 = f.pos.Add(PositionFloat{0, 0, 1})
+		p2 = f.pos.Add(PositionFloat{0, 1, 1})
+		p3 = f.pos.Add(PositionFloat{0, 1, 0})
 		p4 = f.pos
+	case sideNorth:
+		p1 = f.pos.Add(PositionFloat{1, 0, 0})
+		p2 = f.pos.Add(PositionFloat{1, 1, 0})
+		p3 = f.pos.Add(PositionFloat{0, 1, 0})
+		p4 = f.pos
+	case sideSouth:
+		p1 = f.pos
+		p2 = f.pos.Add(PositionFloat{0, 1, 0})
+		p3 = f.pos.Add(PositionFloat{1, 1, 0})
+		p4 = f.pos.Add(PositionFloat{1, 0, 0})
 	}
 	return [4]PositionFloat{p1, p2, p3, p4}
 }
