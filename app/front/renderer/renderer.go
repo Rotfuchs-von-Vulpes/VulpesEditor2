@@ -109,6 +109,7 @@ type FrameBuffer struct {
 	colorBuffer   uint32
 	depth         uint32
 	width, height int32
+	transparent   bool
 }
 
 var w windowScreen
@@ -200,7 +201,8 @@ func Init() {
 	gl.DepthFunc(gl.LESS)
 	gl.Enable(gl.CULL_FACE)
 	gl.CullFace(gl.BACK)
-	gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+	gl.Enable(gl.BLEND)
+	gl.BlendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
 
 	{
 		rTex.shaderHandle = gl.CreateProgram()
@@ -402,13 +404,18 @@ func Init() {
 	gl.BindRenderbuffer(gl.RENDERBUFFER, 0)
 }
 
-func CreateFramebuffer(width, height int32) (f *FrameBuffer) {
+func CreateFramebuffer(width, height int32, transparent bool) (f *FrameBuffer) {
 	f = new(FrameBuffer)
+	f.transparent = transparent
 	f.width = width
 	f.height = height
 	gl.GenTextures(1, &f.colorBuffer)
 	gl.BindTexture(gl.TEXTURE_2D, f.colorBuffer)
-	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGB16F, f.width, f.height, 0, gl.RGB, gl.UNSIGNED_BYTE, nil)
+	if transparent {
+		gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, f.width, f.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, nil)
+	} else {
+		gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGB16F, f.width, f.height, 0, gl.RGB, gl.UNSIGNED_BYTE, nil)
+	}
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
 	gl.BindTexture(gl.TEXTURE_2D, 0)
@@ -435,7 +442,11 @@ func (f *FrameBuffer) Resize(width, height int32) {
 	f.width = width
 	f.height = height
 	gl.BindTexture(gl.TEXTURE_2D, f.colorBuffer)
-	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGB16F, f.width, f.height, 0, gl.RGB, gl.UNSIGNED_BYTE, nil)
+	if f.transparent {
+		gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, f.width, f.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, nil)
+	} else {
+		gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGB16F, f.width, f.height, 0, gl.RGB, gl.UNSIGNED_BYTE, nil)
+	}
 	gl.BindTexture(gl.TEXTURE_2D, f.depth)
 	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT32, f.width, f.height, 0, gl.DEPTH_COMPONENT, gl.UNSIGNED_INT, nil)
 }
@@ -470,10 +481,12 @@ type Camera struct {
 	viewPort      [2]float32
 	Proj, View    mgl32.Mat4
 	width, height float32
+	perspective   bool
 }
 
-func NewCamera(w, h int32) (c *Camera) {
+func NewCamera(w, h int32, perspective bool) (c *Camera) {
 	c = new(Camera)
+	c.perspective = perspective
 	c.resize(w, h)
 	c.setup()
 	return
@@ -482,7 +495,11 @@ func NewCamera(w, h int32) (c *Camera) {
 func (s *Camera) resize(w, h int32) {
 	s.width = float32(w)
 	s.height = float32(h)
-	s.Proj = mgl32.Perspective(mgl32.DegToRad(45.0), s.width/s.height, 0.01, 1000.0)
+	if s.perspective {
+		s.Proj = mgl32.Perspective(mgl32.DegToRad(45.0), s.width/s.height, 0.01, 1000.0)
+	} else {
+		s.Proj = mgl32.Ortho(-0.8, 0.8, -0.8, 0.8, -2, 2)
+	}
 }
 
 func (s *Camera) setup() {
@@ -752,35 +769,37 @@ func (f *FrameBuffer) RenderModel(camera *Camera, mesh *ModelMesh) {
 	gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
 }
 
-func (f *FrameBuffer) RenderBlock(mesh *ModelMesh) {
-	camera := NewCamera(f.width, f.height)
+func (f *FrameBuffer) RenderBlock(mesh *BlocksMesh) {
+	camera := NewCamera(f.width, f.height, false)
 
-	diff := mgl32.Vec3{0.5, 0.5, 0.5}
+	// diff := mgl32.Vec3{0.5, 0.5, 0.5}
 
-	cameraPos := mgl32.Vec3{2, 2, 2}
-	cameraFront := cameraPos.Mul(-1)
-	cameraPos = cameraPos.Add(diff)
+	cameraPos := mgl32.Vec3{0, 0, 0}
+	cameraFront := mgl32.Vec3{-1, -1, -1}
+	// cameraPos = cameraPos.Add(diff)
 
 	camera.Move(cameraPos)
 	camera.Turn(cameraFront)
+
+	camera.resize(f.width, f.height)
 
 	gl.Viewport(0, 0, f.width, f.height)
 	gl.BindFramebuffer(gl.FRAMEBUFFER, f.fbo)
 	gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, f.colorBuffer, 0)
 	gl.FramebufferTexture(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, f.depth, 0)
 	gl.ActiveTexture(gl.TEXTURE0)
-	gl.BindTexture(gl.TEXTURE_2D, mesh.texture)
+	gl.BindTexture(gl.TEXTURE_2D_ARRAY, rBlo.textures)
 
-	gl.UseProgram(rMol.shaderHandle)
+	gl.UseProgram(rBlo.shaderHandle)
 
-	model := mgl32.Ident4()
+	invMV := camera.View.Mul4(mesh.model).Inv().Mat3()
+	gl.Uniform1ui(rBlo.uniforms.texUnit, 0)
+	gl.UniformMatrix4fv(rBlo.uniforms.projection, 1, false, &camera.Proj[0])
+	gl.UniformMatrix4fv(rBlo.uniforms.view, 1, false, &camera.View[0])
+	gl.UniformMatrix4fv(rBlo.uniforms.model, 1, false, &mesh.model[0])
+	gl.UniformMatrix3fv(rBlo.uniforms.invMV, 1, false, &invMV[0])
 
-	gl.UniformMatrix4fv(rMol.uniforms.projection, 1, false, &camera.Proj[0])
-	gl.UniformMatrix4fv(rMol.uniforms.view, 1, false, &camera.View[0])
-	gl.UniformMatrix4fv(rMol.uniforms.model, 1, false, &model[0])
-	gl.UniformMatrix4fv(rMol.uniforms.bones, 64, false, &mesh.bones[0][0])
-
-	gl.ClearColor(0.29, 0.29, 0.39, 1.0)
+	gl.ClearColor(0.0, 0.0, 0.0, 0.0)
 	gl.Clear(gl.COLOR_BUFFER_BIT)
 	gl.Clear(gl.DEPTH_BUFFER_BIT)
 	gl.BindVertexArray(mesh.vao)

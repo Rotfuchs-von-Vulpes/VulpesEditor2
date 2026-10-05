@@ -1,6 +1,7 @@
 package view
 
 import (
+	"VulpesEditor/app/editors/blockCreator/blocks"
 	"VulpesEditor/app/editors/blockCreator/chunk"
 	"VulpesEditor/app/front/renderer"
 	"math"
@@ -138,7 +139,7 @@ func buttonPress(buttons [5]bool) {
 		if buttons[0] && ctx.chunk.Destruct(rayOrigin, rayVersor) {
 			ctx.mesh.SetVertices(ctx.chunk.ToBuffer())
 		}
-		if buttons[1] && ctx.chunk.Construct(rayOrigin, rayVersor) {
+		if buttons[1] && ctx.chunk.Construct(rayOrigin, rayVersor, blocks.GetBlockSelected()) {
 			ctx.mesh.SetVertices(ctx.chunk.ToBuffer())
 		}
 	}
@@ -185,8 +186,7 @@ func Show(id string) {
 		im.ImageV(
 			*im.NewTextureRefTextureID(im.TextureID(ctx.viewer.Image())),
 			ctx.viewer.Size(),
-			im.NewVec2(0, 1),
-			im.NewVec2(1, 0),
+			im.NewVec2(0, 1), im.NewVec2(1, 0),
 		)
 
 		if im.IsItemHovered() {
@@ -211,6 +211,7 @@ func Show(id string) {
 	if isHovering {
 		ctx.viewer.RenderHoveredFrame(ctx.camera, hoverdBlockPos)
 	}
+	// ctx.viewer.RenderBlock(ctx.mesh)
 
 	im.End()
 }

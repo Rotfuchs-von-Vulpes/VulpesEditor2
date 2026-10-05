@@ -23,7 +23,7 @@ func New(id string, w, h int32) {
 func OpenTexture(id string, tex *textureEdit.TextureEdit) {
 	ctx = new(TextureContext)
 	ctx.zoom = 0.9
-	ctx.textureViewer = renderer.CreateFramebuffer(500, 500)
+	ctx.textureViewer = renderer.CreateFramebuffer(500, 500, false)
 	viwerSize = [2]float32{500, 500}
 	ctx.texture = tex
 	ctxManager.Add(id, ctx)

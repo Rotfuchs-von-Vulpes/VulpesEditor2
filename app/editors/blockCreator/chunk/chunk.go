@@ -421,10 +421,10 @@ func (c *Chunk) Hovered(pos, direction mgl32.Vec3) (ok bool, p mgl32.Vec3) {
 	return ok, p
 }
 
-func (c *Chunk) Construct(pos, direction mgl32.Vec3) bool {
+func (c *Chunk) Construct(pos, direction mgl32.Vec3, id uint32) bool {
 	ok, blockPos, _ := c.getHovered(pos, direction)
 	if ok {
-		c.setBlock(blockPos, 2)
+		c.setBlock(blockPos, id)
 	}
 	return ok
 }

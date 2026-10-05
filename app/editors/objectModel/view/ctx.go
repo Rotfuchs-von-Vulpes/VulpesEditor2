@@ -24,8 +24,8 @@ func OpenModel(id string, model *model.Model, mesh *renderer.ModelMesh) {
 	ctx = new(ModelContext)
 	ctx.accumulation = [2]float32{math.Pi / 4, math.Pi / 8}
 	ctx.zoom = 3
-	ctx.camera = renderer.NewCamera(500, 500)
-	ctx.viewer = renderer.CreateFramebuffer(500, 500)
+	ctx.camera = renderer.NewCamera(500, 500, false)
+	ctx.viewer = renderer.CreateFramebuffer(500, 500, false)
 	ctx.model = model
 	ctx.modelComm = model.NewChangeAsker()
 	f, e := ctx.model.ToBuffer()

@@ -13,6 +13,8 @@ var ctxManager = context.New()
 func New(id string) {
 	ctx := new(BlocksContext)
 
+	ctx.selectedBlock = 1
+
 	ctx.textures[0] = new(texButton)
 	ctx.textures[0].label = "Top"
 	ctx.textures[1] = new(texButton)

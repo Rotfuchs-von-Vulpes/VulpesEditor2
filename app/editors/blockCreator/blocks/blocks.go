@@ -2,7 +2,9 @@ package blocks
 
 import (
 	blocksfile "VulpesEditor/app/editors/blockCreator/blocks/blocksFile"
+	"VulpesEditor/app/editors/blockCreator/chunk"
 	"VulpesEditor/app/file"
+	"VulpesEditor/app/front/renderer"
 	"fmt"
 	"image/png"
 	"os"
@@ -20,6 +22,9 @@ func Init() {
 
 func AfterCreateContext() {
 	blocksfile.AfterCreateContext()
+	for i, b := range blocksfile.AllBlocks {
+		blocks = append(blocks, newBlockButton(b.Name, uint32(i+1)))
+	}
 }
 
 type texture struct {
@@ -28,16 +33,24 @@ type texture struct {
 }
 
 var (
+	blocks []*blockButton
+
 	textures        []*texture
 	textureNames    []string
 	selectedTexture int32
 )
 
 type BlocksContext struct {
+	selectedBlock uint32
+
 	blockNameInput   string
 	appendedTextures []*texture
 
 	textures [6]*texButton
+}
+
+func GetBlockSelected() uint32 {
+	return ctx.selectedBlock
 }
 
 func getAllTextures() {
@@ -169,11 +182,49 @@ func addBlock() (err error) {
 	return
 }
 
+type blockButton struct {
+	label   string
+	blockID uint32
+	ref     *im.TextureRef
+
+	viewer *renderer.FrameBuffer
+	mesh   *renderer.BlocksMesh
+}
+
+func newBlockButton(blockName string, blockId uint32) (b *blockButton) {
+	b = new(blockButton)
+	b.label = blockName
+	b.blockID = blockId
+	b.viewer = renderer.CreateFramebuffer(48, 48, true)
+	b.mesh = renderer.NewBlocksMesh()
+	b.mesh.SetVertices(chunk.Block(b.blockID).ToBuffer())
+	b.viewer.RenderBlock(b.mesh)
+	b.ref = im.NewTextureRefTextureID(im.TextureID(b.viewer.Image()))
+	return
+}
+
+func (s *blockButton) show() {
+	if im.ImageButtonV(s.label, *s.ref,
+		im.NewVec2(48, 48),
+		im.NewVec2(0, 1), im.NewVec2(1, 0),
+		im.NewVec4(0, 0, 0, 0), im.NewVec4(1, 1, 1, 1)) {
+		ctx.selectedBlock = s.blockID
+	}
+}
+
+const width = 64
+
 func Show(id string) {
 	ctxManager.Check(id)
 
 	if im.Begin("Blocks") {
-
+		for i, b := range blocks {
+			availableSpace := im.ContentRegionAvail().X
+			b.show()
+			if i != len(blocks)-1 && availableSpace-2*width > 0 {
+				im.SameLine()
+			}
+		}
 	}
 	im.End()
 
@@ -198,6 +249,8 @@ func Show(id string) {
 				fmt.Println(err)
 			} else {
 				resetBlockCreation()
+				b := blocksfile.AllBlocks[len(blocksfile.AllBlocks)-1]
+				blocks = append(blocks, newBlockButton(b.Name, uint32(len(blocksfile.AllBlocks))))
 			}
 		}
 		im.SameLine()
