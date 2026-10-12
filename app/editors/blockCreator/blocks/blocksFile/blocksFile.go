@@ -59,8 +59,8 @@ func sendAllTextures() {
 				if tex.Id == "" {
 					continue
 				}
-				idToIdx[tex.Id] = uint32(len(allTextures))
 				allTextures = append(allTextures, tex)
+				idToIdx[tex.Id] = uint32(len(allTextures))
 			}
 		}
 	}

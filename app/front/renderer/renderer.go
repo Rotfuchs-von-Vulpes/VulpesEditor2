@@ -1,6 +1,8 @@
 package renderer
 
 import (
+	"VulpesEditor/app/editors/textureDraw/canvas/texture"
+	"bytes"
 	_ "embed"
 	"fmt"
 	"strings"
@@ -161,14 +163,12 @@ func Create3DTextureBlocks() (id uint32) {
 	gl.TexParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_R, gl.REPEAT)
 	gl.TexParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR)
 	gl.TexParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
-	gl.TexImage3D(gl.TEXTURE_2D_ARRAY, 0, gl.RGBA32F, 16, 16, 1, 0, gl.RGBA, gl.FLOAT, nil)
+	gl.TexImage3D(gl.TEXTURE_2D_ARRAY, 0, gl.RGBA32F, 16, 16, 1, 0, gl.RGBA, gl.FLOAT, gl.Ptr(fallbackTexture))
 	return id
 }
 
 func Write3DTextureBlocks(datas [][]float32) {
-	if int32(len(datas)) == 0 {
-		return
-	}
+	datas = append([][]float32{fallbackTexture}, datas...)
 	gl.BindTexture(gl.TEXTURE_2D_ARRAY, rBlo.textures)
 	gl.TexParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_S, gl.REPEAT)
 	gl.TexParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_T, gl.REPEAT)
@@ -182,6 +182,10 @@ func Write3DTextureBlocks(datas [][]float32) {
 	gl.GenerateMipmap(gl.TEXTURE_2D_ARRAY)
 }
 
+//go:embed fallback.png
+var fallbackTextureFile []byte
+var fallbackTexture []float32
+
 func Init() {
 	glShaderSource := func(handle uint32, source string) {
 		csource, free := gl.Strs(source + "\x00")
@@ -193,6 +197,12 @@ func Init() {
 	if err := gl.Init(); err != nil {
 		panic(err)
 	}
+
+	tex, err := texture.DecodePNG(bytes.NewBuffer(fallbackTextureFile))
+	if err != nil {
+		panic(err)
+	}
+	fallbackTexture = tex.FlatColors()
 
 	w.width = 1200
 	w.height = 900
