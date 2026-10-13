@@ -153,6 +153,7 @@ func Loop() {
 			}
 
 			for i, t := range tabs.AllTabs {
+				p := true
 				if t == nil {
 					continue
 				}
@@ -162,7 +163,7 @@ func Loop() {
 				}
 				tabID := t.Name() + "###" + strconv.FormatInt(int64(i), 10)
 				im.PushIDStr(tabID)
-				if im.BeginTabItemV(t.Name(), nil, f) {
+				if im.BeginTabItemV(t.Name(), &p, f) {
 					im.PushIDStr(t.Name())
 					im.DockSpace(dockspaceId)
 					im.PopID()
@@ -175,7 +176,7 @@ func Loop() {
 					if export {
 						t.Export()
 					}
-					if close {
+					if close || !p {
 						tabs.Close(i)
 					}
 				}
