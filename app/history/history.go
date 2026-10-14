@@ -11,14 +11,16 @@ type change interface {
 
 type historyData struct {
 	history   []change
-	idx       int
+	count     int
 	undoLevel int
+	saved     int
 }
 
 func Append(c change) {
 	ctx.history = ctx.history[:len(ctx.history)-ctx.undoLevel]
 	ctx.history = append(ctx.history, c)
 	ctx.undoLevel = 0
+	ctx.count++
 }
 
 func undo() {
@@ -27,6 +29,7 @@ func undo() {
 		change := ctx.history[changeIdx]
 		ctx.undoLevel += 1
 		change.Undo()
+		ctx.count--
 	}
 }
 
@@ -37,6 +40,7 @@ func redo() {
 			change := ctx.history[changesIdx]
 			ctx.undoLevel--
 			change.Redo()
+			ctx.count++
 		}
 	}
 }
@@ -58,4 +62,14 @@ func Loop(id string) {
 	if buttons[4] {
 		redo()
 	}
+}
+
+func SetSaved(id string) {
+	ctxManager.Check(id)
+	ctx.saved = ctx.count
+}
+
+func NewChanges(id string) bool {
+	ctxManager.Check(id)
+	return ctx.count != ctx.saved
 }

@@ -161,6 +161,9 @@ func Loop() {
 				if t.Focus() {
 					f |= im.TabItemFlagsSetSelected
 				}
+				if t.Saved() {
+					f |= im.TabItemFlagsUnsavedDocument
+				}
 				tabID := t.Name() + "###" + strconv.FormatInt(int64(i), 10)
 				im.PushIDStr(tabID)
 				if im.BeginTabItemV(t.Name(), &p, f) {

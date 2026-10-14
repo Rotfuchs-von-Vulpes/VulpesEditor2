@@ -187,10 +187,16 @@ func (s *instance) Save() {
 	b.WriteString(s.model.Id)
 	w.Write("metaData.txt", []byte(b.String()))
 	w.Save()
+
+	history.SetSaved(s.id)
 }
 
 func (s *instance) Export() {
 
+}
+
+func (s *instance) Saved() bool {
+	return history.NewChanges(s.id)
 }
 
 func OpenModel(path string) {

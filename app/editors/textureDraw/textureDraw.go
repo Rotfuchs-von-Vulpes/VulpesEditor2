@@ -195,6 +195,8 @@ func (s *instance) Save() {
 	if s.sub != nil {
 		s.notify()
 	}
+
+	history.SetSaved(s.id)
 }
 
 type SubProject struct {
@@ -233,6 +235,10 @@ func (s *instance) Export() {
 	if err != nil {
 		fmt.Println(err)
 	}
+}
+
+func (s *instance) Saved() (saved bool) {
+	return history.NewChanges(s.id)
 }
 
 func OpenSubProject(tex *texture.Texture, name string) *SubProject {

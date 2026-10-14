@@ -5,6 +5,7 @@ import (
 	"VulpesEditor/app/editors/blockCreator/view"
 	"VulpesEditor/app/file"
 	"VulpesEditor/app/front/tabs"
+	"VulpesEditor/app/history"
 	"VulpesEditor/app/util"
 	"fmt"
 	"path/filepath"
@@ -64,10 +65,15 @@ func (s *instance) Save() {
 	b.WriteString(s.name)
 	w.Write("metaData.txt", []byte(b.String()))
 	w.Save()
+	history.SetSaved(s.id)
 }
 
 func (s *instance) Export() {
 
+}
+
+func (s *instance) Saved() bool {
+	return history.NewChanges(s.id)
 }
 
 type creationData struct {
