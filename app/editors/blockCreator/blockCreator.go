@@ -51,6 +51,10 @@ func (s *instance) Name() string {
 	return s.title
 }
 
+func (s *instance) Type() string {
+	return "block"
+}
+
 func (s *instance) Show() {
 	blocks.Show(s.id)
 	view.Show(s.id)
@@ -80,11 +84,11 @@ func (s *instance) Saved() bool {
 	return history.NewChanges(s.id)
 }
 
-func (s *instance) Preview() {
+func (s *instance) Preview(previewPart string) {
 	view.Show(s.id)
 }
 
-func (s *instance) AddPreview(preview func()) {
+func (s *instance) AddPreview(preview func(string)) {
 
 }
 

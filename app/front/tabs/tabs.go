@@ -5,15 +5,16 @@ import "slices"
 type Tab interface {
 	ID() string
 	Name() string
+	Type() string
 	Show()
 	Focus() bool
 	Save()
 	Export()
 	Saved() bool
-	Preview()
+	Preview(string)
 
 	ParentID() string
-	AddPreview(preview func())
+	AddPreview(preview func(string))
 }
 
 var AllTabs []Tab

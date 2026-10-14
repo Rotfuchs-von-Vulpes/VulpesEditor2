@@ -163,11 +163,15 @@ func (s *instance) Name() string {
 	return s.title
 }
 
+func (s *instance) Type() string {
+	return "model"
+}
+
 func (s *instance) Show() {
 	history.Loop(s.id)
 	tools.Show(s.id)
 	texture.Show(s.id)
-	view.Show(s.id)
+	view.Show(s.id, true, "")
 	animation.Show(s.id)
 	s.model.Reset()
 }
@@ -203,12 +207,12 @@ func (s *instance) Saved() bool {
 	return history.NewChanges(s.id)
 }
 
-func (s *instance) Preview() {
+func (s *instance) Preview(parentType string) {
 	texture.Loop(s.id)
-	view.Show(s.id)
+	view.Show(s.id, false, parentType)
 }
 
-func (s *instance) AddPreview(preview func()) {
+func (s *instance) AddPreview(preview func(string)) {
 
 }
 

@@ -110,7 +110,7 @@ func buttonRelease(buttons [5]bool) {
 	}
 }
 
-func Show(id string) {
+func Show(id string, edit bool, parentType string) {
 	ctxManager.Check(id)
 
 	if ctx.modelComm.Changed(model.ChangeUnits) {
@@ -126,7 +126,11 @@ func Show(id string) {
 		im.SetNextWindowFocus()
 		toFocus = false
 	}
-	if im.Begin("Model") {
+	title := "Model"
+	if !edit {
+		title += "###ModelPreview" + parentType
+	}
+	if im.Begin(title) {
 		wSize := im.ContentRegionAvail()
 		width := int32(wSize.X)
 		height := int32(wSize.Y)
@@ -163,8 +167,7 @@ func Show(id string) {
 			buttonRelease([5]bool{true, true, true, false, false})
 		}
 	}
+	im.End()
 
 	ctx.viewer.RenderModel(ctx.camera, ctx.mesh)
-
-	im.End()
 }

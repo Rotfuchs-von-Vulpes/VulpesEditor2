@@ -285,10 +285,6 @@ func Loop(id string) {
 	call()
 }
 
-func SubProject() *textureDraw.SubProject {
-	return ctx.subProject
-}
-
 func Save(id string, w *file.ArchiveWriter) {
 	ctxManager.Check(id)
 	buff := bytes.NewBuffer(nil)

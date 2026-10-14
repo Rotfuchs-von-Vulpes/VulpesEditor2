@@ -172,13 +172,17 @@ func (s *instance) Name() string {
 	return s.title
 }
 
+func (s *instance) Type() string {
+	return "texture"
+}
+
 func (s *instance) Show() {
 	history.Loop(s.id)
 	color.Show(s.id)
 	tools.Show(s.id)
-	canvas.Show(s.id, true)
+	canvas.Show(s.id, true, "")
 	if s.sub != nil && s.sub.preview != nil {
-		s.sub.preview()
+		s.sub.preview("texture")
 	}
 }
 
@@ -209,7 +213,7 @@ func (s *instance) Save() {
 
 type SubProject struct {
 	id        string
-	preview   func()
+	preview   func(string)
 	child     *instance
 	changed   bool
 	callbacks []func(colors [][4]float32)
@@ -251,11 +255,11 @@ func (s *instance) Saved() (saved bool) {
 	return history.NewChanges(s.id)
 }
 
-func (s *instance) Preview() {
-	canvas.Show(s.id, false)
+func (s *instance) Preview(previewType string) {
+	canvas.Show(s.id, false, previewType)
 }
 
-func (s *instance) AddPreview(preview func()) {
+func (s *instance) AddPreview(preview func(string)) {
 	s.sub.preview = preview
 }
 

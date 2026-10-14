@@ -126,7 +126,7 @@ var textureFileName string
 var textureFilePath string
 var toFocus bool
 
-func Show(id string, edit bool) {
+func Show(id string, edit bool, previewType string) {
 	ctxManager.Check(id)
 
 	var toPop string
@@ -134,75 +134,80 @@ func Show(id string, edit bool) {
 		im.SetNextWindowFocus()
 		toFocus = false
 	}
-	im.BeginV("Texture", nil, im.WindowFlagsMenuBar)
-	if im.BeginMenuBar() {
-		if im.BeginMenu("Texture") {
-			if im.MenuItemBool("Save Texture") {
-				toPop = "Not Implement"
-			}
-			im.EndMenu()
-		}
-		if im.BeginMenu("Export") {
-			if im.MenuItemBool("Export as PNG Image") {
-				toPop = "Export PNG"
-			}
-			im.EndMenu()
-		}
-		im.EndMenuBar()
+	title := "Texture"
+	if previewType != "" {
+		title += "###TexturePreview" + previewType
 	}
-	if toPop != "" {
-		im.OpenPopupStr(toPop)
-		toPop = ""
-	}
-	if im.BeginPopupModal("Export PNG") {
-		im.InputTextWithHint("File Name", "texure_"+ctx.texture.Id+".png", &textureFileName, im.InputTextFlagsNone, nil)
-		im.InputTextWithHint("File Path", "", &textureFilePath, im.InputTextFlagsNone, nil)
-		if im.Button("Save") {
-			if ok := ctx.texture.SaveTextureAsFile(textureFileName, textureFilePath); ok {
-				textureFileName = ""
+	if im.BeginV("Texture", nil, im.WindowFlagsMenuBar) {
+		if im.BeginMenuBar() {
+			if im.BeginMenu("Texture") {
+				if im.MenuItemBool("Save Texture") {
+					toPop = "Not Implement"
+				}
+				im.EndMenu()
+			}
+			if im.BeginMenu("Export") {
+				if im.MenuItemBool("Export as PNG Image") {
+					toPop = "Export PNG"
+				}
+				im.EndMenu()
+			}
+			im.EndMenuBar()
+		}
+		if toPop != "" {
+			im.OpenPopupStr(toPop)
+			toPop = ""
+		}
+		if im.BeginPopupModal("Export PNG") {
+			im.InputTextWithHint("File Name", "texure_"+ctx.texture.Id+".png", &textureFileName, im.InputTextFlagsNone, nil)
+			im.InputTextWithHint("File Path", "", &textureFilePath, im.InputTextFlagsNone, nil)
+			if im.Button("Save") {
+				if ok := ctx.texture.SaveTextureAsFile(textureFileName, textureFilePath); ok {
+					textureFileName = ""
+					im.CloseCurrentPopup()
+				}
+			}
+			if im.Button("Cancel") {
 				im.CloseCurrentPopup()
 			}
+			im.EndPopup()
 		}
-		if im.Button("Cancel") {
-			im.CloseCurrentPopup()
+
+		front.NotImplementPopUp()
+
+		wSize := im.ContentRegionAvail()
+		width := int32(wSize.X)
+		height := int32(wSize.Y)
+
+		if viwerSize[0] != wSize.X || viwerSize[1] != wSize.Y {
+			ctx.textureViewer.Resize(width, height)
+			viwerSize[0] = wSize.X
+			viwerSize[1] = wSize.Y
+			aspect = wSize.Y / wSize.X
 		}
-		im.EndPopup()
-	}
 
-	front.NotImplementPopUp()
-
-	wSize := im.ContentRegionAvail()
-	width := int32(wSize.X)
-	height := int32(wSize.Y)
-
-	if viwerSize[0] != wSize.X || viwerSize[1] != wSize.Y {
-		ctx.textureViewer.Resize(width, height)
-		viwerSize[0] = wSize.X
-		viwerSize[1] = wSize.Y
-		aspect = wSize.Y / wSize.X
-	}
-
-	im.ImageV(
-		*im.NewTextureRefTextureID(im.TextureID(ctx.textureViewer.Image())),
-		ctx.textureViewer.Size(),
-		im.NewVec2(0, 1),
-		im.NewVec2(1, 0),
-	)
-	if im.IsItemHovered() {
-		io := im.CurrentContext().IO()
-		if io.MouseWheel() != 0 {
-			scroll(io.MouseWheel())
+		im.ImageV(
+			*im.NewTextureRefTextureID(im.TextureID(ctx.textureViewer.Image())),
+			ctx.textureViewer.Size(),
+			im.NewVec2(0, 1),
+			im.NewVec2(1, 0),
+		)
+		if im.IsItemHovered() {
+			io := im.CurrentContext().IO()
+			if io.MouseWheel() != 0 {
+				scroll(io.MouseWheel())
+			}
+			mouse_pos_abs := io.MousePos()
+			screen_pos_abs := im.ItemRectMin()
+			var mouse_pos_rel im.Vec2
+			mouse_pos_rel.X = mouse_pos_abs.X - screen_pos_abs.X
+			mouse_pos_rel.Y = mouse_pos_abs.Y - screen_pos_abs.Y
+			move(mouse_pos_rel)
+			buttonPress(io.MouseClicked(), edit)
+			buttonRelease(io.MouseReleased(), edit)
+		} else if painting {
+			buttonRelease([5]bool{true, true, true, false, false}, edit)
 		}
-		mouse_pos_abs := io.MousePos()
-		screen_pos_abs := im.ItemRectMin()
-		var mouse_pos_rel im.Vec2
-		mouse_pos_rel.X = mouse_pos_abs.X - screen_pos_abs.X
-		mouse_pos_rel.Y = mouse_pos_abs.Y - screen_pos_abs.Y
-		move(mouse_pos_rel)
-		buttonPress(io.MouseClicked(), edit)
-		buttonRelease(io.MouseReleased(), edit)
-	} else if painting {
-		buttonRelease([5]bool{true, true, true, false, false}, edit)
 	}
 	im.End()
 

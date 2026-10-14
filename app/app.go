@@ -120,7 +120,6 @@ func Loop() {
 			im.EndMenuBar()
 		}
 
-		dockspaceId := im.IDStr("Dockspace")
 		if im.BeginTabBar("AAA") {
 			if im.BeginTabItem("Home") {
 				childSize := im.NewVec2(500, 100+im.FrameHeight()*16)
@@ -147,7 +146,7 @@ func Loop() {
 			}
 
 			if im.BeginTabItem("Debug") {
-				im.DockSpace(dockspaceId)
+				im.DockSpace(im.IDStr("debug"))
 				front.Loop()
 				im.EndTabItem()
 			}
@@ -168,7 +167,7 @@ func Loop() {
 				im.PushIDStr(tabID)
 				if im.BeginTabItemV(t.Name(), &p, f) {
 					im.PushIDStr(t.Name())
-					im.DockSpace(dockspaceId)
+					im.DockSpace(im.IDStr(t.Type()))
 					im.PopID()
 					t.Show()
 					im.EndTabItem()
