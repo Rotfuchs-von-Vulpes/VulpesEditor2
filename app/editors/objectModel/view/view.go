@@ -2,6 +2,7 @@ package view
 
 import (
 	"VulpesEditor/app/editors/objectModel/model"
+	"VulpesEditor/app/editors/objectModel/texture"
 	"VulpesEditor/app/front/renderer"
 	"math"
 
@@ -112,9 +113,13 @@ func buttonRelease(buttons [5]bool) {
 func Show(id string) {
 	ctxManager.Check(id)
 
-	if ctx.modelComm.Changed(model.ChangeTexture | model.ChangeUnits) {
+	if ctx.modelComm.Changed(model.ChangeUnits) {
 		f, e := ctx.model.ToBuffer()
 		ctx.mesh.SetVertices(f, e)
+	}
+
+	if ctx.modelComm.Changed(model.ChangeTexture) {
+		ctx.mesh.SetTexture(texture.GetData())
 	}
 
 	if toFocus {

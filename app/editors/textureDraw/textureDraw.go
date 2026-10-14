@@ -145,7 +145,8 @@ type instance struct {
 	id    string
 	focus bool
 
-	sub *SubProject
+	isNewSub bool
+	sub      *SubProject
 }
 
 func (s *instance) init() {
@@ -163,6 +164,10 @@ func (s *instance) Focus() bool {
 	return false
 }
 
+func (s *instance) ID() string {
+	return s.id
+}
+
 func (s *instance) Name() string {
 	return s.title
 }
@@ -171,7 +176,10 @@ func (s *instance) Show() {
 	history.Loop(s.id)
 	color.Show(s.id)
 	tools.Show(s.id)
-	canvas.Show(s.id)
+	canvas.Show(s.id, true)
+	if s.sub != nil && s.sub.preview != nil {
+		s.sub.preview()
+	}
 }
 
 func (s *instance) Save() {
@@ -200,7 +208,9 @@ func (s *instance) Save() {
 }
 
 type SubProject struct {
-	parent    *instance
+	id        string
+	preview   func()
+	child     *instance
 	changed   bool
 	callbacks []func(colors [][4]float32)
 }
@@ -210,11 +220,11 @@ func (s *SubProject) OnChange(callback func(colors [][4]float32)) {
 }
 
 func (s *SubProject) Focus() {
-	s.parent.focus = true
+	s.child.focus = true
 }
 
 func (s *SubProject) Add(tex *texture.Texture) {
-	canvas.SetLayer(s.parent.id, tex)
+	canvas.SetLayer(s.child.id, tex)
 }
 
 func (s *instance) notify() {
@@ -241,7 +251,23 @@ func (s *instance) Saved() (saved bool) {
 	return history.NewChanges(s.id)
 }
 
-func OpenSubProject(tex *texture.Texture, name string) *SubProject {
+func (s *instance) Preview() {
+	canvas.Show(s.id, false)
+}
+
+func (s *instance) AddPreview(preview func()) {
+	s.sub.preview = preview
+}
+
+func (s *instance) ParentID() string {
+	if s.isNewSub && s.sub != nil {
+		s.isNewSub = false
+		return s.sub.id
+	}
+	return ""
+}
+
+func OpenSubProject(callerId string, tex *texture.Texture, name string) *SubProject {
 	itc := new(instance)
 	itc.name = name
 	itc.id = uuid.New().String()
@@ -252,7 +278,9 @@ func OpenSubProject(tex *texture.Texture, name string) *SubProject {
 	itc.init()
 	tabs.Push(itc)
 	itc.sub = new(SubProject)
-	itc.sub.parent = itc
+	itc.sub.id = callerId
+	itc.sub.child = itc
+	itc.isNewSub = true
 	return itc.sub
 }
 

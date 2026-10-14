@@ -155,6 +155,10 @@ func (s *instance) Focus() bool {
 	return false
 }
 
+func (s *instance) ID() string {
+	return s.id
+}
+
 func (s *instance) Name() string {
 	return s.title
 }
@@ -197,6 +201,19 @@ func (s *instance) Export() {
 
 func (s *instance) Saved() bool {
 	return history.NewChanges(s.id)
+}
+
+func (s *instance) Preview() {
+	texture.Loop(s.id)
+	view.Show(s.id)
+}
+
+func (s *instance) AddPreview(preview func()) {
+
+}
+
+func (s *instance) ParentID() string {
+	return ""
 }
 
 func OpenModel(path string) {

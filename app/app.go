@@ -197,4 +197,6 @@ func Loop() {
 	save = false
 	export = false
 	close = false
+
+	tabs.Loop()
 }

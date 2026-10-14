@@ -244,25 +244,15 @@ type TextureContext struct {
 	surfaces  []*MultiQuad
 	size      int32
 
-	callbacks  []func()
 	changed    bool
 	subProject *textureDraw.SubProject
-}
-
-func OnChange(id string, callback func()) {
-	ctxManager.Check(id)
-	ctx.callbacks = append(ctx.callbacks, callback)
+	newSub     bool
 }
 
 func call() {
 	if ctx.changed {
 		ctx.changed = false
-		for _, f := range ctx.callbacks {
-			f()
-		}
-		if ctx.subProject != nil {
-			ctx.subProject.Add(ctx.texture)
-		}
+		ctx.model.AddChange(model.ChangeTexture)
 	}
 }
 
@@ -271,18 +261,16 @@ func Show(id string) {
 	if ctx.modelComm.Changed(model.ChangeSize | model.ChangeUnits) {
 		generateTexture()
 	}
-	call()
 	if im.Begin("Texture Manager") {
 		if im.Button("Open Edit") {
 			if ctx.subProject == nil {
-				ctx.subProject = textureDraw.OpenSubProject(ctx.texture, ctx.name)
+				ctx.subProject = textureDraw.OpenSubProject(id, ctx.texture, ctx.name)
 				ctx.subProject.OnChange(func(colors [][4]float32) {
 					ctx.texture.Colors = colors
-					ctx.changed = true
-
 					for _, s := range ctx.surfaces {
 						writeTexture(s, ctx.texture)
 					}
+					ctx.changed = true
 				})
 			} else {
 				ctx.subProject.Focus()
@@ -290,6 +278,15 @@ func Show(id string) {
 		}
 	}
 	im.End()
+}
+
+func Loop(id string) {
+	ctxManager.Check(id)
+	call()
+}
+
+func SubProject() *textureDraw.SubProject {
+	return ctx.subProject
 }
 
 func Save(id string, w *file.ArchiveWriter) {

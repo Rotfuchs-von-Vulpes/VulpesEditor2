@@ -88,7 +88,7 @@ func move(pos im.Vec2) {
 
 var secondButton bool
 
-func buttonPress(buttons [5]bool) {
+func buttonPress(buttons [5]bool, edit bool) {
 	if buttons[2] {
 		mousePressedPos = mousePos
 		pressedPos = ctx.pos
@@ -98,20 +98,24 @@ func buttonPress(buttons [5]bool) {
 	if buttons[0] || buttons[1] {
 		painting = true
 		firstButton = buttons[0]
-		tools.Resize(ctx.texture.Width, ctx.texture.Height)
-		tools.SetColors(ctx.texture.LayerColors())
-		tools.ButtonPress(pixelPosMouse(), buttons[0])
+		if edit {
+			tools.Resize(ctx.texture.Width, ctx.texture.Height)
+			tools.SetColors(ctx.texture.LayerColors())
+			tools.ButtonPress(pixelPosMouse(), buttons[0])
+		}
 		toFocus = true
 	}
 }
 
-func buttonRelease(buttons [5]bool) {
+func buttonRelease(buttons [5]bool, edit bool) {
 	if buttons[2] {
 		mouseCanDrag = false
 	}
 	if buttons[0] || buttons[1] {
 		painting = false
-		tools.ButtonRelease(pixelPosMouse())
+		if edit {
+			tools.ButtonRelease(pixelPosMouse())
+		}
 		pixels := tools.Change()
 		ctx.texture.LayerChange(pixels)
 		ctx.texture.ResetPreview()
@@ -122,7 +126,7 @@ var textureFileName string
 var textureFilePath string
 var toFocus bool
 
-func Show(id string) {
+func Show(id string, edit bool) {
 	ctxManager.Check(id)
 
 	var toPop string
@@ -195,10 +199,10 @@ func Show(id string) {
 		mouse_pos_rel.X = mouse_pos_abs.X - screen_pos_abs.X
 		mouse_pos_rel.Y = mouse_pos_abs.Y - screen_pos_abs.Y
 		move(mouse_pos_rel)
-		buttonPress(io.MouseClicked())
-		buttonRelease(io.MouseReleased())
+		buttonPress(io.MouseClicked(), edit)
+		buttonRelease(io.MouseReleased(), edit)
 	} else if painting {
-		buttonRelease([5]bool{true, true, true, false, false})
+		buttonRelease([5]bool{true, true, true, false, false}, edit)
 	}
 	im.End()
 

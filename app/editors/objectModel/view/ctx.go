@@ -3,7 +3,6 @@ package view
 import (
 	"VulpesEditor/app/context"
 	"VulpesEditor/app/editors/objectModel/model"
-	"VulpesEditor/app/editors/objectModel/texture"
 	"VulpesEditor/app/file"
 	"VulpesEditor/app/front/renderer"
 	"math"
@@ -33,10 +32,6 @@ func OpenModel(id string, model *model.Model, mesh *renderer.ModelMesh) {
 	ctx.mesh.SetVertices(f, e)
 	viwerSize = [2]float32{500, 500}
 	ctxManager.Add(id, ctx)
-
-	texture.OnChange(id, func() {
-		ctx.mesh.SetTexture(texture.GetData())
-	})
 
 	moveCamera()
 }

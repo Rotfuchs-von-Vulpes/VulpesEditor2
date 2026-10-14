@@ -60,7 +60,7 @@ func (s *CubeUnit) Remove(unit *CubeUnit) {
 		return u.Id == unit.Id
 	})
 	if s.Source != nil {
-		s.Source.addChange(ChangeHierarchy)
+		s.Source.AddChange(ChangeHierarchy)
 	}
 }
 
@@ -116,7 +116,7 @@ func (s *CubeUnit) SetUV(faceCount int, init, end [2]float32) {
 	s.uvs[faceCount][0] = init
 	s.uvs[faceCount][1] = end
 	if s.Source != nil {
-		s.Source.addChange(ChangeTexture)
+		s.Source.AddChange(ChangeTexture)
 	}
 	if faceCount == 2 {
 		s.QuadPos = init
@@ -127,7 +127,7 @@ func (s *CubeUnit) SetUVs(uvs [6][2][2]float32) {
 	s.uvs = uvs
 	s.QuadPos = uvs[2][0]
 	if s.Source != nil {
-		s.Source.addChange(ChangeTexture)
+		s.Source.AddChange(ChangeTexture)
 	}
 }
 
@@ -137,14 +137,14 @@ func (s *CubeUnit) Data() ([3]float32, [3]float32, [3]float32) {
 
 func (s *CubeUnit) Edit(pos, size, rot [3]float32) {
 	if s.size != size {
-		s.Source.addChange(ChangeSize)
+		s.Source.AddChange(ChangeSize)
 	}
 	s.pos = pos
 	s.size = size
 	s.rot = rot
 	s.Changed = true
 	if s.Source != nil {
-		s.Source.addChange(ChangeUnits)
+		s.Source.AddChange(ChangeUnits)
 	}
 }
 
@@ -301,9 +301,8 @@ type Model struct {
 	Units []*CubeUnit
 	count uint32
 
-	allChanges   ChangeType
 	listeners    []string
-	acknowledged []string
+	acknowledged map[string]ChangeType
 }
 
 type ChangeAsker struct {
@@ -315,6 +314,7 @@ func (m *Model) NewChangeAsker() (c *ChangeAsker) {
 	c = new(ChangeAsker)
 	c.id = uuid.New().String()
 	m.listeners = append(m.listeners, c.id)
+	m.acknowledged[c.id] = 0
 	c.model = m
 	return
 }
@@ -329,33 +329,22 @@ const (
 )
 
 func (s *ChangeAsker) Changed(changes ChangeType) (r bool) {
-	if slices.Contains(s.model.acknowledged, s.id) {
-		return false
-	} else {
-		s.model.acknowledged = append(s.model.acknowledged, s.id)
-		r = s.model.allChanges&changes != 0
-		all := true
-		for _, l := range s.model.listeners {
-			if !slices.Contains(s.model.acknowledged, l) {
-				all = false
-				break
-			}
-		}
-		if all {
-			s.model.acknowledged = nil
-			s.model.allChanges = 0
-		}
-		return
-	}
+	acknowledged := s.model.acknowledged[s.id]
+	diff := changes &^ acknowledged
+	s.model.acknowledged[s.id] = diff | acknowledged
+	return diff != 0
 }
 
-func (s *Model) addChange(changes ChangeType) {
-	s.allChanges |= changes
+func (s *Model) AddChange(changes ChangeType) {
+	for _, l := range s.listeners {
+		s.acknowledged[l] &^= changes
+	}
 }
 
 func NewModel() (s *Model) {
 	s = new(Model)
 	s.Id = uuid.New().String()
+	s.acknowledged = make(map[string]ChangeType)
 	return
 }
 
@@ -371,7 +360,7 @@ func (s *Model) AppendUnit(unit *CubeUnit) bool {
 		unit.Name = fmt.Sprintf("Unit #%d", s.count)
 	}
 	s.count++
-	s.addChange(ChangeHierarchy | ChangeUnits)
+	s.AddChange(ChangeHierarchy | ChangeUnits)
 	return true
 }
 
@@ -387,7 +376,7 @@ func (s *Model) Remove(unit *CubeUnit) (err error) {
 			unit.parent.Remove(unit)
 		}
 		unit.Source = nil
-		s.addChange(ChangeUnits)
+		s.AddChange(ChangeUnits)
 	}
 	return
 }
