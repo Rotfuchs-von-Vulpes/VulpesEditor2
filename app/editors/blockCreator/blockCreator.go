@@ -31,6 +31,7 @@ type instance struct {
 
 func (s *instance) init() {
 	s.title = s.name + " Blocks"
+	history.New(s.id)
 	blocks.New(s.id)
 	view.New(s.id)
 }
