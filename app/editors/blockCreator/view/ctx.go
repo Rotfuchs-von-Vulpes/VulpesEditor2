@@ -25,7 +25,6 @@ func New(id string) {
 	ctx.mesh = renderer.NewBlocksMesh()
 	ctx.chunk = chunk.Test()
 	ctx.mesh.SetVertices(ctx.chunk.ToBuffer())
-	// ctx.mesh.Centralize(8, 8, 8)
 	ctxManager.Add(id, ctx)
 
 	moveCamera()

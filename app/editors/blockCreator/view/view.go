@@ -127,7 +127,7 @@ func move(pos im.Vec2) {
 
 var secondButton bool
 
-func buttonPress(buttons [5]bool) {
+func buttonPress(buttons [5]bool, edit bool) {
 	if buttons[2] {
 		mousePressedPos = mousePos
 		mouseCanDrag = true
@@ -136,11 +136,13 @@ func buttonPress(buttons [5]bool) {
 	if buttons[0] || buttons[1] {
 		firstButton = buttons[0]
 		toFocus = true
-		if buttons[0] && ctx.chunk.Destruct(rayOrigin, rayVersor) {
-			ctx.mesh.SetVertices(ctx.chunk.ToBuffer())
-		}
-		if buttons[1] && ctx.chunk.Construct(rayOrigin, rayVersor, blocks.GetBlockSelected()) {
-			ctx.mesh.SetVertices(ctx.chunk.ToBuffer())
+		if edit {
+			if buttons[0] && ctx.chunk.Destruct(rayOrigin, rayVersor) {
+				ctx.mesh.SetVertices(ctx.chunk.ToBuffer())
+			}
+			if buttons[1] && ctx.chunk.Construct(rayOrigin, rayVersor, blocks.GetBlockSelected()) {
+				ctx.mesh.SetVertices(ctx.chunk.ToBuffer())
+			}
 		}
 	}
 }
@@ -158,19 +160,18 @@ func buttonRelease(buttons [5]bool) {
 	}
 }
 
-func Show(id string) {
+func Show(id string, edit bool) {
 	ctxManager.Check(id)
-
-	// if ctx.modelComm.Changed(model.ChangeTexture | model.ChangeUnits) {
-	// 	f, e := ctx.model.ToBuffer()
-	// 	ctx.mesh.SetVertices(f, e)
-	// }
 
 	if toFocus {
 		im.SetNextWindowFocus()
 		toFocus = false
 	}
-	if im.Begin("Model") {
+	title := "Structure"
+	if !edit {
+		title += "###StructurePreview"
+	}
+	if im.Begin(title) {
 		wSize := im.ContentRegionAvail()
 		width := int32(wSize.X)
 		height := int32(wSize.Y)
@@ -200,7 +201,7 @@ func Show(id string) {
 			mouse_pos_rel.X = mouse_pos_abs.X - screen_pos_abs.X
 			mouse_pos_rel.Y = mouse_pos_abs.Y - screen_pos_abs.Y
 			move(mouse_pos_rel)
-			buttonPress(io.MouseClicked())
+			buttonPress(io.MouseClicked(), edit)
 			buttonRelease(io.MouseReleased())
 		} else {
 			buttonRelease([5]bool{true, true, true, false, false})
@@ -211,7 +212,6 @@ func Show(id string) {
 	if isHovering {
 		ctx.viewer.RenderHoveredFrame(ctx.camera, hoverdBlockPos)
 	}
-	// ctx.viewer.RenderBlock(ctx.mesh)
 
 	im.End()
 }

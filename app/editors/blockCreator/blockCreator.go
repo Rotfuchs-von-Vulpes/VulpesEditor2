@@ -58,7 +58,7 @@ func (s *instance) Type() string {
 
 func (s *instance) Show() {
 	blocks.Show(s.id)
-	view.Show(s.id)
+	view.Show(s.id, true)
 }
 
 func (s *instance) Save() {
@@ -86,7 +86,7 @@ func (s *instance) Saved() bool {
 }
 
 func (s *instance) Preview(previewPart string) {
-	view.Show(s.id)
+	view.Show(s.id, false)
 }
 
 func (s *instance) AddPreview(preview func(string)) {
