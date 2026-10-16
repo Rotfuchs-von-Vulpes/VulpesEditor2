@@ -163,8 +163,13 @@ func (s *instance) Name() string {
 	return s.title
 }
 
-func (s *instance) Type() string {
-	return "model"
+var dockID im.ID
+
+func (s *instance) DockID() im.ID {
+	if dockID == 0 {
+		dockID = im.IDStr("Model")
+	}
+	return dockID
 }
 
 func (s *instance) Show() {

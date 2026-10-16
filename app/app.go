@@ -147,7 +147,7 @@ func Loop() {
 
 			if im.BeginTabItem("Debug") {
 				im.DockSpace(im.IDStr("debug"))
-				front.Loop()
+				front.Debug()
 				im.EndTabItem()
 			}
 
@@ -164,11 +164,8 @@ func Loop() {
 					f |= im.TabItemFlagsUnsavedDocument
 				}
 				tabID := t.Name() + "###" + strconv.FormatInt(int64(i), 10)
-				im.PushIDStr(tabID)
-				if im.BeginTabItemV(t.Name(), &p, f) {
-					im.PushIDStr(t.Name())
-					im.DockSpace(im.IDStr(t.Type()))
-					im.PopID()
+				if im.BeginTabItemV(tabID, &p, f) {
+					im.DockSpace(t.DockID())
 					t.Show()
 					im.EndTabItem()
 
@@ -182,7 +179,6 @@ func Loop() {
 						tabs.Close(i)
 					}
 				}
-				im.PopID()
 			}
 
 			im.EndTabBar()

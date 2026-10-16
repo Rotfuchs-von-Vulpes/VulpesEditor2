@@ -1,11 +1,15 @@
 package tabs
 
-import "slices"
+import (
+	"slices"
+
+	im "github.com/AllenDang/cimgui-go/imgui"
+)
 
 type Tab interface {
 	ID() string
 	Name() string
-	Type() string
+	DockID() im.ID
 	Show()
 	Focus() bool
 	Save()

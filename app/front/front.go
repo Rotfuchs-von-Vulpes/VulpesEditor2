@@ -16,7 +16,7 @@ func Nuke() {
 	renderer.Nuke()
 }
 
-func Loop() {
+func Debug() {
 	if showDemoWindow {
 		im.ShowDemoWindowV(&showDemoWindow)
 	}

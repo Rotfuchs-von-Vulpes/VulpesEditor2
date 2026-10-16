@@ -135,10 +135,10 @@ func Show(id string, edit bool, previewType string) {
 		toFocus = false
 	}
 	title := "Texture"
-	if previewType != "" {
+	if previewType != "" && !edit {
 		title += "###TexturePreview" + previewType
 	}
-	if im.BeginV("Texture", nil, im.WindowFlagsMenuBar) {
+	if im.BeginV(title, nil, im.WindowFlagsMenuBar) {
 		if im.BeginMenuBar() {
 			if im.BeginMenu("Texture") {
 				if im.MenuItemBool("Save Texture") {

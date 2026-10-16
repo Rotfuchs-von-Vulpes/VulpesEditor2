@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"strings"
 	"uuid"
+
+	im "github.com/AllenDang/cimgui-go/imgui"
 )
 
 func Init() {
@@ -52,8 +54,13 @@ func (s *instance) Name() string {
 	return s.title
 }
 
-func (s *instance) Type() string {
-	return "block"
+var dockID im.ID
+
+func (s *instance) DockID() im.ID {
+	if dockID == 0 {
+		dockID = im.IDStr("Blocks")
+	}
+	return dockID
 }
 
 func (s *instance) Show() {
