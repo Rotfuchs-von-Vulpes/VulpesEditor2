@@ -5,6 +5,7 @@ import (
 	"VulpesEditor/app/editors/objectModel"
 	"VulpesEditor/app/editors/textureDraw"
 	"VulpesEditor/app/front"
+	"VulpesEditor/app/front/explorer"
 	"VulpesEditor/app/front/tabs"
 	"VulpesEditor/app/util"
 	"flag"
@@ -58,6 +59,8 @@ func AfterCreateContext() {
 			}
 		}
 	}
+
+	explorer.AfterCreateContext()
 }
 
 func BeforeDestroyContext() {
@@ -148,6 +151,12 @@ func Loop() {
 			if im.BeginTabItem("Debug") {
 				im.DockSpace(im.IDStr("debug"))
 				front.Debug()
+				im.EndTabItem()
+			}
+
+			if im.BeginTabItem("Assets") {
+				im.DockSpace(im.IDStr("assets"))
+				explorer.Show()
 				im.EndTabItem()
 			}
 
