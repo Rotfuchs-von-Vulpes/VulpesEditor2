@@ -59,7 +59,7 @@ func Resize(width int32) {
 	table = nil
 	tableSize = nil
 	count := width / 200
-	tableWidth = float32(width) / float32(count)
+	tableWidth = float32(width)/float32(count) - 8
 	for range count {
 		table = append(table, []assetIcon{})
 		tableSize = append(tableSize, 0)
@@ -88,7 +88,7 @@ func Show() {
 			viwerSize[0] = wSize.X
 			viwerSize[1] = wSize.Y
 
-			Resize(int32(wSize.X) - 50)
+			Resize(int32(wSize.X))
 		}
 
 		for i, collum := range table {
