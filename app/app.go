@@ -72,6 +72,9 @@ var save = false
 var export = false
 var close = false
 
+var assetsOpen = false
+var focusAssets = false
+
 func Loop() {
 	im.ClearSizeCallbackPool()
 
@@ -129,6 +132,10 @@ func Loop() {
 				im.SetCursorPos(im.WindowSize().Sub(childSize).Div(2))
 				im.BeginChildStrV("Contents", childSize, im.ChildFlagsNone, im.WindowFlagsNone)
 				size := im.NewVec2(-0.00001, 0)
+				if im.ButtonV("Browse Assets...", size) {
+					assetsOpen = true
+					focusAssets = true
+				}
 				if im.ButtonV("New Texture...", size) {
 					textureDraw.OpenNewTextureWindow()
 				}
@@ -154,10 +161,21 @@ func Loop() {
 				im.EndTabItem()
 			}
 
-			if im.BeginTabItem("Assets") {
+			assetsFlags := im.TabItemFlagsNone
+
+			if focusAssets {
+				assetsFlags |= im.TabItemFlagsSetSelected
+				focusAssets = false
+			}
+
+			if im.BeginTabItemV("Assets", &assetsOpen, assetsFlags) {
 				im.DockSpace(im.IDStr("assets"))
 				explorer.Show()
 				im.EndTabItem()
+
+				if close {
+					assetsOpen = false
+				}
 			}
 
 			for i, t := range tabs.AllTabs {
