@@ -9,6 +9,9 @@ import (
 )
 
 func EnhancePixels(img image.Image, coeff int) (finalImg *image.RGBA) {
+	if coeff <= 0 {
+		coeff = 1
+	}
 	originalWidth := img.Bounds().Dx()
 	originalHeight := img.Bounds().Dy()
 	width := coeff * originalWidth
