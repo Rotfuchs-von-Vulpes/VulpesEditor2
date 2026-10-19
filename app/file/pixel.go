@@ -18,10 +18,7 @@ func EnhancePixels(img image.Image, coeff int) (finalImg *image.RGBA) {
 	return
 }
 
-func LoadImage(r io.Reader, coeff int32) (finalImg *image.RGBA, err error) {
-	if coeff <= 0 {
-		coeff = 1
-	}
+func LoadImage(r io.Reader) (finalImg *image.RGBA, err error) {
 	img, err := png.Decode(r)
 	if err != nil {
 		return
