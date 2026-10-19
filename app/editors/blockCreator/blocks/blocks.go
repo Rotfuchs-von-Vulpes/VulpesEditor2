@@ -6,7 +6,6 @@ import (
 	"VulpesEditor/app/file"
 	"VulpesEditor/app/front/renderer"
 	"fmt"
-	"image/png"
 	"os"
 	"path/filepath"
 	"slices"
@@ -66,14 +65,14 @@ func getAllTextures() {
 				continue
 			}
 			defer f.Close()
-			img, err := png.Decode(f)
+			img, err := file.LoadImage(f)
 			if err != nil {
 				fmt.Println(err)
 				continue
 			}
 			tex := new(texture)
 			tex.name = t.Name
-			tex.data = backend.NewTextureFromRgba(backend.ImageToRgba(img))
+			tex.data = backend.NewTextureFromRgba(img)
 			textures = append(textures, tex)
 			textureNames = append(textureNames, t.Name)
 		}
