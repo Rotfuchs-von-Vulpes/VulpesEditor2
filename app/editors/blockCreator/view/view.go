@@ -113,6 +113,17 @@ func CalculateMouseRay(screenX, screenY float32) (rayOrigin, rayDirection mgl32.
 	return rayOrigin, rayDirection
 }
 
+var directions = [6]mgl32.Vec3{
+	{0, 0, 1},
+	{0, 0, -1},
+	{0, 1, 0},
+	{0, -1, 0},
+	{1, 0, 0},
+	{-1, 0, 0},
+}
+
+var frameFaces [6]bool
+
 func move(pos im.Vec2) {
 	mousePos = [2]float32{pos.X, pos.Y}
 
@@ -123,6 +134,41 @@ func move(pos im.Vec2) {
 	rayOrigin, rayVersor = CalculateMouseRay(pos.X, pos.Y)
 
 	isHovering, hoverdBlockPos = ctx.chunk.Hovered(rayOrigin, rayVersor)
+
+	frameFaces = [6]bool{true, true, true, true, true, true}
+	if rayVersor[0] > 0 {
+		frameFaces[4] = false
+	} else if rayVersor[0] < 0 {
+		frameFaces[5] = false
+	}
+	if rayVersor[1] > 0 {
+		frameFaces[2] = false
+	} else if rayVersor[1] < 0 {
+		frameFaces[3] = false
+	}
+	if rayVersor[2] > 0 {
+		frameFaces[0] = false
+	} else if rayVersor[2] < 0 {
+		frameFaces[1] = false
+	}
+	if hoverdBlockPos[0] == -1 || hoverdBlockPos[0] == float32(ctx.chunk.Width) {
+		frameFaces[0] = false
+		frameFaces[1] = false
+		frameFaces[2] = false
+		frameFaces[3] = false
+	}
+	if hoverdBlockPos[1] == -1 || hoverdBlockPos[1] == float32(ctx.chunk.Height) {
+		frameFaces[0] = false
+		frameFaces[1] = false
+		frameFaces[4] = false
+		frameFaces[5] = false
+	}
+	if hoverdBlockPos[2] == -1 || hoverdBlockPos[2] == float32(ctx.chunk.Depth) {
+		frameFaces[2] = false
+		frameFaces[3] = false
+		frameFaces[4] = false
+		frameFaces[5] = false
+	}
 }
 
 var secondButton bool
@@ -210,7 +256,7 @@ func Show(id string, edit bool) {
 
 	ctx.viewer.RenderBlocks(ctx.camera, ctx.mesh)
 	if isHovering {
-		ctx.viewer.RenderHoveredFrame(ctx.camera, hoverdBlockPos)
+		ctx.viewer.RenderHoveredFrame(ctx.camera, hoverdBlockPos, frameFaces)
 	}
 
 	im.End()

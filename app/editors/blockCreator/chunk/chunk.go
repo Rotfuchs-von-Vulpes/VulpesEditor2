@@ -18,15 +18,6 @@ func (p PositionInt) Add(p2 PositionInt) (p3 PositionInt) {
 	return
 }
 
-type PositionFloat [3]float32
-
-func (p PositionFloat) Add(p2 PositionFloat) (p3 PositionFloat) {
-	p3[0] = p[0] + p2[0]
-	p3[1] = p[1] + p2[1]
-	p3[2] = p[2] + p2[2]
-	return
-}
-
 type block struct {
 	kindId uint32
 }
@@ -91,8 +82,41 @@ func (c *Chunk) isAir(pos PositionInt) bool {
 	return b == 0
 }
 
-func (c *Chunk) isBorder(pos PositionInt) bool {
-	return pos[0] >= 0 && pos[0] < c.Width && pos[1] == -1 && pos[2] >= 0 && pos[2] < c.Depth
+func (c *Chunk) isBorder(pos PositionInt, direction mgl32.Vec3) bool {
+	if pos[1] < c.Height && pos[1] >= 0 && pos[2] < c.Depth && pos[2] >= 0 {
+		if direction[0] > 0 {
+			if pos[0] == c.Width {
+				return true
+			}
+		} else if direction[0] < 0 {
+			if pos[0] == -1 {
+				return true
+			}
+		}
+	}
+	if pos[0] < c.Width && pos[0] >= 0 && pos[2] < c.Depth && pos[2] >= 0 {
+		if direction[1] > 0 {
+			if pos[1] == c.Height {
+				return true
+			}
+		} else if direction[1] < 0 {
+			if pos[1] == -1 {
+				return true
+			}
+		}
+	}
+	if pos[0] < c.Width && pos[0] >= 0 && pos[1] < c.Height && pos[1] >= 0 {
+		if direction[2] > 0 {
+			if pos[2] == c.Depth {
+				return true
+			}
+		} else if direction[2] < 0 {
+			if pos[2] == -1 {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 type Side uint32
@@ -116,45 +140,45 @@ var SOUTH PositionInt = [3]int32{0, 0, -1}
 type faceUnit struct {
 	id        uint32
 	direction Side
-	pos       PositionFloat
+	pos       mgl32.Vec3
 	uvs       [4][2]float32
 }
 
-func (f *faceUnit) getVertices() [4]PositionFloat {
-	var p1, p2, p3, p4 PositionFloat
+func (f *faceUnit) getVertices() [4]mgl32.Vec3 {
+	var p1, p2, p3, p4 mgl32.Vec3
 	switch f.direction {
 	case sideTop:
-		p1 = f.pos.Add(PositionFloat{0, 0, 1})
-		p2 = f.pos.Add(PositionFloat{1, 0, 1})
-		p3 = f.pos.Add(PositionFloat{1, 0, 0})
+		p1 = f.pos.Add(mgl32.Vec3{0, 0, 1})
+		p2 = f.pos.Add(mgl32.Vec3{1, 0, 1})
+		p3 = f.pos.Add(mgl32.Vec3{1, 0, 0})
 		p4 = f.pos
 	case sideBottom:
 		p1 = f.pos
-		p2 = f.pos.Add(PositionFloat{1, 0, 0})
-		p3 = f.pos.Add(PositionFloat{1, 0, 1})
-		p4 = f.pos.Add(PositionFloat{0, 0, 1})
+		p2 = f.pos.Add(mgl32.Vec3{1, 0, 0})
+		p3 = f.pos.Add(mgl32.Vec3{1, 0, 1})
+		p4 = f.pos.Add(mgl32.Vec3{0, 0, 1})
 	case sideEast:
 		p1 = f.pos
-		p2 = f.pos.Add(PositionFloat{0, 1, 0})
-		p3 = f.pos.Add(PositionFloat{0, 1, 1})
-		p4 = f.pos.Add(PositionFloat{0, 0, 1})
+		p2 = f.pos.Add(mgl32.Vec3{0, 1, 0})
+		p3 = f.pos.Add(mgl32.Vec3{0, 1, 1})
+		p4 = f.pos.Add(mgl32.Vec3{0, 0, 1})
 	case sideWest:
-		p1 = f.pos.Add(PositionFloat{0, 0, 1})
-		p2 = f.pos.Add(PositionFloat{0, 1, 1})
-		p3 = f.pos.Add(PositionFloat{0, 1, 0})
+		p1 = f.pos.Add(mgl32.Vec3{0, 0, 1})
+		p2 = f.pos.Add(mgl32.Vec3{0, 1, 1})
+		p3 = f.pos.Add(mgl32.Vec3{0, 1, 0})
 		p4 = f.pos
 	case sideNorth:
-		p1 = f.pos.Add(PositionFloat{1, 0, 0})
-		p2 = f.pos.Add(PositionFloat{1, 1, 0})
-		p3 = f.pos.Add(PositionFloat{0, 1, 0})
+		p1 = f.pos.Add(mgl32.Vec3{1, 0, 0})
+		p2 = f.pos.Add(mgl32.Vec3{1, 1, 0})
+		p3 = f.pos.Add(mgl32.Vec3{0, 1, 0})
 		p4 = f.pos
 	case sideSouth:
 		p1 = f.pos
-		p2 = f.pos.Add(PositionFloat{0, 1, 0})
-		p3 = f.pos.Add(PositionFloat{1, 1, 0})
-		p4 = f.pos.Add(PositionFloat{1, 0, 0})
+		p2 = f.pos.Add(mgl32.Vec3{0, 1, 0})
+		p3 = f.pos.Add(mgl32.Vec3{1, 1, 0})
+		p4 = f.pos.Add(mgl32.Vec3{1, 0, 0})
 	}
-	return [4]PositionFloat{p1, p2, p3, p4}
+	return [4]mgl32.Vec3{p1, p2, p3, p4}
 }
 
 type cubeUnit struct {
@@ -367,7 +391,7 @@ func (c *Chunk) getHovered(camPos, camDir mgl32.Vec3) (ok bool, side, blockPos P
 	}
 
 	for {
-		if !c.isAir(current) || c.isBorder(current) {
+		if !c.isAir(current) || c.isBorder(current, camDir) {
 			ok = true
 			blockPos = current
 			return

@@ -356,6 +356,16 @@ func Init() {
 		gl.DeleteShader(fragHandle)
 
 		vertices := []float32{
+			0.0, 0.0, 1.0,
+			1.0, 0.0, 1.0,
+			1.0, 1.0, 1.0,
+			0.0, 1.0, 1.0,
+
+			0.0, 0.0, 0.0,
+			1.0, 0.0, 0.0,
+			1.0, 1.0, 0.0,
+			0.0, 1.0, 0.0,
+
 			0.0, 1.0, 0.0,
 			0.0, 1.0, 1.0,
 			1.0, 1.0, 1.0,
@@ -363,23 +373,18 @@ func Init() {
 
 			0.0, 0.0, 0.0,
 			0.0, 0.0, 1.0,
-			0.0, 1.0, 1.0,
-			0.0, 1.0, 0.0,
+			1.0, 0.0, 1.0,
+			1.0, 0.0, 0.0,
+
+			1.0, 0.0, 0.0,
+			1.0, 0.0, 1.0,
+			1.0, 1.0, 1.0,
+			1.0, 1.0, 0.0,
 
 			0.0, 0.0, 0.0,
-			1.0, 0.0, 0.0,
-			1.0, 1.0, 0.0,
-			0.0, 1.0, 0.0,
-
-			1.0, 0.0, 0.0,
-			1.0, 0.0, 1.0,
-			1.0, 1.0, 1.0,
-			1.0, 1.0, 0.0,
-
 			0.0, 0.0, 1.0,
-			1.0, 0.0, 1.0,
-			1.0, 1.0, 1.0,
 			0.0, 1.0, 1.0,
+			0.0, 1.0, 0.0,
 		}
 
 		for i, v := range vertices {
@@ -392,7 +397,7 @@ func Init() {
 
 		rBloF.length = len(vertices)
 
-		gl.UseProgram(rBlo.shaderHandle)
+		gl.UseProgram(rBloF.shaderHandle)
 
 		gl.GenVertexArrays(1, &rBloF.vao)
 		gl.GenBuffers(1, &rBloF.vbo)
@@ -655,7 +660,16 @@ func (f *FrameBuffer) RenderBlocks(camera *Camera, mesh *BlocksMesh) {
 	gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
 }
 
-func (f *FrameBuffer) RenderHoveredFrame(camera *Camera, pos mgl32.Vec3) {
+var directions = [6]mgl32.Vec3{
+	{0, 0, 1},
+	{0, 0, -1},
+	{0, 1, 0},
+	{0, -1, 0},
+	{1, 0, 0},
+	{-1, 0, 0},
+}
+
+func (f *FrameBuffer) RenderHoveredFrame(camera *Camera, pos mgl32.Vec3, flags [6]bool) {
 	camera.resize(f.width, f.height)
 
 	gl.Viewport(0, 0, f.width, f.height)
@@ -676,10 +690,12 @@ func (f *FrameBuffer) RenderHoveredFrame(camera *Camera, pos mgl32.Vec3) {
 	gl.BindBuffer(gl.ARRAY_BUFFER, rBloF.vbo)
 	gl.PolygonMode(gl.FRONT_AND_BACK, gl.LINE)
 	gl.Disable(gl.CULL_FACE)
-	if pos[1] < 0 {
-		gl.DrawArrays(gl.QUADS, 0, 4)
-	} else {
-		gl.DrawArrays(gl.QUADS, 4, int32(rBloF.length)-4)
+
+	for i := range int32(6) {
+		if !flags[i] {
+			continue
+		}
+		gl.DrawArrays(gl.QUADS, i*4, 4)
 	}
 	gl.PolygonMode(gl.FRONT_AND_BACK, gl.FILL)
 	gl.Enable(gl.CULL_FACE)
