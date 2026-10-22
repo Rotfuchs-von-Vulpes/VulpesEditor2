@@ -29,7 +29,7 @@ func LoadImage(r io.Reader) (finalImg *image.RGBA, err error) {
 	originalWidth := img.Bounds().Dx()
 	originalHeight := img.Bounds().Dy()
 	if originalWidth < 64 || originalHeight < 64 {
-		finalImg = EnhancePixels(img, 10)
+		finalImg = EnhancePixels(img, 15)
 		return
 	}
 	if originalWidth < 128 || originalHeight < 128 {
