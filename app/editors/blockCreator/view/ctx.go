@@ -23,7 +23,7 @@ func New(id string) {
 	ctx.viewer = renderer.CreateFramebuffer(500, 500, false)
 	viwerSize = [2]float32{500, 500}
 	ctx.mesh = renderer.NewBlocksMesh()
-	ctx.chunk = chunk.Test()
+	ctx.chunk = chunk.New(16, 16, 16)
 	ctx.mesh.SetVertices(ctx.chunk.ToBuffer())
 	ctxManager.Add(id, ctx)
 

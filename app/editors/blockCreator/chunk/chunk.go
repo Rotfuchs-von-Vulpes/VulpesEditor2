@@ -91,6 +91,10 @@ func (c *Chunk) isAir(pos PositionInt) bool {
 	return b == 0
 }
 
+func (c *Chunk) isBorder(pos PositionInt) bool {
+	return pos[0] >= 0 && pos[0] < c.Width && pos[1] == -1 && pos[2] >= 0 && pos[2] < c.Depth
+}
+
 type Side uint32
 
 const (
@@ -363,7 +367,7 @@ func (c *Chunk) getHovered(camPos, camDir mgl32.Vec3) (ok bool, side, blockPos P
 	}
 
 	for {
-		if !c.isAir(current) {
+		if !c.isAir(current) || c.isBorder(current) {
 			ok = true
 			blockPos = current
 			return

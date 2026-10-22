@@ -356,6 +356,11 @@ func Init() {
 		gl.DeleteShader(fragHandle)
 
 		vertices := []float32{
+			0.0, 1.0, 0.0,
+			0.0, 1.0, 1.0,
+			1.0, 1.0, 1.0,
+			1.0, 1.0, 0.0,
+
 			0.0, 0.0, 0.0,
 			0.0, 0.0, 1.0,
 			0.0, 1.0, 1.0,
@@ -671,7 +676,11 @@ func (f *FrameBuffer) RenderHoveredFrame(camera *Camera, pos mgl32.Vec3) {
 	gl.BindBuffer(gl.ARRAY_BUFFER, rBloF.vbo)
 	gl.PolygonMode(gl.FRONT_AND_BACK, gl.LINE)
 	gl.Disable(gl.CULL_FACE)
-	gl.DrawArrays(gl.QUADS, 0, int32(rBloF.length))
+	if pos[1] < 0 {
+		gl.DrawArrays(gl.QUADS, 0, 4)
+	} else {
+		gl.DrawArrays(gl.QUADS, 4, int32(rBloF.length)-4)
+	}
 	gl.PolygonMode(gl.FRONT_AND_BACK, gl.FILL)
 	gl.Enable(gl.CULL_FACE)
 	gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
